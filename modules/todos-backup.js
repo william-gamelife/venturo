@@ -39,13 +39,13 @@ class TodosModule {
         this.currentFilter = 'all';
         this.draggedItem = null;
         this.quickTags = [
-            { id: 'quote', name: '報價', color: '#c9a961' },
-            { id: 'schedule', name: '行程', color: '#7a8b74' },
-            { id: 'presentation', name: '簡報', color: '#6b8e9f' },
-            { id: 'contract', name: '合約', color: '#d4a574' },
-            { id: 'flight', name: '團務機票', color: '#b87d8b' },
-            { id: 'hotel', name: '團務訂房', color: '#8b9dc3' },
-            { id: 'transport', name: '團務訂車', color: '#a0c4a0' }
+            { id: 'quote', name: '報價', icon: '📊', color: '#c9a961' },
+            { id: 'schedule', name: '行程', icon: '📅', color: '#7a8b74' },
+            { id: 'presentation', name: '簡報', icon: '📈', color: '#6b8e9f' },
+            { id: 'contract', name: '合約', icon: '📋', color: '#d4a574' },
+            { id: 'flight', name: '團務機票', icon: '✈️', color: '#b87d8b' },
+            { id: 'hotel', name: '團務訂房', icon: '🏨', color: '#8b9dc3' },
+            { id: 'transport', name: '團務訂車', icon: '🚗', color: '#a0c4a0' }
         ];
         
         // 新增狀態管理
@@ -59,31 +59,31 @@ class TodosModule {
                 id: 'travel-basic',
                 name: '旅行社基礎模板',
                 categories: [
-                    { id: 'contract', name: '合約類' },
-                    { id: 'flight', name: '機票類' },
-                    { id: 'hotel', name: '住宿類' },
-                    { id: 'transport', name: '交通類' }
+                    { id: 'contract', name: '合約類', icon: '📋' },
+                    { id: 'flight', name: '機票類', icon: '✈️' },
+                    { id: 'hotel', name: '住宿類', icon: '🏨' },
+                    { id: 'transport', name: '交通類', icon: '🚗' }
                 ]
             },
             {
                 id: 'travel-full',
                 name: '旅行社完整模板',
                 categories: [
-                    { id: 'contract', name: '合約類' },
-                    { id: 'flight', name: '機票類' },
-                    { id: 'hotel', name: '住宿類' },
-                    { id: 'transport', name: '交通類' },
-                    { id: 'activity', name: '活動類' },
-                    { id: 'meal', name: '餐飲類' },
-                    { id: 'insurance', name: '保險類' },
-                    { id: 'document', name: '文件類' }
+                    { id: 'contract', name: '合約類', icon: '📋' },
+                    { id: 'flight', name: '機票類', icon: '✈️' },
+                    { id: 'hotel', name: '住宿類', icon: '🏨' },
+                    { id: 'transport', name: '交通類', icon: '🚗' },
+                    { id: 'activity', name: '活動類', icon: '🎯' },
+                    { id: 'meal', name: '餐飲類', icon: '🍽️' },
+                    { id: 'insurance', name: '保險類', icon: '🛡️' },
+                    { id: 'document', name: '文件類', icon: '📄' }
                 ]
             },
             {
                 id: 'blank',
                 name: '空白專案',
                 categories: [
-                    { id: 'general', name: '一般任務' }
+                    { id: 'general', name: '一般任務', icon: '📝' }
                 ]
             }
         ];
@@ -189,12 +189,14 @@ class TodosModule {
                         <span class="filter-section-title">快速篩選：</span>
                         <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
                                 onclick="window.activeModule.setFilter('all')">
+                            <span class="tag-icon">📊</span>
                             全部
                         </button>
                         ${this.quickTags.map(tag => `
                             <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
                                     onclick="window.activeModule.setFilter('${tag.id}')"
                                     style="--tag-color: ${tag.color}">
+                                <span class="tag-icon">${tag.icon}</span>
                                 ${tag.name}
                             </button>
                         `).join('')}
@@ -570,39 +572,24 @@ class TodosModule {
                 }
 
                 .priority-star {
+                    width: 32px;
+                    height: 32px;
+                    border: 1px solid var(--border);
+                    border-radius: 4px;
                     cursor: pointer;
-                    transition: all 0.2s;
-                }
-
-                .priority-star:hover path {
-                    fill: var(--primary-light, #a89080);
-                }
-                
-                /* 對話框關閉按鈕 */
-                .dialog-close {
-                    position: absolute;
-                    top: 16px;
-                    right: 16px;
-                    background: none;
-                    border: none;
-                    cursor: pointer;
-                    padding: 4px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    color: var(--text-light);
                     transition: all 0.2s;
-                    border-radius: 50%;
                 }
-                
-                .dialog-close:hover {
+
+                .priority-star:hover {
                     background: var(--bg);
-                    transform: rotate(90deg);
                 }
-                
-                .dialog-header {
-                    position: relative;
-                    padding-right: 50px;
+
+                .priority-star.selected {
+                    background: var(--primary-light);
+                    border-color: var(--primary);
                 }
 
                 .tag-selector {
@@ -991,8 +978,8 @@ class TodosModule {
                 <div class="dialog-header">
                     <h3>${prefillData ? '編輯待辦事項' : '新增待辦事項'}</h3>
                     <button class="dialog-close" onclick="window.activeModule.closeDialog()">
-                        <svg width="20" height="20" viewBox="0 0 20 20">
-                            <path d="M15 5L5 15M5 5l10 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <svg width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2"/>
                         </svg>
                     </button>
                 </div>
@@ -1020,20 +1007,16 @@ class TodosModule {
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">優先級</label>
-                            <div class="priority-selector" id="prioritySelector">
-                                <svg class="priority-star" data-priority="1" onclick="window.activeModule.setPriority(1)" viewBox="0 0 24 24" width="28" height="28">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
-                                <svg class="priority-star" data-priority="2" onclick="window.activeModule.setPriority(2)" viewBox="0 0 24 24" width="28" height="28">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
-                                <svg class="priority-star" data-priority="3" onclick="window.activeModule.setPriority(3)" viewBox="0 0 24 24" width="28" height="28">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
+                            <label class="form-label">優先級設定</label>
+                            <div class="priority-selector">
+                                ${[0,1,2,3].map(i => `
+                                    <div class="priority-star ${(prefillData?.priority || 0) >= i && i > 0 ? 'selected' : ''}" 
+                                         data-priority="${i}" 
+                                         onclick="window.activeModule.setPriority(${i})">
+                                        ${i === 0 ? '無' : '★'.repeat(i)}
+                                        ${i === 0 ? '' : `<span class="priority-label">${['', '低', '中', '高'][i]}</span>`}
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
                         
@@ -1042,6 +1025,7 @@ class TodosModule {
                             <input type="date" class="form-input" id="dueDate" 
                                    min="${new Date().toISOString().split('T')[0]}"
                                    value="${prefillData?.dueDate || ''}">
+                            <div class="form-hint">不設定表示無截止日期</div>
                         </div>
                     </div>
                     
@@ -1054,6 +1038,7 @@ class TodosModule {
                                          data-tag="${tag.id}" 
                                          onclick="window.activeModule.toggleTag('${tag.id}')"
                                          style="--tag-color: ${tag.color}">
+                                        <span class="tag-icon">${tag.icon}</span>
                                         <span class="tag-name">${tag.name}</span>
                                     </div>
                                 `).join('')}
@@ -1067,16 +1052,17 @@ class TodosModule {
                             <input type="text" class="form-input" id="projectTag" 
                                    placeholder="例如：王小姐、ABC公司"
                                    value="${prefillData?.projectTag || ''}">
+                            <div class="form-hint">用於將相關任務歸類到同一專案</div>
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">指派對象</label>
                             <select class="form-select" id="assignedTo">
                                 <option value="">指派給...</option>
-                                <option value="自己" ${prefillData?.assignedTo === '自己' ? 'selected' : ''}>自己</option>
-                                <option value="小美" ${prefillData?.assignedTo === '小美' ? 'selected' : ''}>小美</option>
-                                <option value="小明" ${prefillData?.assignedTo === '小明' ? 'selected' : ''}>小明</option>
-                                <option value="經理" ${prefillData?.assignedTo === '經理' ? 'selected' : ''}>經理</option>
+                                <option value="自己" ${prefillData?.assignedTo === '自己' ? 'selected' : ''}>🗣️ 自己</option>
+                                <option value="小美" ${prefillData?.assignedTo === '小美' ? 'selected' : ''}>👩 小美</option>
+                                <option value="小明" ${prefillData?.assignedTo === '小明' ? 'selected' : ''}>👨 小明</option>
+                                <option value="經理" ${prefillData?.assignedTo === '經理' ? 'selected' : ''}>💼 經理</option>
                             </select>
                         </div>
                     </div>
@@ -1145,13 +1131,10 @@ class TodosModule {
     // 增強版設定優先級
     setPriority(level) {
         this.selectedPriority = level;
-        const stars = document.querySelectorAll('.priority-star');
-        stars.forEach(star => {
-            const starLevel = parseInt(star.dataset.priority);
-            if (starLevel <= level) {
-                star.querySelector('path').setAttribute('fill', 'var(--primary)');
-            } else {
-                star.querySelector('path').setAttribute('fill', 'none');
+        document.querySelectorAll('.priority-star').forEach((star, index) => {
+            star.classList.remove('selected');
+            if (index > 0 && index <= level) {
+                star.classList.add('selected');
             }
         });
     }
@@ -1159,41 +1142,13 @@ class TodosModule {
     // 增強版切換標籤
     toggleTag(tagId) {
         const element = document.querySelector(`[data-tag="${tagId}"]`);
-        const titleInput = document.getElementById('taskTitle');
-        const tag = this.quickTags.find(t => t.id === tagId);
-        
         if (element.classList.contains('selected')) {
             element.classList.remove('selected');
-            // 移除標籤文字
-            const currentValue = titleInput.value;
-            const tagText = `${tag.name}│`;
-            if (currentValue.startsWith(tagText)) {
-                titleInput.value = currentValue.substring(tagText.length).trim();
-            }
+            this.selectedTag = null;
         } else {
-            // 先清除其他標籤
-            document.querySelectorAll('.tag-option').forEach(t => {
-                t.classList.remove('selected');
-                // 移除舊標籤文字
-                const oldTag = this.quickTags.find(qt => qt.id === t.dataset.tag);
-                if (oldTag) {
-                    const oldTagText = `${oldTag.name}│`;
-                    if (titleInput.value.startsWith(oldTagText)) {
-                        titleInput.value = titleInput.value.substring(oldTagText.length).trim();
-                    }
-                }
-            });
-            
+            document.querySelectorAll('.tag-option').forEach(t => t.classList.remove('selected'));
             element.classList.add('selected');
-            // 加入新標籤文字
-            const tagText = `${tag.name}│`;
-            if (!titleInput.value.startsWith(tagText)) {
-                titleInput.value = tagText + titleInput.value;
-            }
-            
-            // 設定游標位置到直線後面
-            titleInput.focus();
-            titleInput.setSelectionRange(tagText.length, tagText.length);
+            this.selectedTag = tagId;
         }
     }
 
