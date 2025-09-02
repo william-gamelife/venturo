@@ -972,7 +972,6 @@ class TodosModule {
                     
                     <div class="form-row form-row-centered">
                         <div class="form-group form-group-center">
-                            <label class="form-label">優先級</label>
                             <div class="priority-selector" id="prioritySelector">
                                 <svg class="priority-star" data-priority="1" onclick="window.activeModule.setPriority(1)" viewBox="0 0 24 24" width="24" height="24">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
@@ -990,7 +989,6 @@ class TodosModule {
                         </div>
                         
                         <div class="form-group form-group-center">
-                            <label class="form-label">到期日</label>
                             <input type="date" class="form-input" id="dueDate" 
                                    value="${prefillData?.dueDate || ''}">
                         </div>
@@ -1066,7 +1064,14 @@ class TodosModule {
         
         // 初始化優先級顯示
         if (this.selectedPriority > 0) {
-            setTimeout(() => this.setPriority(this.selectedPriority), 50);
+            setTimeout(() => {
+                this.setPriority(this.selectedPriority);
+                // 確保星星可以點擊
+                document.querySelectorAll('.priority-star').forEach(star => {
+                    star.style.pointerEvents = 'auto';
+                    star.style.cursor = 'pointer';
+                });
+            }, 50);
         }
         
         // 聚焦到標題輸入框

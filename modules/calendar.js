@@ -523,7 +523,22 @@ class CalendarModule {
 
     getEventsForDate(date) {
         const dateStr = date.toISOString().split('T')[0];
-        return this.events.filter(event => event.date === dateStr);
+        return this.events.filter(event => {
+            // 全日事件
+            if (event.date) {
+                return event.date === dateStr;
+            }
+            // 定時事件
+            if (event.startDateTime) {
+                const eventDate = event.startDateTime.split('T')[0];
+                return eventDate === dateStr;
+            }
+            // 多日事件
+            if (event.startDate && event.endDate) {
+                return dateStr >= event.startDate && dateStr <= event.endDate;
+            }
+            return false;
+        });
     }
 
     previousMonth() {
