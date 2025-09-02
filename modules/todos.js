@@ -20,6 +20,7 @@ class TodosModule {
     static moduleInfo = {
         name: '待辦事項',
         subtitle: '智慧任務管理與專案追蹤',
+        description: '支援四欄位看板管理、專案分組、批量操作及智慧篩選功能。專為旅行社業務流程設計，整合報價、行程、簡報等工作標籤。',
         icon: `<svg viewBox="0 0 24 24" fill="none">
                 <rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="2"/>
                 <path d="M8 10h8M8 14h5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -105,6 +106,61 @@ class TodosModule {
         
         // 綁定事件
         this.attachEventListeners();
+
+        // 更新招牌
+        this.updateSignboard();
+    }
+
+    updateSignboard() {
+        // 動態更新招牌內容
+        const moduleInfo = {
+            ...TodosModule.moduleInfo,
+            stats: [
+                { label: `${this.todos.length} 個任務`, highlight: false },
+                ...(this.selectedTodos.size > 0 ? [{ label: `已選取 ${this.selectedTodos.size} 個`, highlight: true }] : [])
+            ],
+            actions: [
+                { 
+                    label: '新增任務', 
+                    onClick: 'window.activeModule.showAddDialog', 
+                    primary: true,
+                    icon: '<svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>'
+                },
+                { 
+                    label: '批量操作', 
+                    onClick: 'window.activeModule.showBatchActions', 
+                    disabled: this.selectedTodos.size === 0 
+                },
+                { 
+                    label: '合併專案', 
+                    onClick: 'window.activeModule.showMergeDialog', 
+                    disabled: this.selectedTodos.size < 2 
+                },
+                { 
+                    label: '清除選取', 
+                    onClick: 'window.activeModule.clearSelection', 
+                    disabled: this.selectedTodos.size === 0 
+                }
+            ],
+            filters: [
+                { id: 'all', label: '全部', active: this.currentFilter === 'all', onClick: 'window.activeModule.setFilter' },
+                ...this.quickTags.map(tag => ({
+                    id: tag.id,
+                    label: tag.name,
+                    active: this.currentFilter === tag.id,
+                    onClick: 'window.activeModule.setFilter'
+                }))
+            ],
+            searchButton: {
+                label: '搜尋',
+                onClick: 'window.activeModule.showSearchDialog'
+            }
+        };
+
+        // 更新儀表板招牌
+        if (typeof updateModuleSignboard === 'function') {
+            updateModuleSignboard(moduleInfo);
+        }
     }
 
     async loadData() {
@@ -136,81 +192,6 @@ class TodosModule {
     getHTML() {
         return `
             <div class="todos-container">
-                <!-- 模組歡迎卡片 -->
-                <div class="module-welcome-card">
-                    <div class="welcome-header">
-                        <div class="welcome-info">
-                            <div class="welcome-icon-title">
-                                <div class="welcome-icon">
-                                    ${TodosModule.moduleInfo.icon}
-                                </div>
-                                <div>
-                                    <h2>${TodosModule.moduleInfo.name}</h2>
-                                    <p class="welcome-subtitle">${TodosModule.moduleInfo.subtitle}</p>
-                                </div>
-                            </div>
-                            <div class="todos-stats">
-                                <span class="todos-count">${this.todos.length} 個任務</span>
-                                <span class="selected-count" ${this.selectedTodos.size > 0 ? '' : 'style="display: none;"'}>
-                                    已選取 ${this.selectedTodos.size} 個
-                                </span>
-                            </div>
-                        </div>
-                        
-                        <div class="welcome-actions">
-                            <button class="btn-add" onclick="window.activeModule.showAddDialog()">
-                                <svg width="16" height="16" viewBox="0 0 16 16">
-                                    <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                                </svg>
-                                新增任務
-                            </button>
-                            
-                            <button class="btn-batch ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
-                                    onclick="window.activeModule.showBatchActions()"
-                                    ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
-                                批量操作
-                            </button>
-                            
-                            <button class="btn-merge ${this.selectedTodos.size >= 2 ? '' : 'disabled'}" 
-                                    onclick="window.activeModule.showMergeDialog()"
-                                    ${this.selectedTodos.size >= 2 ? '' : 'disabled'}>
-                                合併專案
-                            </button>
-                            
-                            <button class="btn-clear ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
-                                    onclick="window.activeModule.clearSelection()"
-                                    ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
-                                清除選取
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- 篩選標籤 -->
-                    <div class="welcome-filters">
-                        <div class="filter-section">
-                            <span class="filter-section-title">快速篩選：</span>
-                            <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
-                                    onclick="window.activeModule.setFilter('all')">
-                                全部
-                            </button>
-                            ${this.quickTags.map(tag => `
-                                <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
-                                        onclick="window.activeModule.setFilter('${tag.id}')"
-                                        style="--tag-color: ${tag.color}">
-                                    ${tag.name}
-                                </button>
-                            `).join('')}
-                        </div>
-                        
-                        <button class="filter-search-btn" onclick="window.activeModule.showSearchDialog()">
-                            <svg width="16" height="16" viewBox="0 0 16 16">
-                                <circle cx="7" cy="7" r="5" stroke="currentColor" fill="none"/>
-                                <path d="11 11l4 4" stroke="currentColor"/>
-                            </svg>
-                            搜尋
-                        </button>
-                    </div>
-                </div>
 
                 <!-- 四欄看板 -->
                 <div class="kanban-board">
@@ -235,202 +216,9 @@ class TodosModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    padding: 20px 0;
                     gap: 20px;
                 }
 
-                /* 模組歡迎卡片 */
-                .module-welcome-card {
-                    background: var(--card);
-                    border-radius: 16px;
-                    padding: 20px;
-                    border: 1px solid var(--border);
-                    margin: 0 20px 20px;
-                    box-shadow: var(--shadow);
-                }
-
-                .welcome-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    margin-bottom: 16px;
-                    gap: 20px;
-                }
-
-                .welcome-info {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-
-                .welcome-icon-title {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                }
-
-                .welcome-icon {
-                    width: 40px;
-                    height: 40px;
-                    background: linear-gradient(135deg, var(--primary), var(--accent));
-                    border-radius: 10px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: white;
-                    flex-shrink: 0;
-                }
-
-                .welcome-icon svg {
-                    width: 20px;
-                    height: 20px;
-                }
-
-                .welcome-header h2 {
-                    font-size: 1.5rem;
-                    font-weight: 600;
-                    color: var(--text);
-                    margin: 0;
-                }
-
-                .welcome-subtitle {
-                    margin: 0;
-                    color: var(--text-light);
-                    font-size: 0.9rem;
-                }
-
-                .todos-stats {
-                    display: flex;
-                    gap: 12px;
-                    align-items: center;
-                }
-
-                .todos-count {
-                    font-size: 0.85rem;
-                    color: var(--text-light);
-                    background: var(--bg);
-                    padding: 4px 8px;
-                    border-radius: 12px;
-                }
-
-                .selected-count {
-                    font-size: 0.85rem;
-                    color: var(--primary);
-                    background: var(--primary-light);
-                    padding: 4px 8px;
-                    border-radius: 12px;
-                }
-
-                .welcome-actions {
-                    display: flex;
-                    gap: 8px;
-                    flex-wrap: wrap;
-                }
-
-                .btn-add, .btn-batch, .btn-merge, .btn-clear {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 8px 12px;
-                    border: none;
-                    border-radius: 6px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-weight: 500;
-                    font-size: 0.85rem;
-                    white-space: nowrap;
-                }
-
-                .btn-add {
-                    background: var(--primary);
-                    color: white;
-                }
-
-                .btn-batch, .btn-merge, .btn-clear {
-                    background: var(--bg);
-                    color: var(--text);
-                    border: 1px solid var(--border);
-                }
-
-                .btn-add:hover {
-                    background: var(--primary-dark);
-                    transform: translateY(-1px);
-                }
-
-                .btn-batch:hover:not(.disabled), .btn-merge:hover:not(.disabled), .btn-clear:hover:not(.disabled) {
-                    background: var(--bg-dark);
-                    transform: translateY(-1px);
-                }
-
-                .disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-
-                /* 篩選區域 */
-                .welcome-filters {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    padding-top: 16px;
-                    border-top: 1px solid var(--border);
-                    gap: 16px;
-                }
-
-                .filter-section {
-                    display: flex;
-                    gap: 8px;
-                    align-items: center;
-                    flex-wrap: wrap;
-                }
-
-                .filter-section-title {
-                    font-size: 0.85rem;
-                    color: var(--text-light);
-                    font-weight: 500;
-                    margin-right: 4px;
-                }
-
-                .filter-tag {
-                    padding: 4px 12px;
-                    background: white;
-                    border: 1px solid var(--border);
-                    border-radius: 16px;
-                    color: var(--text-light);
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    white-space: nowrap;
-                    font-size: 0.8rem;
-                    font-weight: 500;
-                }
-
-                .filter-tag:hover {
-                    background: var(--bg);
-                }
-
-                .filter-tag.active {
-                    background: var(--primary);
-                    color: white;
-                    border-color: var(--primary);
-                }
-
-                .filter-search-btn {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    padding: 6px 12px;
-                    background: white;
-                    border: 1px solid var(--border);
-                    border-radius: 6px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-size: 0.8rem;
-                    color: var(--text-light);
-                }
-
-                .filter-search-btn:hover {
-                    background: var(--bg);
-                }
 
                 /* 看板欄位 */
                 .kanban-board {
@@ -439,7 +227,6 @@ class TodosModule {
                     gap: 16px;
                     overflow-x: auto;
                     min-height: 400px;
-                    margin: 0 20px 20px;
                 }
 
                 .kanban-column {
@@ -523,7 +310,6 @@ class TodosModule {
 
                 /* 專案區域 */
                 .projects-section {
-                    margin: 20px 20px 0;
                     background: var(--card);
                     border-radius: 16px;
                     padding: 20px;
@@ -909,40 +695,9 @@ class TodosModule {
 
                 /* 手機版響應式 */
                 @media (max-width: 768px) {
-                    .todos-container {
-                        padding: 12px 0;
-                    }
-
-                    .module-welcome-card {
-                        margin: 0 12px 20px;
-                        padding: 16px;
-                    }
-
-                    .welcome-header {
-                        flex-direction: column;
-                        gap: 16px;
-                        align-items: stretch;
-                    }
-
-                    .welcome-actions {
-                        justify-content: flex-start;
-                    }
-
-                    .welcome-filters {
-                        flex-direction: column;
-                        gap: 12px;
-                        align-items: stretch;
-                    }
-
-                    .filter-section {
-                        overflow-x: auto;
-                        -webkit-overflow-scrolling: touch;
-                    }
-
                     .kanban-board {
                         grid-template-columns: 1fr;
                         overflow-x: visible;
-                        margin: 0 12px;
                     }
 
                     .kanban-column {
@@ -950,7 +705,6 @@ class TodosModule {
                     }
 
                     .projects-section {
-                        margin: 20px 12px 0;
                         padding: 16px;
                     }
 

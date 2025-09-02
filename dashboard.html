@@ -204,8 +204,162 @@
         .welcome-content {
             position: relative;
             z-index: 1;
-            flex: 1;
-            min-width: 0;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            gap: 20px;
+        }
+
+        .module-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .module-icon-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .module-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+            font-size: 20px;
+        }
+
+        .module-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        .module-stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            background: var(--bg);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .stat-badge.highlight {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .module-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .module-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .module-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .module-btn.secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .module-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .module-btn.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .module-btn.secondary:hover {
+            background: var(--bg-dark);
+        }
+
+        .module-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .module-filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+            gap: 16px;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            font-weight: 500;
+            margin-right: 4px;
+        }
+
+        .filter-tag {
+            padding: 4px 12px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-size: 0.8rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .filter-tag:hover {
+            background: var(--bg);
+        }
+
+        .filter-tag.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         .welcome-title {
@@ -351,6 +505,32 @@
             .main-content {
                 margin-left: 0;
                 padding: 24px 20px 100px;
+            }
+
+            .welcome-card {
+                padding: 16px;
+                margin: 0 12px 16px;
+            }
+
+            .module-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .module-actions {
+                justify-content: flex-start;
+            }
+
+            .module-filters {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
             
             .welcome-card {
@@ -582,11 +762,32 @@
 
     <!-- 主內容 -->
     <main class="main-content">
-        <!-- 歡迎卡片 -->
-        <div class="welcome-card">
+        <!-- 模組招牌框架 -->
+        <div class="welcome-card" id="moduleSignboard">
             <div class="welcome-content">
-                <h1 class="welcome-title" id="moduleTitle">歡迎使用遊戲人生 3.0</h1>
-                <p class="welcome-subtitle" id="moduleSubtitle">純雲端架構 · 定時同步 · UUID 隔離</p>
+                <div class="module-header">
+                    <div class="module-info">
+                        <div class="module-icon-title">
+                            <div class="module-icon" id="moduleIcon">
+                                🏠
+                            </div>
+                            <div>
+                                <h1 class="welcome-title" id="moduleTitle">歡迎使用遊戲人生 3.0</h1>
+                                <p class="welcome-subtitle" id="moduleSubtitle">純雲端架構 · 定時同步 · UUID 隔離</p>
+                                <p class="module-description" id="moduleDescription" style="display: none; margin: 8px 0 0 0; color: var(--text-muted); font-size: 0.85rem; line-height: 1.4;"></p>
+                            </div>
+                        </div>
+                        <div class="module-stats" id="moduleStats">
+                            <!-- 統計資訊區域 -->
+                        </div>
+                    </div>
+                    <div class="module-actions" id="moduleActions">
+                        <!-- 動作按鈕區域 -->
+                    </div>
+                </div>
+                <div class="module-filters" id="moduleFilters" style="display: none;">
+                    <!-- 篩選器區域 -->
+                </div>
             </div>
         </div>
         
@@ -666,6 +867,100 @@
                 console.error('登出錯誤:', error);
                 // 強制跳轉到登入頁面
                 window.location.href = './index.html';
+            }
+        }
+
+        // 模組招牌管理系統
+        function clearModuleSignboard() {
+            document.getElementById('moduleTitle').textContent = '歡迎使用遊戲人生 3.0';
+            document.getElementById('moduleSubtitle').textContent = '純雲端架構 · 定時同步 · UUID 隔離';
+            document.getElementById('moduleDescription').style.display = 'none';
+            document.getElementById('moduleDescription').textContent = '';
+            document.getElementById('moduleIcon').innerHTML = '🏠';
+            document.getElementById('moduleStats').innerHTML = '';
+            document.getElementById('moduleActions').innerHTML = '';
+            document.getElementById('moduleFilters').style.display = 'none';
+            document.getElementById('moduleFilters').innerHTML = '';
+        }
+
+        function updateModuleSignboard(moduleInfo) {
+            // 基本資訊
+            document.getElementById('moduleTitle').textContent = moduleInfo.name || '未命名模組';
+            document.getElementById('moduleSubtitle').textContent = moduleInfo.subtitle || '';
+            
+            // 招牌說明
+            const descriptionElement = document.getElementById('moduleDescription');
+            if (moduleInfo.description) {
+                descriptionElement.textContent = moduleInfo.description;
+                descriptionElement.style.display = 'block';
+            } else {
+                descriptionElement.style.display = 'none';
+            }
+            
+            // 圖標
+            const iconElement = document.getElementById('moduleIcon');
+            if (typeof moduleInfo.icon === 'string' && moduleInfo.icon.includes('<svg')) {
+                iconElement.innerHTML = moduleInfo.icon;
+            } else {
+                iconElement.textContent = moduleInfo.icon || '📦';
+            }
+
+            // 統計資訊
+            const statsContainer = document.getElementById('moduleStats');
+            if (moduleInfo.stats && moduleInfo.stats.length > 0) {
+                statsContainer.innerHTML = moduleInfo.stats.map(stat => `
+                    <span class="stat-badge ${stat.highlight ? 'highlight' : ''}" ${stat.title ? `title="${stat.title}"` : ''}>
+                        ${stat.label}
+                    </span>
+                `).join('');
+            } else {
+                statsContainer.innerHTML = '';
+            }
+
+            // 動作按鈕
+            const actionsContainer = document.getElementById('moduleActions');
+            if (moduleInfo.actions && moduleInfo.actions.length > 0) {
+                actionsContainer.innerHTML = moduleInfo.actions.map(action => `
+                    <button class="module-btn ${action.primary ? 'primary' : 'secondary'}" 
+                            onclick="${action.onClick}()" 
+                            ${action.disabled ? 'disabled' : ''}
+                            ${action.title ? `title="${action.title}"` : ''}>
+                        ${action.icon || ''}
+                        ${action.label}
+                    </button>
+                `).join('');
+            } else {
+                actionsContainer.innerHTML = '';
+            }
+
+            // 篩選器
+            const filtersContainer = document.getElementById('moduleFilters');
+            if (moduleInfo.filters && moduleInfo.filters.length > 0) {
+                filtersContainer.style.display = 'flex';
+                filtersContainer.innerHTML = `
+                    <div class="filter-group">
+                        <span class="filter-label">快速篩選：</span>
+                        ${moduleInfo.filters.map(filter => `
+                            <button class="filter-tag ${filter.active ? 'active' : ''}" 
+                                    onclick="${filter.onClick}('${filter.id}')" 
+                                    ${filter.title ? `title="${filter.title}"` : ''}>
+                                ${filter.label}
+                            </button>
+                        `).join('')}
+                    </div>
+                    ${moduleInfo.searchButton ? `
+                        <button class="module-btn secondary" onclick="${moduleInfo.searchButton.onClick}()">
+                            <svg width="16" height="16" viewBox="0 0 16 16">
+                                <circle cx="7" cy="7" r="5" stroke="currentColor" fill="none"/>
+                                <path d="11 11l4 4" stroke="currentColor"/>
+                            </svg>
+                            ${moduleInfo.searchButton.label || '搜尋'}
+                        </button>
+                    ` : ''}
+                `;
+            } else {
+                filtersContainer.style.display = 'none';
+                filtersContainer.innerHTML = '';
             }
         }
         
@@ -751,8 +1046,8 @@
                 // 記住當前模組位置
                 window.location.hash = moduleName;
                 
-                // 更新標題
-                updateModuleHeader(moduleName);
+                // 先清理招牌
+                clearModuleSignboard();
                 
                 // 更新導航狀態
                 document.querySelectorAll('.nav-link').forEach(link => {
@@ -821,11 +1116,20 @@
                         moduleClass = settingsModule.SettingsModule;
                         break;
                     default:
-                        // 預設顯示總覽
+                        // 預設顯示總覽，更新招牌
+                        updateModuleSignboard({
+                            name: '系統總覽',
+                            subtitle: '歡迎使用遊戲人生 3.0 管理系統',
+                            icon: '🏠',
+                            stats: [],
+                            actions: [],
+                            filters: []
+                        });
+                        
                         moduleContainer.innerHTML = `
                             <div style="background: var(--card); border-radius: 20px; padding: 40px; text-align: center; backdrop-filter: blur(20px); border: 1px solid var(--border);">
-                                <h2 style="margin-bottom: 16px; color: var(--text);">系統總覽</h2>
-                                <p style="color: var(--text-light); margin-bottom: 24px;">歡迎使用遊戲人生 3.0 管理系統</p>
+                                <h2 style="margin-bottom: 16px; color: var(--text);">功能模組</h2>
+                                <p style="color: var(--text-light); margin-bottom: 24px;">選擇左側導航使用各功能模組</p>
                                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 32px;">
                                     <div style="background: rgba(139, 115, 85, 0.1); padding: 24px; border-radius: 16px; text-align: center;">
                                         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom: 8px;">
@@ -866,6 +1170,11 @@
                 currentModule = new moduleClass();
                 window.activeModule = currentModule; // 重要：設定全域引用供按鈕使用
                 await currentModule.render(user.uuid);
+                
+                // 更新模組招牌（如果模組有 moduleInfo）
+                if (moduleClass.moduleInfo) {
+                    updateModuleSignboard(moduleClass.moduleInfo);
+                }
                 
             } catch (error) {
                 console.error('載入模組失敗:', error);
