@@ -768,8 +768,7 @@ class TodosModule {
 
         let filtered = this.todos;
 
-
-        // 再根據欄位篩選
+        // 根據欄位篩選
         switch (columnId) {
             case 'pending':
                 return filtered.filter(task => 

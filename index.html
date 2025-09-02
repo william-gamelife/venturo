@@ -391,9 +391,9 @@
 
     <!-- 主要 JavaScript -->
     <script>
-        // Supabase 設定
-        const SUPABASE_URL = 'https://your-project.supabase.co';  // 請替換為您的 Supabase URL
-        const SUPABASE_ANON_KEY = 'your-anon-key';  // 請替換為您的 anon key
+        // Supabase 設定（與 sync.js 保持一致）
+        const SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
         const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
         const ORG_ID = 'org_default';
         const USERS_MODULE_KEY = 'users';
@@ -501,13 +501,12 @@
             }
         }
 
-        // 載入使用者
-        async function loadUsers() {
+        // 載入使用者（簡化版本）
+        function loadUsers() {
             const container = document.getElementById('usersContainer');
-            container.innerHTML = '載入中…';
-            
-            const users = await fetchUsersFromCloud();
             container.innerHTML = '';
+            
+            const users = defaultUsers;
             
             users.forEach(user => {
                 const userCard = createUserCard(user);
@@ -533,47 +532,30 @@
             return card;
         }
 
-        // 選擇使用者
-        async function selectUser(user) {
-            try {
-                // 需要整包 users 來確保 UUID
-                const allUsers = await fetchUsersFromCloud();
-                const uuid = await ensureUserHasUUID(user, allUsers);
-                
-                // 建立完整的用戶資料
-                selectedUser = {
-                    ...user,
-                    uuid,
-                    username: user.username,
-                    display_name: user.display_name || user.username,
-                    title: user.title || '',
-                    role: user.role || 'user'
-                };
-                
-                // 更新卡片狀態
-                document.querySelectorAll('.user-card').forEach(card => {
-                    card.classList.remove('selected');
-                });
-                event.currentTarget.classList.add('selected');
-                
-                // 更新頁面標題和品牌名稱
-                updatePageTitle(selectedUser);
-                
-                // 顯示密碼輸入區域
-                const greeting = document.getElementById('passwordGreeting');
-                greeting.textContent = `歡迎回來 ${selectedUser.display_name}！請輸入密碼`;
-                
-                const passwordSection = document.getElementById('passwordSection');
-                passwordSection.classList.add('show');
-                
-                // 聚焦到密碼輸入框
-                setTimeout(() => {
-                    document.getElementById('passwordInput').focus();
-                }, 300);
-            } catch (error) {
-                console.error('選擇用戶失敗:', error);
-                alert('選擇用戶時發生錯誤，請重試');
-            }
+        // 選擇使用者（簡化版本）
+        function selectUser(user) {
+            selectedUser = user;
+            
+            // 更新卡片狀態
+            document.querySelectorAll('.user-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+            
+            // 更新頁面標題和品牌名稱
+            updatePageTitle(user);
+            
+            // 顯示密碼輸入區域
+            const greeting = document.getElementById('passwordGreeting');
+            greeting.textContent = `歡迎回來 ${user.display_name}！請輸入密碼`;
+            
+            const passwordSection = document.getElementById('passwordSection');
+            passwordSection.classList.add('show');
+            
+            // 聚焦到密碼輸入框
+            setTimeout(() => {
+                document.getElementById('passwordInput').focus();
+            }, 300);
         }
         
         // 更新頁面標題和品牌名稱
@@ -640,21 +622,7 @@
                 const result = validateLogin(selectedUser.username, password);
                 
                 if (result.success) {
-                    // 儲存完整的用戶資料到 sessionStorage
-                    const profile = {
-                        uuid: selectedUser.uuid,
-                        username: selectedUser.username,
-                        display_name: selectedUser.display_name,
-                        title: selectedUser.title,
-                        role: selectedUser.role
-                    };
-                    
-                    sessionStorage.setItem('currentUser', JSON.stringify(profile));
-                    
-                    // 也更新 localStorage 讓其他分頁能偵測
-                    localStorage.setItem('users_updated_at', Date.now().toString());
-                    
-                    // 跳轉到儀表板
+                    // 跳轉到儀表板（使用原本的方式）
                     window.location.href = './dashboard.html';
                 } else {
                     showError(result.message);
@@ -691,25 +659,17 @@
             }
         });
 
-        // 初始化
-        async function init() {
+        // 初始化（簡化版本）
+        function init() {
             // 載入使用者
-            await loadUsers();
+            loadUsers();
             
-            // 檢查是否已登入
-            const currentUser = sessionStorage.getItem('currentUser');
-            if (currentUser) {
-                try {
-                    const user = JSON.parse(currentUser);
-                    if (user.uuid) {
-                        // 已登入，跳轉到儀表板
-                        window.location.href = './dashboard.html';
-                        return;
-                    }
-                } catch (error) {
-                    console.error('解析用戶資料失敗:', error);
-                    sessionStorage.removeItem('currentUser');
-                }
+            // 檢查是否已登入（使用原本的方式）
+            const userUuid = sessionStorage.getItem('user_uuid');
+            if (userUuid) {
+                // 已登入，跳轉到儀表板
+                window.location.href = './dashboard.html';
+                return;
             }
         }
 
