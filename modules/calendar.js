@@ -732,19 +732,38 @@ class CalendarModule {
     }
     
     refreshView() {
-        const moduleContainer = document.getElementById('moduleContainer');
-        if (moduleContainer) {
-            moduleContainer.innerHTML = this.getHTML();
-        }
+        // 重新渲染月曆視圖
+        this.updateCalendarView();
+        // 也可以重新整理事件
+        this.attachEventListeners();
     }
     
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
+        toast.className = `toast toast-${type}`;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${
+                type === 'error' ? '#ef4444' : 
+                type === 'success' ? '#22c55e' : 
+                '#3b82f6'
+            };
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        `;
         toast.textContent = message;
         document.body.appendChild(toast);
         
-        setTimeout(() => toast.remove(), 3000);
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
     }
 
     async loadData() {
@@ -756,6 +775,19 @@ class CalendarModule {
         } catch (error) {
             console.error('載入月曆資料失敗:', error);
             this.events = [];
+        }
+    }
+
+    async saveData() {
+        try {
+            await this.syncManager.save(this.currentUser.uuid, 'calendar', {
+                events: this.events,
+                updated_at: new Date().toISOString()
+            });
+            console.log('月曆資料已儲存');
+        } catch (error) {
+            console.error('儲存月曆資料失敗:', error);
+            this.showToast('儲存失敗，請稍後再試', 'error');
         }
     }
 

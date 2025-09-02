@@ -305,6 +305,7 @@ class TodosModule {
                     display: flex;
                     gap: 8px;
                     flex-wrap: wrap;
+                    align-items: center;
                 }
 
                 .task-tag {
@@ -318,6 +319,7 @@ class TodosModule {
                 .task-priority {
                     display: flex;
                     gap: 2px;
+                    align-items: center;
                 }
 
                 .star {

@@ -47,7 +47,7 @@ class ThemeManager {
             }
         };
         
-        this.currentTheme = localStorage.getItem('selected-theme') || 'autumn-golden';
+        this.currentTheme = localStorage.getItem('selected-theme') || 'zen';
         this.loadedThemeLinks = new Map(); // 追蹤已載入的主題CSS
     }
 

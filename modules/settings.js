@@ -10,9 +10,9 @@ class SettingsModule {
         this.settings = {};
         this.themes = {
             'zen': '枯山水',
-            'dark': '深色模式',
-            'light': '明亮模式',
-            'jazz': '爵士咖啡'
+            'autumn-golden': '秋日黃金',
+            'desert-oasis': '沙漠綠洲',
+            'ivory-charcoal': '象牙炭灰'
         };
         this.languages = {
             'zh-TW': '繁體中文',
@@ -72,10 +72,9 @@ class SettingsModule {
                             <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text); font-size: 14px;">主題樣式</label>
                             <select id="themeSelect" onchange="window.activeModule.updateSetting('theme', this.value)" 
                                     style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: white;">
-                                <option value="zen">枯山水（預設）</option>
-                                <option value="dark">深色模式</option>
-                                <option value="light">明亮模式</option>
-                                <option value="jazz">爵士咖啡</option>
+                                ${Object.entries(this.themes).map(([key, name]) => `
+                                    <option value="${key}">${name}</option>
+                                `).join('')}
                             </select>
                             <p style="margin: 8px 0 0 0; font-size: 12px; color: var(--text-light);">選擇您喜歡的視覺風格</p>
                         </div>
@@ -424,7 +423,12 @@ class SettingsModule {
                 break;
             
             case 'theme':
-                console.log(`切換主題: ${this.themes[value]}`);
+                if (window.themeManager) {
+                    window.themeManager.loadTheme(value);
+                    console.log(`切換主題: ${this.themes[value]}`);
+                } else {
+                    console.log('主題管理器未載入');
+                }
                 break;
             
             case 'preferences.compact_mode':

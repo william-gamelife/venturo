@@ -335,6 +335,7 @@ class TimeboxModule {
                     position: relative;
                     user-select: none;
                     border: 1px solid var(--border);
+                    border-radius: 3px;
                     overflow: hidden;
                 }
 
@@ -423,6 +424,12 @@ class TimeboxModule {
                     text-overflow: ellipsis;
                     overflow: hidden;
                     white-space: nowrap;
+                    text-align: center;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    height: 100%;
                 }
 
                 /* 番茄鐘面板 */
@@ -888,6 +895,59 @@ class TimeboxModule {
         return `${this.currentWeekStart.getFullYear()}年 ${startStr} - ${endStr}`;
     }
 
+    // 收集連續任務區塊
+    collectTaskBlocks() {
+        const blocks = [];
+        const slotsPerHour = 60 / this.timeUnit;
+        
+        for (let d = 0; d < 7; d++) {
+            const date = new Date(this.currentWeekStart);
+            date.setDate(date.getDate() + d);
+            const dateStr = this.formatDate(date);
+            
+            let currentBlock = null;
+            
+            for (let hour = 6; hour < 23; hour++) {
+                for (let slot = 0; slot < slotsPerHour; slot++) {
+                    const minutes = slot * this.timeUnit;
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                    const slotKey = `${dateStr}_${timeStr}`;
+                    const slotData = this.timeboxData[slotKey];
+                    
+                    if (slotData && slotData.taskId) {
+                        if (!currentBlock || currentBlock.taskId !== slotData.taskId) {
+                            // 開始新區塊
+                            if (currentBlock) blocks.push(currentBlock);
+                            currentBlock = {
+                                taskId: slotData.taskId,
+                                activityId: slotData.activityId,
+                                content: slotData.content,
+                                day: d,
+                                startRow: (hour - 6) * slotsPerHour + slot + 2, // +2 因為有標題行
+                                endRow: (hour - 6) * slotsPerHour + slot + 2,
+                                dateStr: dateStr,
+                                completed: slotData.completed
+                            };
+                        } else {
+                            // 延續當前區塊
+                            currentBlock.endRow = (hour - 6) * slotsPerHour + slot + 2;
+                        }
+                    } else {
+                        // 結束當前區塊
+                        if (currentBlock) {
+                            blocks.push(currentBlock);
+                            currentBlock = null;
+                        }
+                    }
+                }
+            }
+            
+            if (currentBlock) blocks.push(currentBlock);
+        }
+        
+        return blocks;
+    }
+
     getTimeGridHTML() {
         const days = ['一', '二', '三', '四', '五', '六', '日'];  // 週一到週日
         const today = new Date();
@@ -909,19 +969,105 @@ class TimeboxModule {
             `;
         }
         
-        // 時間格子
+        // 使用新的合併渲染方法
+        html += this.renderMergedTimeGrid();
+        
+        return html;
+    }
+
+    renderMergedTimeGrid() {
         const slotsPerHour = 60 / this.timeUnit;
+        let html = '';
+        
+        // 先收集所有任務區塊
+        const taskBlocks = this.collectTaskBlocks();
+        const renderedSlots = new Set();
+        
         for (let hour = 6; hour < 23; hour++) {
             for (let slot = 0; slot < slotsPerHour; slot++) {
                 const minutes = slot * this.timeUnit;
                 const timeStr = `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+                const rowIndex = (hour - 6) * slotsPerHour + slot;
                 
-                // 時間標籤（只在整點或第一個時段顯示）
+                // 時間標籤（只在整點顯示）
                 if (slot === 0) {
                     html += `<div class="time-label">${timeStr}</div>`;
                 } else {
                     html += `<div class="time-label"></div>`;
                 }
+                
+                // 7天的格子
+                for (let d = 0; d < 7; d++) {
+                    const date = new Date(this.currentWeekStart);
+                    date.setDate(date.getDate() + d);
+                    const dateStr = this.formatDate(date);
+                    const slotKey = `${dateStr}_${timeStr}`;
+                    
+                    // 檢查這個位置是否已經被合併的區塊占用
+                    const blockKey = `${d}_${rowIndex + 2}`;
+                    if (renderedSlots.has(blockKey)) {
+                        continue; // 跳過已渲染的格子
+                    }
+                    
+                    // 查找從這個位置開始的任務區塊
+                    const taskBlock = taskBlocks.find(block => 
+                        block.day === d && block.startRow === rowIndex + 2
+                    );
+                    
+                    if (taskBlock) {
+                        // 渲染合併的任務區塊
+                        const rowSpan = taskBlock.endRow - taskBlock.startRow + 1;
+                        const activity = this.activityTypes.find(a => a.id === taskBlock.activityId);
+                        const totalTime = rowSpan * this.timeUnit;
+                        const hours = Math.floor(totalTime / 60);
+                        const mins = totalTime % 60;
+                        const timeText = hours > 0 ? `${hours}h${mins > 0 ? mins + 'm' : ''}` : `${mins}m`;
+                        
+                        html += `
+                            <div class="time-slot occupied merged-slot ${taskBlock.completed ? 'completed' : ''}" 
+                                 data-date="${dateStr}" 
+                                 data-time="${timeStr}"
+                                 data-key="${slotKey}"
+                                 data-task-id="${taskBlock.taskId}"
+                                 style="grid-row: span ${rowSpan}; background: ${activity?.color}; border-color: ${activity?.color};">
+                                <div class="time-slot-content">
+                                    <div>${taskBlock.content || activity?.name}</div>
+                                    <div style="font-size: 0.7em; opacity: 0.8;">${timeText}</div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        // 標記所有被占用的位置
+                        for (let r = taskBlock.startRow; r <= taskBlock.endRow; r++) {
+                            renderedSlots.add(`${d}_${r}`);
+                        }
+                    } else {
+                        // 渲染空格子
+                        const slotData = this.timeboxData[slotKey];
+                        let slotClass = 'time-slot';
+                        let slotStyle = '';
+                        
+                        if (this.selectedTimeSlots.has(slotKey)) {
+                            slotClass += ' selected';
+                        }
+                        
+                        html += `
+                            <div class="${slotClass}" 
+                                 data-date="${dateStr}" 
+                                 data-time="${timeStr}"
+                                 data-key="${slotKey}"
+                                 style="${slotStyle}">
+                            </div>
+                        `;
+                        
+                        renderedSlots.add(blockKey);
+                    }
+                }
+            }
+        }
+        
+        return html;
+    }
                 
                 // 7天的格子
                 for (let d = 0; d < 7; d++) {

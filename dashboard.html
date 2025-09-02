@@ -1037,8 +1037,9 @@
                     return;
                 }
                 
-                // 記住當前模組位置
+                // 記住當前模組位置，同時儲存到 localStorage
                 window.location.hash = moduleName;
+                localStorage.setItem('current-module', moduleName);
                 
                 // 更新導航狀態
                 document.querySelectorAll('.nav-link').forEach(link => {
@@ -1108,6 +1109,30 @@
             }
         }
         
+        // 更新導航狀態
+        function updateNavigationState(moduleName) {
+            // 清除所有 active 狀態
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 設置當前模組的 active 狀態
+            const activeNavElement = document.querySelector(`[onclick*="'${moduleName}'"]`);
+            if (activeNavElement) {
+                activeNavElement.classList.add('active');
+            }
+            
+            // 更新手機版導航狀態
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const activeMobileNavElement = document.querySelector(`.mobile-nav-item[onclick*="'${moduleName}'"]`);
+            if (activeMobileNavElement) {
+                activeMobileNavElement.classList.add('active');
+            }
+        }
+
         // 權限檢查 - 隱藏無權限的功能
         function checkPermissions() {
             const user = getCurrentUser();
@@ -1130,8 +1155,8 @@
                 // 設定 HTML 的 data-theme 屬性
                 document.documentElement.setAttribute('data-theme', themeManager.currentTheme);
                 
-                // 載入秋日主題CSS
-                await themeManager.loadTheme('autumn-golden');
+                // 載入當前選擇的主題CSS
+                await themeManager.loadTheme(themeManager.currentTheme);
                 
                 // 全域設置主題管理器
                 window.themeManager = themeManager;
@@ -1152,13 +1177,22 @@
             loadUserInfo();
             checkPermissions();
             
-            // 從 URL hash 取得當前模組，沒有則載入總覽
+            // 從 URL hash 或 localStorage 取得當前模組
             const currentHash = window.location.hash.slice(1);
-            const moduleToLoad = currentHash || 'dashboard';
+            const savedModule = localStorage.getItem('current-module');
+            const moduleToLoad = currentHash || savedModule || 'dashboard';
+            
+            // 如果使用了儲存的模組，更新 URL hash
+            if (!currentHash && savedModule) {
+                window.location.hash = savedModule;
+            }
             
             // 找到對應的導航元素並載入
             const navElement = document.querySelector(`[onclick*="'${moduleToLoad}'"]`);
             loadModule(moduleToLoad, navElement);
+            
+            // 確保導航狀態正確
+            updateNavigationState(moduleToLoad);
         }
         
         // 全域函數
@@ -1166,6 +1200,15 @@
         window.handleLogout = handleLogout;
         window.performLogout = performLogout;
         
+        // 處理瀏覽器前進/後退按鈕
+        window.addEventListener('hashchange', function() {
+            const newModule = window.location.hash.slice(1);
+            if (newModule && newModule !== localStorage.getItem('current-module')) {
+                const navElement = document.querySelector(`[onclick*="'${newModule}'"]`);
+                loadModule(newModule, navElement);
+            }
+        });
+
         // 初始化應用
         document.addEventListener('DOMContentLoaded', init);
     </script>
