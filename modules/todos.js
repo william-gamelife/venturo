@@ -87,6 +87,17 @@ class TodosModule {
                 ]
             }
         ];
+        
+        // 快速分類標籤
+        this.quickTags = [
+            { id: 'quote', name: '報價', color: '#007bff' },
+            { id: 'itinerary', name: '行程', color: '#28a745' },
+            { id: 'presentation', name: '簡報', color: '#ffc107' },
+            { id: 'contract', name: '合約', color: '#dc3545' },
+            { id: 'group-flight', name: '團務機票', color: '#6f42c1' },
+            { id: 'group-hotel', name: '團務訂房', color: '#fd7e14' },
+            { id: 'group-transport', name: '團務訂車', color: '#20c997' }
+        ];
     }
 
     async render(uuid) {

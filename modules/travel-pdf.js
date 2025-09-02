@@ -34,15 +34,26 @@ class TravelPdfModule {
     }
 
     async render(uuid) {
-        this.currentUser = { uuid };
-        
-        // 載入PDF資料
-        await this.loadData();
-        
-        // 渲染介面
-        const moduleContainer = document.getElementById('moduleContainer');
-        moduleContainer.innerHTML = this.getHTML();
-        this.attachEventListeners();
+        try {
+            this.currentUser = { uuid };
+            
+            // 載入PDF資料
+            await this.loadData();
+            
+            // 渲染介面
+            const moduleContainer = document.getElementById('moduleContainer');
+            if (!moduleContainer) {
+                throw new Error('找不到 moduleContainer 元素');
+            }
+            
+            moduleContainer.innerHTML = this.getHTML();
+            this.attachEventListeners();
+            
+            console.log('旅遊PDF模組渲染完成');
+        } catch (error) {
+            console.error('旅遊PDF模組渲染失敗:', error);
+            throw error;
+        }
     }
 
     getHTML() {

@@ -1485,34 +1485,66 @@ class TimeboxModule {
         dialog.className = 'dialog-overlay';
         dialog.innerHTML = `
             <div class="activity-dialog">
-                <div class="dialog-header">管理活動類型</div>
+                <div class="dialog-header">
+                    <h3>活動類型管理</h3>
+                    <p class="dialog-subtitle">自定義您的活動類型與計算方式</p>
+                </div>
                 <div class="dialog-content">
                     <div class="activity-list">
                         ${this.activityTypes.map((a, i) => `
-                            <div class="activity-item" style="display: flex; align-items: center; gap: 12px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px;">
-                                <div style="width: 24px; height: 24px; background: ${a.color}; border-radius: 4px;"></div>
-                                <span style="flex: 1;">${a.name}</span>
-                                <select onchange="window.activeModule.updateActivityCountType(${i}, this.value)">
-                                    <option value="time" ${a.countType === 'time' ? 'selected' : ''}>計時</option>
-                                    <option value="count" ${a.countType === 'count' ? 'selected' : ''}>計次</option>
-                                </select>
-                                <button onclick="window.activeModule.deleteActivity(${i})" style="padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer;">刪除</button>
+                            <div class="activity-item">
+                                <div class="activity-icon" style="background: linear-gradient(135deg, ${a.color} 0%, ${this.lightenColor(a.color, 20)} 100%);"></div>
+                                <div class="activity-info">
+                                    <div class="activity-name">${a.name}</div>
+                                    <div class="activity-meta">
+                                        <select class="activity-select" onchange="window.activeModule.updateActivityCountType(${i}, this.value)">
+                                            <option value="time" ${a.countType === 'time' ? 'selected' : ''}>⏰ 計時型</option>
+                                            <option value="count" ${a.countType === 'count' ? 'selected' : ''}>🔢 計次型</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button class="activity-delete-btn" onclick="window.activeModule.deleteActivity(${i})" title="刪除活動類型">
+                                    🗑️
+                                </button>
                             </div>
                         `).join('')}
                     </div>
                     
-                    <div style="border-top: 1px solid var(--border); margin-top: 16px; padding-top: 16px;">
+                    <div class="add-activity-section">
+                        <h4>新增活動類型</h4>
                         <div class="form-group">
-                            <label class="form-label">新增活動類型</label>
-                            <input type="text" class="form-input" id="newActivityName" placeholder="活動名稱">
+                            <label class="form-label">活動名稱</label>
+                            <input type="text" class="form-input" id="newActivityName" placeholder="例如：重訓、跑步、讀書...">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">計算方式</label>
+                            <div class="count-type-selector">
+                                <label class="count-type-option">
+                                    <input type="radio" name="countType" value="time" checked>
+                                    <div class="count-type-card">
+                                        <div class="count-type-icon">⏰</div>
+                                        <div class="count-type-title">計時型</div>
+                                        <div class="count-type-desc">記錄花費時間</div>
+                                    </div>
+                                </label>
+                                <label class="count-type-option">
+                                    <input type="radio" name="countType" value="count">
+                                    <div class="count-type-card">
+                                        <div class="count-type-icon">🔢</div>
+                                        <div class="count-type-title">計次型</div>
+                                        <div class="count-type-desc">記錄完成次數</div>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">選擇顏色</label>
-                            <div class="color-picker-group">
-                                ${['#c9a961', '#7a8b74', '#6b8e9f', '#d4a574', '#b87d8b', '#8b9dc3', '#f4a460', '#dda0dd'].map(color => `
-                                    <div class="color-option" style="background: ${color};" 
-                                         onclick="window.activeModule.selectColor('${color}', this)"></div>
+                            <div class="color-picker-grid">
+                                ${['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA'].map(color => `
+                                    <div class="color-option" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 15)} 100%);" 
+                                         onclick="window.activeModule.selectColor('${color}', this)" title="${color}"></div>
                                 `).join('')}
                             </div>
                         </div>
@@ -1520,17 +1552,224 @@ class TimeboxModule {
                 </div>
                 
                 <div class="dialog-actions">
-                    <button class="btn" onclick="window.activeModule.closeDialog()">關閉</button>
-                    <button class="btn btn-primary" onclick="window.activeModule.addActivity()">新增活動</button>
+                    <button class="btn btn-secondary" onclick="window.activeModule.closeDialog()">取消</button>
+                    <button class="btn btn-primary" onclick="window.activeModule.addActivity()">
+                        <span>➕</span> 新增活動
+                    </button>
                 </div>
             </div>
+            
+            <style>
+                .activity-dialog {
+                    max-width: 600px;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                }
+                
+                .dialog-header h3 {
+                    margin: 0 0 8px 0;
+                    color: var(--text);
+                }
+                
+                .dialog-subtitle {
+                    margin: 0;
+                    color: var(--text-secondary);
+                    font-size: 0.9rem;
+                }
+                
+                .activity-list {
+                    max-height: 300px;
+                    overflow-y: auto;
+                    margin-bottom: 24px;
+                }
+                
+                .activity-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 16px;
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 12px;
+                    margin-bottom: 12px;
+                    transition: all 0.2s ease;
+                }
+                
+                .activity-item:hover {
+                    border-color: var(--primary);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+                
+                .activity-icon {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 10px;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                }
+                
+                .activity-info {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
+                }
+                
+                .activity-name {
+                    font-weight: 600;
+                    color: var(--text);
+                    font-size: 1rem;
+                }
+                
+                .activity-select {
+                    padding: 6px 12px;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    font-size: 0.85rem;
+                    background: white;
+                }
+                
+                .activity-delete-btn {
+                    padding: 8px 12px;
+                    border: 1px solid #ffebee;
+                    border-radius: 8px;
+                    background: #ffebee;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    font-size: 1rem;
+                }
+                
+                .activity-delete-btn:hover {
+                    background: #ffcdd2;
+                    border-color: #ffcdd2;
+                }
+                
+                .add-activity-section {
+                    border-top: 2px solid var(--border);
+                    padding-top: 24px;
+                }
+                
+                .add-activity-section h4 {
+                    margin: 0 0 20px 0;
+                    color: var(--text);
+                    font-size: 1.1rem;
+                }
+                
+                .count-type-selector {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                }
+                
+                .count-type-option {
+                    cursor: pointer;
+                }
+                
+                .count-type-option input {
+                    display: none;
+                }
+                
+                .count-type-card {
+                    padding: 16px;
+                    border: 2px solid var(--border);
+                    border-radius: 12px;
+                    text-align: center;
+                    transition: all 0.2s ease;
+                }
+                
+                .count-type-option input:checked + .count-type-card {
+                    border-color: var(--primary);
+                    background: var(--primary-light);
+                }
+                
+                .count-type-card:hover {
+                    border-color: var(--primary);
+                    transform: translateY(-1px);
+                }
+                
+                .count-type-icon {
+                    font-size: 24px;
+                    margin-bottom: 8px;
+                }
+                
+                .count-type-title {
+                    font-weight: 600;
+                    margin-bottom: 4px;
+                    color: var(--text);
+                }
+                
+                .count-type-desc {
+                    font-size: 0.85rem;
+                    color: var(--text-secondary);
+                }
+                
+                .color-picker-grid {
+                    display: grid;
+                    grid-template-columns: repeat(6, 1fr);
+                    gap: 8px;
+                }
+                
+                .color-option {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 10px;
+                    cursor: pointer;
+                    border: 3px solid transparent;
+                    transition: all 0.2s ease;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                }
+                
+                .color-option:hover {
+                    transform: scale(1.1);
+                    border-color: white;
+                }
+                
+                .color-option.selected {
+                    transform: scale(1.15);
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 2px var(--primary);
+                }
+                
+                .btn {
+                    padding: 12px 24px;
+                    border-radius: 10px;
+                    font-weight: 600;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    transition: all 0.2s ease;
+                }
+                
+                .btn-secondary {
+                    background: white;
+                    border: 1px solid var(--border);
+                    color: var(--text-secondary);
+                }
+                
+                .btn-secondary:hover {
+                    background: var(--bg);
+                }
+                
+                .btn-primary {
+                    background: var(--primary);
+                    border: 1px solid var(--primary);
+                    color: white;
+                }
+                
+                .btn-primary:hover {
+                    background: var(--primary-dark);
+                    transform: translateY(-1px);
+                }
+            </style>
         `;
         
         document.body.appendChild(dialog);
-        this.selectedColor = '#c9a961';
+        this.selectedColor = '#FF6B6B';
         
         // 預設選擇第一個顏色
-        dialog.querySelector('.color-option').classList.add('selected');
+        const firstColorOption = dialog.querySelector('.color-option');
+        if (firstColorOption) {
+            firstColorOption.classList.add('selected');
+        }
     }
 
     selectColor(color, element) {
@@ -1546,11 +1785,15 @@ class TimeboxModule {
             return;
         }
         
+        // 取得選中的計算方式
+        const countTypeRadio = document.querySelector('input[name="countType"]:checked');
+        const countType = countTypeRadio ? countTypeRadio.value : 'time';
+        
         const newActivity = {
             id: Date.now().toString(),
             name,
-            color: this.selectedColor || '#c9a961',
-            countType: 'time'
+            color: this.selectedColor || '#FF6B6B',
+            countType
         };
         
         this.activityTypes.push(newActivity);
@@ -1838,9 +2081,7 @@ class TimeboxModule {
 
     // SignageHost 按鈕方法：打開活動類型面板
     openActivityTypes() {
-        console.log('打開活動類型面板');
-        // TODO: 實現活動類型管理面板
-        alert('活動類型管理功能開發中...');
+        this.showActivityManager();
     }
 }
 
