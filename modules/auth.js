@@ -40,6 +40,22 @@ function validateLogin(username, password) {
   }
   
   try {
+    // 使用 localStorage 代替 sessionStorage，但加上過期時間
+    const loginData = {
+      uuid: user.uuid,
+      display_name: user.display_name,
+      role: user.role,
+      username: user.username,
+      title: user.title,
+      avatar: user.avatar,
+      loginTime: Date.now(),
+      // 設定 7 天過期
+      expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000)
+    };
+    
+    localStorage.setItem('gamelife_auth', JSON.stringify(loginData));
+    
+    // 同時保留 sessionStorage 以確保相容性
     sessionStorage.setItem('user_uuid', user.uuid);
     sessionStorage.setItem('display_name', user.display_name);
     sessionStorage.setItem('role', user.role);
@@ -49,14 +65,7 @@ function validateLogin(username, password) {
     
     return { 
       success: true, 
-      user: {
-        uuid: user.uuid,
-        display_name: user.display_name,
-        role: user.role,
-        username: user.username,
-        title: user.title,
-        avatar: user.avatar
-      }
+      user: loginData
     };
   } catch (error) {
     return { success: false, message: '登入失敗，請稍後再試' };
@@ -65,6 +74,36 @@ function validateLogin(username, password) {
 
 function getCurrentUser() {
   try {
+    // 先檢查 localStorage
+    const authData = localStorage.getItem('gamelife_auth');
+    if (authData) {
+      const data = JSON.parse(authData);
+      
+      // 檢查是否過期
+      if (data.expireTime && Date.now() < data.expireTime) {
+        // 同步到 sessionStorage
+        sessionStorage.setItem('user_uuid', data.uuid);
+        sessionStorage.setItem('display_name', data.display_name);
+        sessionStorage.setItem('role', data.role);
+        sessionStorage.setItem('username', data.username);
+        sessionStorage.setItem('title', data.title);
+        sessionStorage.setItem('avatar', data.avatar);
+        
+        return {
+          uuid: data.uuid,
+          display_name: data.display_name,
+          role: data.role,
+          username: data.username,
+          title: data.title,
+          avatar: data.avatar
+        };
+      } else {
+        // 過期了，清除
+        localStorage.removeItem('gamelife_auth');
+      }
+    }
+    
+    // 如果 localStorage 沒有，再檢查 sessionStorage
     const uuid = sessionStorage.getItem('user_uuid');
     if (!uuid) return null;
     
@@ -82,11 +121,33 @@ function getCurrentUser() {
 }
 
 function isLoggedIn() {
+  // 先檢查 localStorage
+  const authData = localStorage.getItem('gamelife_auth');
+  if (authData) {
+    try {
+      const data = JSON.parse(authData);
+      // 檢查是否過期
+      if (data.expireTime && Date.now() < data.expireTime) {
+        return true;
+      } else {
+        // 過期了，清除
+        localStorage.removeItem('gamelife_auth');
+      }
+    } catch (error) {
+      localStorage.removeItem('gamelife_auth');
+    }
+  }
+  
+  // 再檢查 sessionStorage
   return sessionStorage.getItem('user_uuid') !== null;
 }
 
 function logout() {
   try {
+    // 清除 localStorage
+    localStorage.removeItem('gamelife_auth');
+    
+    // 清除 sessionStorage
     sessionStorage.removeItem('user_uuid');
     sessionStorage.removeItem('display_name');
     sessionStorage.removeItem('role');

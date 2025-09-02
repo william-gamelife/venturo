@@ -43,9 +43,9 @@ class TodosModule {
             { id: 'schedule', name: '行程', color: '#7a8b74' },
             { id: 'presentation', name: '簡報', color: '#6b8e9f' },
             { id: 'contract', name: '合約', color: '#d4a574' },
-            { id: 'flight', name: '團務機票', color: '#b87d8b' },
-            { id: 'hotel', name: '團務訂房', color: '#8b9dc3' },
-            { id: 'transport', name: '團務訂車', color: '#a0c4a0' }
+            { id: 'flight', name: '機票', color: '#b87d8b' },
+            { id: 'hotel', name: '訂房', color: '#8b9dc3' },
+            { id: 'transport', name: '訂車', color: '#a0c4a0' }
         ];
         
         // 新增狀態管理
@@ -140,75 +140,35 @@ class TodosModule {
                 <div class="todos-header">
                     <div class="todos-title">
                         <h2>待辦事項管理系統</h2>
-                        <span class="todos-count">${this.todos.length} 個任務</span>
-                        <span class="selected-count" ${this.selectedTodos.size > 0 ? '' : 'style="display: none;"'}>
-                            已選取 ${this.selectedTodos.size} 個
-                        </span>
                     </div>
                     
                     <div class="todos-actions">
-                        <button class="btn-add" onclick="window.activeModule.showAddDialog()">
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M10 5v10M5 10h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            新增任務
-                        </button>
-                        
-                        <button class="btn-batch ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
-                                onclick="window.activeModule.showBatchActions()"
-                                ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M3 6h14M3 12h14M3 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            批量操作
-                        </button>
-                        
                         <button class="btn-merge ${this.selectedTodos.size >= 2 ? '' : 'disabled'}" 
                                 onclick="window.activeModule.showMergeDialog()"
                                 ${this.selectedTodos.size >= 2 ? '' : 'disabled'}>
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M5 10h10M5 5l5 5-5 5M15 5l-5 5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
                             合併成專案
                         </button>
                         
                         <button class="btn-clear ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
                                 onclick="window.activeModule.clearSelection()"
                                 ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
-                            <svg width="16" height="16" viewBox="0 0 16 16">
-                                <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
                             清除選取
                         </button>
                     </div>
                 </div>
 
-                <!-- 增強篩選標籤列 -->
+                <!-- 簡化篩選標籤列 -->
                 <div class="filter-tags">
-                    <div class="filter-section">
-                        <span class="filter-section-title">快速篩選：</span>
-                        <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
-                                onclick="window.activeModule.setFilter('all')">
-                            全部
+                    <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
+                            onclick="window.activeModule.setFilter('all')">
+                        全部
+                    </button>
+                    ${this.quickTags.map(tag => `
+                        <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
+                                onclick="window.activeModule.setFilter('${tag.id}')">
+                            ${tag.name}
                         </button>
-                        ${this.quickTags.map(tag => `
-                            <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
-                                    onclick="window.activeModule.setFilter('${tag.id}')"
-                                    style="--tag-color: ${tag.color}">
-                                ${tag.name}
-                            </button>
-                        `).join('')}
-                    </div>
-                    
-                    <div class="filter-actions">
-                        <button class="filter-search-btn" onclick="window.activeModule.showSearchDialog()">
-                            <svg width="16" height="16" viewBox="0 0 16 16">
-                                <circle cx="7" cy="7" r="5" stroke="currentColor" fill="none"/>
-                                <path d="11 11l4 4" stroke="currentColor"/>
-                            </svg>
-                            搜尋
-                        </button>
-                    </div>
+                    `).join('')}
                 </div>
 
                 <!-- 五欄看板 -->
