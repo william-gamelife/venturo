@@ -314,18 +314,25 @@ class TodosModule {
                     border-radius: 4px;
                     font-size: 0.75rem;
                     color: var(--text-light);
+                    height: 18px; /* 統一高度 */
+                    display: flex;
+                    align-items: center;
+                    line-height: 1;
                 }
 
                 .task-priority {
                     display: flex;
                     gap: 2px;
                     align-items: center;
+                    height: 18px; /* 固定高度確保對齊 */
+                    font-size: 0.75rem; /* 統一字體大小 */
                 }
 
                 .star {
                     width: 12px;
                     height: 12px;
                     fill: var(--border);
+                    flex-shrink: 0; /* 防止壓縮 */
                 }
 
                 .star.filled {
@@ -338,6 +345,12 @@ class TodosModule {
                     display: flex;
                     align-items: center;
                     gap: 4px;
+                    height: 18px; /* 與優先級相同的固定高度 */
+                    line-height: 1; /* 確保行高一致 */
+                }
+
+                .task-due svg {
+                    flex-shrink: 0; /* 防止 SVG 被壓縮 */
                 }
 
                 .task-actions {
@@ -973,15 +986,15 @@ class TodosModule {
                     <div class="form-row form-row-centered">
                         <div class="form-group form-group-center">
                             <div class="priority-selector" id="prioritySelector">
-                                <svg class="priority-star" data-priority="1" onclick="window.activeModule.setPriority(1)" viewBox="0 0 24 24" width="24" height="24">
+                                <svg class="priority-star" data-priority="1" viewBox="0 0 24 24" width="24" height="24">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
                                           stroke="currentColor" stroke-width="2" fill="none"/>
                                 </svg>
-                                <svg class="priority-star" data-priority="2" onclick="window.activeModule.setPriority(2)" viewBox="0 0 24 24" width="24" height="24">
+                                <svg class="priority-star" data-priority="2" viewBox="0 0 24 24" width="24" height="24">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
                                           stroke="currentColor" stroke-width="2" fill="none"/>
                                 </svg>
-                                <svg class="priority-star" data-priority="3" onclick="window.activeModule.setPriority(3)" viewBox="0 0 24 24" width="24" height="24">
+                                <svg class="priority-star" data-priority="3" viewBox="0 0 24 24" width="24" height="24">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
                                           stroke="currentColor" stroke-width="2" fill="none"/>
                                 </svg>
@@ -1062,17 +1075,22 @@ class TodosModule {
         // 事件綁定
         this.attachDialogEvents(dialog);
         
-        // 初始化優先級顯示
-        if (this.selectedPriority > 0) {
-            setTimeout(() => {
+        // 初始化優先級顯示和星星事件
+        setTimeout(() => {
+            if (this.selectedPriority > 0) {
                 this.setPriority(this.selectedPriority);
-                // 確保星星可以點擊
-                document.querySelectorAll('.priority-star').forEach(star => {
-                    star.style.pointerEvents = 'auto';
-                    star.style.cursor = 'pointer';
+            }
+            // 確保星星可以點擊
+            document.querySelectorAll('.priority-star').forEach(star => {
+                star.style.pointerEvents = 'auto';
+                star.style.cursor = 'pointer';
+                star.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const priority = parseInt(star.dataset.priority);
+                    this.setPriority(priority);
                 });
-            }, 50);
-        }
+            });
+        }, 50);
         
         // 聚焦到標題輸入框
         setTimeout(() => {

@@ -12,23 +12,11 @@ class ThemeManager {
                 cssFile: null, // 使用現有CSS
                 gradient: 'linear-gradient(135deg, #c9a961 0%, #7a8b74 100%)'
             },
-            'desert-oasis': {
-                name: '沙漠綠洲',
-                description: '溫暖與清新的完美融合，沙橙配深森綠',
-                cssFile: './themes/desert-oasis.css',
-                gradient: 'linear-gradient(135deg, #f4a460 0%, #2f4f2f 100%)'
-            },
             'ivory-charcoal': {
                 name: '象牙炭灰',
                 description: '溫潤與深沉的永恆優雅，象牙白配炭灰',
                 cssFile: './themes/ivory-charcoal.css',
                 gradient: 'linear-gradient(135deg, #f5deb3 0%, #696969 100%)'
-            },
-            'autumn-golden': {
-                name: '秋日黃金',
-                description: '溫暖的秋日黃金配深綠，如同秋葉與森林的完美融合',
-                cssFile: './themes/autumn-golden.css',
-                gradient: 'linear-gradient(135deg, #cd853f 0%, #355e3b 100%)'
             },
             'dark': {
                 name: '深色模式',

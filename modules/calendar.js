@@ -483,17 +483,24 @@ class CalendarModule {
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay());
         
-        let html = '';
+        // 重新設計為支援跨日事件長條的格式
+        container.innerHTML = this.renderCalendarWithEventBars(startDate, month);
+    }
+
+    renderCalendarWithEventBars(startDate, currentMonth) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
+        let html = '<div class="calendar-grid">';
+        
+        // 渲染日期格子
         for (let i = 0; i < 42; i++) {
             const date = new Date(startDate);
             date.setDate(startDate.getDate() + i);
             
             const isToday = date.getTime() === today.getTime();
-            const isCurrentMonth = date.getMonth() === month;
-            const dayEvents = this.getEventsForDate(date);
+            const isCurrentMonth = date.getMonth() === currentMonth;
+            const dayEvents = this.getEventsForDate(date).filter(e => !e.multiDay && !e.startDate); // 只顯示單日事件的點
             
             html += `
                 <div class="calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}"
@@ -501,15 +508,90 @@ class CalendarModule {
                     <div class="day-number">${date.getDate()}</div>
                     <div class="day-events">
                         ${dayEvents.slice(0, 3).map(event => `
-                            <div class="event-dot" style="background: ${this.getPriorityColor(event.priority)}"></div>
+                            <div class="event-dot" 
+                                 style="background: ${this.getPriorityColor(event.priority)}" 
+                                 onclick="event.stopPropagation(); window.activeModule.editEvent('${event.id}')" 
+                                 title="${event.title}">
+                            </div>
                         `).join('')}
-                        ${dayEvents.length > 3 ? `<span>+${dayEvents.length - 3}</span>` : ''}
+                        ${dayEvents.length > 3 ? `<span onclick="event.stopPropagation(); window.activeModule.showDayEvents('${date.toISOString().split('T')[0]}')" style="cursor: pointer;">+${dayEvents.length - 3}</span>` : ''}
                     </div>
                 </div>
             `;
         }
+        html += '</div>';
         
-        container.innerHTML = html;
+        // 添加跨日事件長條
+        html += '<div class="calendar-event-bars">';
+        html += this.renderEventBars(startDate);
+        html += '</div>';
+        
+        return html;
+    }
+
+    renderEventBars(startDate) {
+        const multiDayEvents = this.events.filter(event => event.multiDay || event.startDate);
+        let html = '';
+        
+        multiDayEvents.forEach((event, index) => {
+            const startDateStr = event.startDate;
+            const endDateStr = event.endDate;
+            
+            if (!startDateStr || !endDateStr) return;
+            
+            const eventStart = new Date(startDateStr);
+            const eventEnd = new Date(endDateStr);
+            const calendarEnd = new Date(startDate);
+            calendarEnd.setDate(calendarEnd.getDate() + 41);
+            
+            // 計算事件在日曆網格中的位置
+            const startDiff = Math.max(0, Math.floor((eventStart - startDate) / (24 * 60 * 60 * 1000)));
+            const endDiff = Math.min(41, Math.floor((eventEnd - startDate) / (24 * 60 * 60 * 1000)));
+            
+            if (startDiff > 41 || endDiff < 0) return; // 事件不在當前月曆範圍內
+            
+            const startWeek = Math.floor(startDiff / 7);
+            const endWeek = Math.floor(endDiff / 7);
+            
+            // 為每一週創建事件條
+            for (let week = startWeek; week <= endWeek; week++) {
+                const weekStart = week * 7;
+                const weekEnd = weekStart + 6;
+                
+                const barStart = Math.max(startDiff, weekStart);
+                const barEnd = Math.min(endDiff, weekEnd);
+                
+                if (barStart > barEnd) continue;
+                
+                const barStartCol = barStart % 7;
+                const barWidth = barEnd - barStart + 1;
+                
+                html += `
+                    <div class="event-bar" 
+                         style="
+                            grid-row: ${week + 2}; 
+                            grid-column: ${barStartCol + 1} / span ${barWidth};
+                            background: ${this.getPriorityColor(event.priority)};
+                            color: white;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            font-size: 11px;
+                            font-weight: 500;
+                            cursor: pointer;
+                            margin-top: 2px;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                         "
+                         onclick="window.activeModule.editEvent('${event.id}')"
+                         title="${event.title}">
+                        ${event.title}
+                    </div>
+                `;
+            }
+        });
+        
+        return html;
     }
 
     getPriorityColor(priority) {
@@ -745,9 +827,79 @@ class CalendarModule {
             this.currentDialog = null;
         }
     }
+
+    // 編輯事件
+    editEvent(eventId) {
+        const event = this.events.find(e => e.id === eventId);
+        if (!event) {
+            this.showToast('找不到事件', 'error');
+            return;
+        }
+        
+        // 關閉現有對話框
+        this.closeDialog();
+        
+        // 顯示編輯對話框，預填事件資料
+        setTimeout(() => {
+            this.createEventDialog(event);
+        }, 100);
+    }
+
+    // 顯示某日的所有事件列表
+    showDayEvents(dateStr) {
+        const date = new Date(dateStr);
+        const dayEvents = this.getEventsForDate(date);
+        
+        if (dayEvents.length === 0) {
+            this.showToast('該日無事件', 'info');
+            return;
+        }
+
+        const dialog = document.createElement('div');
+        dialog.className = 'dialog-overlay';
+        dialog.innerHTML = `
+            <div class="dialog event-list-dialog">
+                <div class="dialog-header">
+                    <h3>${date.getMonth() + 1}/${date.getDate()} 的事件</h3>
+                    <button class="dialog-close" onclick="window.activeModule.closeDialog()">
+                        <svg width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                    </button>
+                </div>
+                
+                <div class="event-list">
+                    ${dayEvents.map(event => `
+                        <div class="event-item" onclick="window.activeModule.editEvent('${event.id}')">
+                            <div class="event-priority-dot" style="background: ${this.getPriorityColor(event.priority)}"></div>
+                            <div class="event-content">
+                                <div class="event-title">${event.title}</div>
+                                ${event.description ? `<div class="event-desc">${event.description}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="dialog-footer">
+                    <button onclick="window.activeModule.selectDate('${date.toISOString()}')" class="btn btn-primary">
+                        新增事件
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(dialog);
+        this.currentDialog = dialog;
+
+        // 點擊遮罩關閉
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) this.closeDialog();
+        });
+    }
     
     refreshView() {
         // 重新渲染月曆視圖
+        this.updateMonthDisplay();
         this.updateCalendarView();
         // 也可以重新整理事件
         this.attachEventListeners();

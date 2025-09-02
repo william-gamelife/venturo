@@ -10,8 +10,6 @@ class SettingsModule {
         this.settings = {};
         this.themes = {
             'zen': '枯山水',
-            'autumn-golden': '秋日黃金',
-            'desert-oasis': '沙漠綠洲',
             'ivory-charcoal': '象牙炭灰'
         };
         this.languages = {
