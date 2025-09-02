@@ -10,6 +10,20 @@
  */
 
 class TimeboxModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '箱型時間',
+        subtitle: '番茄鐘與一週時段',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        actions: [
+            { id:'slot15',  label:'15分',  kind:'secondary', onClick:'setSlot15'  },
+            { id:'slot30',  label:'30分',  kind:'secondary', onClick:'setSlot30'  },
+            { id:'slot60',  label:'60分',  kind:'secondary', onClick:'setSlot60'  },
+            { id:'pomodoro',label:'番茄鐘', kind:'primary',   onClick:'togglePomodoro' },
+            { id:'types',   label:'活動類型', kind:'secondary', onClick:'openActivityTypes' }
+        ]
+    };
+
     // 靜態資訊（必填）- 店家招牌
     static moduleInfo = {
         name: '箱型時間',
@@ -1897,6 +1911,46 @@ class TimeboxModule {
         
         // 關閉對話框
         this.closeDialog();
+    }
+
+    // SignageHost 按鈕方法：設定15分鐘時段
+    setSlot15() {
+        this.slotMinutes = 15;
+        console.log('時段設定為15分鐘');
+        // 重新渲染時間網格
+        this.renderTimeGrid();
+    }
+
+    // SignageHost 按鈕方法：設定30分鐘時段
+    setSlot30() {
+        this.slotMinutes = 30;
+        console.log('時段設定為30分鐘');
+        // 重新渲染時間網格
+        this.renderTimeGrid();
+    }
+
+    // SignageHost 按鈕方法：設定60分鐘時段
+    setSlot60() {
+        this.slotMinutes = 60;
+        console.log('時段設定為60分鐘');
+        // 重新渲染時間網格
+        this.renderTimeGrid();
+    }
+
+    // SignageHost 按鈕方法：切換番茄鐘
+    togglePomodoro() {
+        if (this.pomodoroTimer && this.pomodoroTimer.isActive) {
+            this.stopPomodoro();
+        } else {
+            this.startPomodoro();
+        }
+    }
+
+    // SignageHost 按鈕方法：打開活動類型面板
+    openActivityTypes() {
+        console.log('打開活動類型面板');
+        // TODO: 實現活動類型管理面板
+        alert('活動類型管理功能開發中...');
     }
 }
 

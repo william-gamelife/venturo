@@ -619,6 +619,31 @@
             width: 100%;
             margin: 0;
         }
+
+        /* 招牌框：行事曆規格 */
+        #signageHost { margin-bottom: 20px; }
+        .signage-card{
+            height:100px;background:var(--card);border:1px solid var(--border);
+            border-radius:16px;padding:0 24px;display:flex;align-items:center;
+            justify-content:space-between;backdrop-filter:blur(20px);
+        }
+        .signage-left{display:flex;align-items:center;gap:16px;}
+        .signage-icon{width:40px;height:40px;border-radius:12px;color:#fff;
+            display:flex;align-items:center;justify-content:center;
+            background:linear-gradient(135deg,var(--primary),var(--accent));
+        }
+        .signage-icon svg{width:24px;height:24px}
+        .signage-title{margin:0;font-size:1.25rem;font-weight:600;color:var(--text)}
+        .signage-sub{margin:0;font-size:.875rem;color:var(--text-light)}
+        .signage-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .sg-btn{height:36px;padding:0 14px;border-radius:8px;font-size:.875rem;cursor:pointer;
+            display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+        .sg-btn.secondary{background:#fff;border:1px solid var(--border);color:var(--text)}
+        .sg-btn.primary{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;font-weight:500}
+        .sg-badge{font-size:.85rem;color:var(--text-light);background:var(--bg);padding:4px 8px;border-radius:12px}
+        @media (max-width:768px){
+            .signage-card{height:auto;padding:16px;flex-direction:column;align-items:flex-start;gap:12px}
+        }
     </style>
 </head>
 <body>
@@ -822,6 +847,8 @@
 
     <!-- 主內容 -->
     <main class="main-content">
+        <!-- 招牌框 -->
+        <div id="signageHost"></div>
         <!-- 模組容器 -->
         <div id="moduleContainer" class="module-container">
             <!-- 模組內容將動態載入 -->
@@ -947,6 +974,37 @@
             };
         }
         
+        // 招牌渲染函式
+        function renderSignage(ModuleClass, instance){
+            const meta = ModuleClass.signage || ModuleClass.moduleInfo || {};
+            const el = document.getElementById('signageHost');
+            const actions = (meta.actions||[])
+              .map(a=>`<button class="sg-btn ${a.kind||'secondary'}" data-action="${a.onClick||''}">${a.label}</button>`)
+              .join('');
+            const badges = (meta.badges||[])
+              .map(b=>`<span class="sg-badge">${b.label}：${b.value}</span>`).join('');
+            el.innerHTML = `
+              <div class="signage-card">
+                <div class="signage-left">
+                  <div class="signage-icon">${meta.iconSVG||''}</div>
+                  <div>
+                    <h2 class="signage-title">${meta.title||'模組'}</h2>
+                    <p class="signage-sub">${meta.subtitle||''}</p>
+                  </div>
+                </div>
+                <div class="signage-right">
+                  ${badges}
+                  ${actions}
+                </div>
+              </div>
+            `;
+            // 綁定右側按鈕
+            el.querySelectorAll('[data-action]').forEach(btn=>{
+              const fn = btn.getAttribute('data-action');
+              if (fn && typeof instance?.[fn] === 'function') btn.onclick = ()=>instance[fn]();
+            });
+        }
+
         // 模組載入功能
         let currentModule = null;
         
@@ -1041,6 +1099,11 @@
                 // 實例化並渲染模組
                 currentModule = new moduleClass();
                 window.activeModule = currentModule; // 重要：設定全域引用供按鈕使用
+                
+                // 先掛招牌（不等資料，避免空白）
+                renderSignage(moduleClass, currentModule);
+                
+                // 再渲染內容
                 await currentModule.render(user.uuid);
                 
             } catch (error) {

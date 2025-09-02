@@ -4,6 +4,16 @@
  */
 
 class UsersModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '人員管理',
+        subtitle: '戶政事務所｜成員名冊與權限',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" stroke="currentColor" stroke-width="2"/></svg>',
+        actions: [
+            { id:'hrChange', label:'人事異動', kind:'primary', onClick:'openHRChangeDialog' }
+        ]
+    };
+
     // 靜態資訊（必填）- 店家招牌
     static moduleInfo = {
         name: '人員管理',
@@ -810,6 +820,21 @@ class UsersModule {
                 }
             };
         }, 100);
+    }
+
+    // SignageHost 按鈕方法：人事異動對話框
+    openHRChangeDialog() {
+        // TODO: 實現新增/調職/停用成員的對話框
+        console.log('人事異動功能待實現');
+        
+        // 可以在這裡實現：
+        // 1. 顯示人事異動選項對話框（新增/調職/停用）
+        // 2. 根據選項顯示相應的表單
+        // 3. 處理人員資料的變更
+        // 4. 更新權限和狀態
+        
+        // 暫時顯示提示
+        alert('人事異動功能開發中...');
     }
 }
 

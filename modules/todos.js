@@ -16,6 +16,16 @@
  */
 
 class TodosModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '待辦事項',
+        subtitle: '郵務總局｜任務與流程',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 11l3 3L20 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        actions: [
+            { id:'mergeToProject', label:'合併專案', kind:'primary', onClick:'mergeSelectedToProject' }
+        ]
+    };
+
     // 靜態資訊（必填）- 店家招牌
     static moduleInfo = {
         name: '待辦事項',
@@ -1847,6 +1857,21 @@ class TodosModule {
         // 清理狀態
         this.editingTask = null;
         this.currentDialog = null;
+    }
+
+    // SignageHost 按鈕方法：合併選取的任務為專案
+    mergeSelectedToProject() {
+        // TODO: 實現把選取的任務加上 projectId，或跳合併對話框
+        console.log('合併專案功能待實現');
+        
+        // 可以在這裡實現：
+        // 1. 檢查是否有選取的任務
+        // 2. 顯示合併到專案的對話框
+        // 3. 讓使用者選擇現有專案或創建新專案
+        // 4. 將選取的任務標記為屬於該專案
+        
+        // 暫時顯示提示
+        alert('合併專案功能開發中...');
     }
 }
 

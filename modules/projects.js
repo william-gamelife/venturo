@@ -12,6 +12,16 @@
  */
 
 class ProjectsModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '專案管理',
+        subtitle: '市政廳｜容器、報表與總覽',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/></svg>',
+        actions: [
+            { id:'suggest', label:'建議專案', kind:'primary', onClick:'openProjectSuggestions' }
+        ]
+    };
+
     // 靜態資訊（必填）- 店家招牌
     static moduleInfo = {
         name: '專案管理',
@@ -1778,6 +1788,21 @@ class ProjectsModule {
         // 移除 Toast
         const toasts = document.querySelectorAll('.toast');
         toasts.forEach(toast => toast.remove());
+    }
+
+    // SignageHost 按鈕方法：建議專案
+    openProjectSuggestions() {
+        // TODO: 依待辦/人員/近期事件產生模板建議
+        console.log('建議專案功能待實現');
+        
+        // 可以在這裡實現：
+        // 1. 分析當前待辦事項，找出可合併的任務群組
+        // 2. 根據人員工作量建議新專案分配
+        // 3. 分析近期事件趨勢，推薦相關專案模板
+        // 4. 顯示專案建議對話框供使用者選擇
+        
+        // 暫時顯示提示
+        alert('專案建議功能開發中...');
     }
 }
 

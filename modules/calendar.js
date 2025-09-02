@@ -4,6 +4,18 @@
  */
 
 class CalendarModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '行事曆',
+        subtitle: '時間管理與行程安排',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="16" r="2" fill="currentColor"/></svg>',
+        actions: [
+            { id:'prev',  label:'〈',    kind:'secondary', onClick:'previousMonth' },
+            { id:'today', label:'今天',  kind:'secondary', onClick:'goToToday' },
+            { id:'next',  label:'〉',    kind:'secondary', onClick:'nextMonth' }
+        ]
+    };
+
     static moduleInfo = {
         name: '行事曆',
         subtitle: '時間管理與行程安排',
@@ -414,6 +426,24 @@ class CalendarModule {
     destroy() {
         // 清理事件監聽器
         document.removeEventListener('keydown', this.attachEventListeners);
+    }
+
+    // SignageHost 按鈕方法：上一個月
+    previousMonth() {
+        this.viewDate.setMonth(this.viewDate.getMonth() - 1);
+        this.renderCalendar(); // 刷新日曆顯示
+    }
+
+    // SignageHost 按鈕方法：回到今天
+    goToToday() {
+        this.viewDate = new Date();
+        this.renderCalendar(); // 刷新日曆顯示
+    }
+
+    // SignageHost 按鈕方法：下一個月
+    nextMonth() {
+        this.viewDate.setMonth(this.viewDate.getMonth() + 1);
+        this.renderCalendar(); // 刷新日曆顯示
     }
 }
 
