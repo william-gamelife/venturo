@@ -38,6 +38,7 @@ class TodosModule {
         this.selectedTodos = new Set();
         this.currentFilter = 'all';
         this.draggedItem = null;
+        this.taskBridge = null;
         this.quickTags = [
             { id: 'quote', name: '報價', color: '#c9a961' },
             { id: 'schedule', name: '行程', color: '#7a8b74' },
@@ -95,6 +96,11 @@ class TodosModule {
         // 動態載入管委會
         const syncModule = await import('./sync.js');
         this.syncManager = new syncModule.SyncManager();
+        
+        // 初始化任務橋接器
+        const { getTaskBridge } = await import('./task-bridge.js');
+        this.taskBridge = await getTaskBridge();
+        await this.taskBridge.initialize(this.currentUser.uuid, this.syncManager);
         
         // 載入資料
         await this.loadData();
@@ -1207,6 +1213,15 @@ class TodosModule {
         if (task) {
             task.status = 'completed';
             task.completedAt = new Date().toISOString();
+            task.updatedAt = new Date().toISOString();
+            
+            // 如果任務有映射到專案，同步狀態
+            if (this.taskBridge) {
+                await this.taskBridge.syncTaskStatus('todos', taskId, 'completed', {
+                    completedAt: task.completedAt
+                });
+            }
+            
             await this.saveData();
             this.render(this.currentUser.uuid);
             this.showToast('任務已完成', 'success');
@@ -1369,37 +1384,85 @@ class TodosModule {
 
     async createProject() {
         const projectName = document.getElementById('projectName').value.trim();
+        const templateId = document.getElementById('projectTemplate').value;
+        
         if (!projectName) {
             this.showToast('請輸入專案名稱', 'error');
             return;
         }
         
-        // 準備專案資料
-        const projectData = {
+        // 獲取選中的任務
+        const selectedTasks = Array.from(this.selectedTodos).map(taskId => 
+            this.todos.find(t => t.id === taskId)
+        ).filter(task => task);
+        
+        // 生成專案編號
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const projectId = `P${dateStr}${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+        
+        // 準備要傳遞給專案模組的資料
+        const projectCreationData = {
             name: projectName,
-            template: document.getElementById('projectTemplate').value,
-            tasks: Array.from(this.selectedTodos),
-            createdAt: new Date().toISOString()
+            template: templateId,
+            mergedTasks: selectedTasks.map(task => ({
+                id: task.id,
+                title: task.title,
+                description: task.description,
+                priority: task.priority,
+                tags: task.tags,
+                projectTag: task.projectTag,
+                assignedTo: task.assignedTo,
+                dueDate: task.dueDate,
+                status: 'pending',
+                createdAt: task.createdAt,
+                comments: task.comments || []
+            }))
         };
         
-        // 標記選中的任務為已轉專案
-        this.selectedTodos.forEach(taskId => {
-            const task = this.todos.find(t => t.id === taskId);
-            if (task) {
-                task.status = 'project';
-                task.projectId = Date.now().toString();
-            }
-        });
-        
-        await this.saveData();
-        
-        // 切換到專案模組（如果有的話）
-        // 這裡需要與專案模組協作
-        this.showToast(`專案「${projectName}」建立成功`, 'success');
+        // 嘗試將資料傳遞給專案模組
+        try {
+            await this.createProjectInProjectsModule(projectId, projectCreationData);
+            
+            // 標記選中的任務為已轉專案
+            this.selectedTodos.forEach(taskId => {
+                const task = this.todos.find(t => t.id === taskId);
+                if (task) {
+                    task.status = 'project';
+                    task.projectId = projectId;
+                    task.updatedAt = new Date().toISOString();
+                }
+            });
+            
+            await this.saveData();
+            this.showToast(`專案「${projectName}」建立成功，已轉移 ${selectedTasks.length} 個任務`, 'success');
+            
+        } catch (error) {
+            console.error('建立專案失敗:', error);
+            this.showToast('專案建立失敗，請稍後重試', 'error');
+            return;
+        }
         
         this.selectedTodos.clear();
         this.closeDialog();
         this.render(this.currentUser.uuid);
+    }
+    
+    // 新增方法：在專案模組中建立專案
+    async createProjectInProjectsModule(projectId, projectData) {
+        try {
+            // 載入專案管理模組
+            const projectModule = await import('./projects.js');
+            const projectsManager = new projectModule.ProjectsModule();
+            await projectsManager.render(this.currentUser.uuid);
+            
+            // 調用專案建立方法
+            await projectsManager.createProjectFromTodos(projectId, projectData);
+            
+        } catch (error) {
+            console.error('專案模組操作失敗:', error);
+            throw error;
+        }
     }
 
     // 篩選功能

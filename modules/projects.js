@@ -1190,6 +1190,113 @@ class ProjectsModule {
         }, 5000);
     }
 
+    // 新增方法：從待辦事項建立專案
+    async createProjectFromTodos(projectId, projectData) {
+        const { name, template, mergedTasks } = projectData;
+        
+        // 獲取模板
+        const selectedTemplate = this.projectTemplates.find(t => t.id === template) || 
+                                this.projectTemplates.find(t => t.id === 'travel-basic');
+        
+        // 建立專案基礎結構
+        const project = {
+            id: projectId,
+            name: name,
+            template: template,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            mergedFromTodos: true,
+            categories: selectedTemplate.categories.map(category => ({
+                ...category,
+                tasks: category.tasks.map((taskTitle, index) => ({
+                    id: `template_task_${Date.now()}_${index}`,
+                    title: taskTitle,
+                    status: 'pending',
+                    createdAt: new Date().toISOString(),
+                    assignedTo: null,
+                    dueDate: null,
+                    description: ''
+                }))
+            }))
+        };
+        
+        // 智慧分類合併的任務到對應類別
+        if (mergedTasks && mergedTasks.length > 0) {
+            mergedTasks.forEach(task => {
+                const categoryId = this.categorizeTask(task);
+                const targetCategory = project.categories.find(cat => cat.id === categoryId);
+                
+                if (targetCategory) {
+                    // 將任務加入對應類別
+                    const projectTask = {
+                        id: task.id,
+                        title: task.title,
+                        description: task.description || '',
+                        status: 'pending',
+                        assignedTo: task.assignedTo || null,
+                        dueDate: task.dueDate || null,
+                        priority: task.priority || 0,
+                        originalTodoTags: task.tags || [],
+                        projectTag: task.projectTag || '',
+                        createdAt: task.createdAt,
+                        mergedFromTodos: true,
+                        comments: task.comments || []
+                    };
+                    targetCategory.tasks.push(projectTask);
+                } else {
+                    // 如果無法分類，放入第一個類別
+                    project.categories[0].tasks.push({
+                        id: task.id,
+                        title: task.title,
+                        description: task.description || '',
+                        status: 'pending',
+                        assignedTo: task.assignedTo || null,
+                        dueDate: task.dueDate || null,
+                        priority: task.priority || 0,
+                        originalTodoTags: task.tags || [],
+                        projectTag: task.projectTag || '',
+                        createdAt: task.createdAt,
+                        mergedFromTodos: true,
+                        comments: task.comments || []
+                    });
+                }
+            });
+        }
+        
+        // 儲存專案
+        this.projects.push(project);
+        await this.saveData();
+        
+        return project;
+    }
+    
+    // 智慧分類任務方法
+    categorizeTask(task) {
+        const title = task.title.toLowerCase();
+        const tags = task.tags || [];
+        const projectTag = (task.projectTag || '').toLowerCase();
+        
+        // 根據標籤分類
+        if (tags.includes('contract')) return 'contract';
+        if (tags.includes('flight')) return 'flight';
+        if (tags.includes('hotel')) return 'hotel';
+        if (tags.includes('transport')) return 'transport';
+        if (tags.includes('activity')) return 'activity';
+        if (tags.includes('meal')) return 'meal';
+        
+        // 根據關鍵字分類
+        if (title.includes('合約') || title.includes('簽約') || title.includes('付款')) return 'contract';
+        if (title.includes('機票') || title.includes('航班') || title.includes('飛行')) return 'flight';
+        if (title.includes('飯店') || title.includes('住宿') || title.includes('房間')) return 'hotel';
+        if (title.includes('交通') || title.includes('接送') || title.includes('巴士')) return 'transport';
+        if (title.includes('活動') || title.includes('景點') || title.includes('門票')) return 'activity';
+        if (title.includes('餐廳') || title.includes('用餐') || title.includes('餐飲')) return 'meal';
+        
+        // 預設分類到第一個類別
+        return 'contract';
+    }
+
     bindEvents() {
         // ESC 關閉對話框
         document.addEventListener('keydown', (e) => {
