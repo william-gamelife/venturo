@@ -16,6 +16,7 @@ class TimeboxModule {
         subtitle: '番茄鐘與一週時段',
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         actions: [
+            { id:'weekSwitch', label:'每週切換', kind:'secondary', onClick:'switchWeek' },
             { id:'slot15',  label:'15分',  kind:'secondary', onClick:'setSlot15'  },
             { id:'slot30',  label:'30分',  kind:'secondary', onClick:'setSlot30'  },
             { id:'slot60',  label:'60分',  kind:'secondary', onClick:'setSlot60'  },
@@ -1944,6 +1945,13 @@ class TimeboxModule {
         } else {
             this.startPomodoro();
         }
+    }
+
+    // SignageHost 按鈕方法：每週切換
+    switchWeek() {
+        console.log('每週切換功能');
+        // TODO: 實現週次切換功能
+        alert('每週切換功能開發中...');
     }
 
     // SignageHost 按鈕方法：打開活動類型面板

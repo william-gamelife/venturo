@@ -60,32 +60,6 @@ class CalendarModule {
     getHTML() {
         return `
             <div class="calendar-container">
-                <!-- 統一歡迎卡片 -->
-                <div class="module-welcome-card">
-                    <div class="welcome-left">
-                        <div class="module-icon-wrapper">
-                            ${CalendarModule.moduleInfo.icon}
-                        </div>
-                        <div class="module-text">
-                            <h2 class="module-title">${CalendarModule.moduleInfo.name}</h2>
-                            <p class="module-subtitle">${CalendarModule.moduleInfo.subtitle}</p>
-                        </div>
-                    </div>
-                    <div class="welcome-right">
-                        <button class="nav-btn" onclick="window.activeModule.previousMonth()">
-                            <svg width="20" height="20"><path d="M12 15l-5-5 5-5" stroke="currentColor" fill="none" stroke-width="2"/></svg>
-                        </button>
-                        <span class="month-display">${this.monthNames[this.viewDate.getMonth()]} ${this.viewDate.getFullYear()}</span>
-                        <button class="nav-btn" onclick="window.activeModule.nextMonth()">
-                            <svg width="20" height="20"><path d="M8 15l5-5-5-5" stroke="currentColor" fill="none" stroke-width="2"/></svg>
-                        </button>
-                        <button class="btn-secondary" onclick="window.activeModule.goToToday()">今天</button>
-                        <button class="btn-primary" onclick="window.activeModule.showAddEventDialog()">
-                            <svg width="16" height="16"><path d="M8 1v14M1 8h14" stroke="currentColor" stroke-width="2"/></svg>
-                            新增事件
-                        </button>
-                    </div>
-                </div>
                 
                 <!-- 月曆主體 -->
                 <div class="calendar-main">

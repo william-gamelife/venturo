@@ -3,6 +3,14 @@
  */
 
 class OverviewModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '系統總覽',
+        subtitle: '歡迎使用遊戲人生 3.0 管理系統',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><path d="M3 12L12 3l9 9v9H3z" fill="none" stroke="currentColor" stroke-width="2"/></svg>',
+        actions: []
+    };
+
     static moduleInfo = {
         name: '系統總覽',
         subtitle: '歡迎使用遊戲人生 3.0 管理系統',
@@ -32,21 +40,6 @@ class OverviewModule {
     getHTML() {
         return `
             <div class="overview-container">
-                <!-- 統一歡迎卡片 -->
-                <div class="module-welcome-card">
-                    <div class="welcome-left">
-                        <div class="module-icon-wrapper">
-                            ${OverviewModule.moduleInfo.icon}
-                        </div>
-                        <div class="module-text">
-                            <h2 class="module-title">${OverviewModule.moduleInfo.name}</h2>
-                            <p class="module-subtitle">${OverviewModule.moduleInfo.subtitle}</p>
-                        </div>
-                    </div>
-                    <div class="welcome-right">
-                        <!-- 總覽不需要按鈕 -->
-                    </div>
-                </div>
 
                 <!-- 功能卡片網格 -->
                 <div class="modules-grid">

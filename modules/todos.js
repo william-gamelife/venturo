@@ -154,14 +154,6 @@ class TodosModule {
             <div class="todos-container">
                 <!-- 頂部工具列 -->
                 <div class="todos-header">
-                    <div class="todos-title">
-                        <h2>待辦事項管理系統</h2>
-                        <button class="btn-add-task" onclick="window.activeModule.showAddDialog()" title="新增任務">
-                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                    </div>
                     
                     <div class="todos-actions">
                         <button class="btn-merge ${this.selectedTodos.size >= 2 ? '' : 'disabled'}" 
@@ -362,7 +354,28 @@ class TodosModule {
                     color: var(--text);
                     display: flex;
                     align-items: center;
+                    justify-content: space-between;
                     gap: 8px;
+                }
+
+                .add-btn {
+                    width: 24px;
+                    height: 24px;
+                    border: none;
+                    background: var(--primary);
+                    color: white;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    font-size: 16px;
+                    transition: all 0.2s;
+                }
+
+                .add-btn:hover {
+                    background: var(--primary-dark);
+                    transform: scale(1.1);
                 }
 
                 .column-count {
@@ -784,11 +797,15 @@ class TodosModule {
 
         return columns.map(column => {
             const tasks = this.getTasksByColumn(column.id);
+            const hasAddButton = ['pending', 'today', 'week'].includes(column.id);
             
             return `
                 <div class="kanban-column" data-column="${column.id}">
                     <div class="column-header">
-                        <div class="column-title">${column.title}</div>
+                        <div class="column-title">
+                            ${column.title}
+                            ${hasAddButton ? '<button class="add-btn" onclick="window.activeModule.showAddDialog(\'' + column.id + '\')">＋</button>' : ''}
+                        </div>
                         <div class="column-count">${tasks.length}</div>
                     </div>
                     <div class="column-tasks" 

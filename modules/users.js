@@ -50,14 +50,6 @@ class UsersModule {
         if (!this.adminUUIDs.includes(userId)) {
             const moduleContainer = document.getElementById('moduleContainer');
             moduleContainer.innerHTML = `
-                <!-- 歡迎卡片 -->
-                <div class="welcome-card" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; margin-bottom: 20px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow);">
-                    <div style="flex: 1; text-align: center;">
-                        <h2 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.8rem; line-height: 1.2;">人員管理</h2>
-                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">團隊成員管理與權限控制</p>
-                    </div>
-                </div>
-                
                 <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 20px;">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -80,14 +72,12 @@ class UsersModule {
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = `
             <div class="users-container" style="height: 100%; min-height: 500px;">
-                <!-- 歡迎卡片 -->
-                <div class="welcome-card" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; margin-bottom: 20px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow);">
-                    <div style="flex: 1; text-align: center;">
-                        <h2 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.8rem; line-height: 1.2;">人員管理</h2>
-                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">團隊成員管理與權限控制</p>
-                    </div>
+                <!-- 功能按鈕區域 -->
+                <div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center;">
+                    <button id="btnAddUser" class="module-btn primary" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;">新增人員</button>
+                    <button class="module-btn secondary" disabled style="background: #f5f5f5; color: #999; border: 1px solid #ddd; padding: 12px 24px; border-radius: 8px; cursor: not-allowed; font-size: 0.9rem;">人事異動（功能開發中）</button>
                 </div>
-
+                
                 <!-- 使用者列表 -->
                 <div class="users-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
                     <!-- 使用者卡片將動態生成 -->
@@ -565,6 +555,14 @@ class UsersModule {
     }
 
     attachEventListeners() {
+        // 新增人員按鈕
+        const btnAddUser = document.getElementById('btnAddUser');
+        if (btnAddUser) {
+            btnAddUser.addEventListener('click', () => {
+                this.showAddDialog();
+            });
+        }
+
         const modal = document.getElementById('addUserModal');
         if (modal) {
             modal.addEventListener('click', (e) => {
