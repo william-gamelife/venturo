@@ -1483,6 +1483,7 @@ class TimeboxModule {
         
         // 關閉對話框
         this.closeDialog();
+    }
 }
 
 // ES6 模組匯出
