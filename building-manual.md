@@ -628,9 +628,278 @@ const module = await import('./modules/todos.js');
    今天的偷懶是明天的災難
 ```
 
+## 十四、實作細節規範（必讀！）
+
+以下是規範書遺漏但**極度重要**的實作細節，所有開發者必須遵守：
+
+### 1️⃣ 模組初始化規範
+
+```javascript
+class XXXModule {
+  async render(uuid) {
+    // ⭐ 必須：第一行設定 activeModule
+    window.activeModule = this;
+    
+    // ⭐ 必須：儲存當前使用者
+    this.currentUser = uuid;
+    
+    // ⭐ 必須：動態載入 sync.js
+    const syncModule = await import('./sync.js');
+    this.syncManager = new syncModule.SyncManager();
+    
+    // 載入資料（必須 await）
+    await this.loadData(uuid);
+    
+    // 渲染介面
+    const moduleContainer = document.getElementById('moduleContainer');
+    moduleContainer.innerHTML = this.getHTML();
+    
+    // 綁定事件（最後執行）
+    this.bindEvents();
+  }
+}
+```
+
+### 2️⃣ 按鈕綁定規範
+
+**HTML 按鈕必須這樣寫：**
+```html
+<!-- ✅ 正確：透過 window.activeModule -->
+<button onclick="window.activeModule.showAddDialog()">新增</button>
+<button onclick="window.activeModule.deleteItem(${id})">刪除</button>
+
+<!-- ❌ 錯誤：直接呼叫 -->
+<button onclick="showAddDialog()">新增</button>
+<button onclick="this.showAddDialog()">新增</button>
+```
+
+**所有互動方法必須實作：**
+```javascript
+// ⭐ 必須實作的基本方法
+showAddDialog() {
+  if (!this.currentUser) {
+    showToast('請先登入', 'error');
+    return;
+  }
+  // 實作內容
+}
+
+// ⭐ 有參數的方法
+deleteItem(id) {
+  if (!id) return;
+  // 實作內容
+}
+
+// ⭐ 編輯方法
+editItem(id) {
+  if (!id) return;
+  // 實作內容
+}
+```
+
+### 3️⃣ 資料存取規範
+
+**必須使用 async/await：**
+```javascript
+// ✅ 正確：完整錯誤處理
+async saveData(data) {
+  try {
+    await this.syncManager.save(
+      this.currentUser, 
+      'module_name',  // 模組名稱要一致
+      data
+    );
+    showToast('儲存成功', 'success');
+  } catch (error) {
+    console.error('儲存失敗:', error);
+    // localStorage 備援
+    localStorage.setItem(
+      `gamelife_module_name_${this.currentUser}`,
+      JSON.stringify(data)
+    );
+    showToast('已儲存到本地', 'warning');
+  }
+}
+
+// ✅ 正確：載入資料
+async loadData(uuid) {
+  try {
+    const data = await this.syncManager.load(uuid, 'module_name');
+    this.data = data || this.getDefaultData();
+  } catch (error) {
+    // 從 localStorage 讀取
+    const localData = localStorage.getItem(
+      `gamelife_module_name_${uuid}`
+    );
+    this.data = localData ? JSON.parse(localData) : this.getDefaultData();
+  }
+}
+```
+
+### 4️⃣ 生命週期管理
+
+**必須實作 destroy 方法：**
+```javascript
+destroy() {
+  // ⭐ 清理事件監聽器
+  if (this.clickHandler) {
+    document.removeEventListener('click', this.clickHandler);
+  }
+  
+  // ⭐ 清理計時器
+  if (this.autoSaveTimer) {
+    clearInterval(this.autoSaveTimer);
+  }
+  
+  // ⭐ 清理 DOM 參照
+  this.currentUser = null;
+  this.syncManager = null;
+  this.data = null;
+  
+  // ⭐ 清理 activeModule
+  if (window.activeModule === this) {
+    window.activeModule = null;
+  }
+}
+```
+
+### 5️⃣ 常見錯誤檢查表
+
+| 錯誤訊息 | 原因 | 必須修正 |
+|---------|------|----------|
+| Cannot read 'showAddDialog' of undefined | 沒設定 window.activeModule | 在 render() 第一行加入 |
+| Cannot read 'save' of undefined | syncManager 未初始化 | 確認 import 和 new |
+| 資料沒存進去 | 沒寫 await | 所有 save/load 加 await |
+| 按兩次執行兩次 | 事件重複綁定 | destroy() 要清理 |
+| 切換模組資料還在 | 沒清理舊資料 | destroy() 清理 this.data |
+
+### 6️⃣ 完整模組範本
+
+```javascript
+// ⭐ 這是標準範本，直接複製使用
+class StandardModule {
+  static moduleInfo = {
+    name: '模組名稱',
+    subtitle: '功能說明',
+    icon: '<svg>...</svg>',
+    version: '1.0.0',
+    author: 'william',
+    themeSupport: true,
+    mobileSupport: true
+  };
+
+  constructor() {
+    this.syncManager = null;
+    this.currentUser = null;
+    this.data = null;
+  }
+
+  async render(uuid) {
+    // 必須：設定 activeModule
+    window.activeModule = this;
+    this.currentUser = uuid;
+    
+    // 載入 sync
+    const syncModule = await import('./sync.js');
+    this.syncManager = new syncModule.SyncManager();
+    
+    // 載入資料
+    await this.loadData(uuid);
+    
+    // 渲染
+    const moduleContainer = document.getElementById('moduleContainer');
+    moduleContainer.innerHTML = this.getHTML();
+    
+    // 綁定事件
+    this.bindEvents();
+  }
+  
+  getHTML() {
+    return `
+      <div class="module-content">
+        <button onclick="window.activeModule.showAddDialog()">
+          新增
+        </button>
+      </div>
+    `;
+  }
+  
+  bindEvents() {
+    // 事件綁定
+  }
+  
+  showAddDialog() {
+    if (!this.currentUser) return;
+    // 實作
+  }
+  
+  async saveData(data) {
+    try {
+      await this.syncManager.save(
+        this.currentUser,
+        'module_name',
+        data
+      );
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  
+  async loadData(uuid) {
+    try {
+      this.data = await this.syncManager.load(uuid, 'module_name');
+    } catch (e) {
+      this.data = {};
+    }
+  }
+  
+  destroy() {
+    this.currentUser = null;
+    this.syncManager = null;
+    this.data = null;
+    if (window.activeModule === this) {
+      window.activeModule = null;
+    }
+  }
+}
+
+export { StandardModule };
+```
+
+### 7️⃣ Dashboard 切換規範
+
+```javascript
+// dashboard.html 必須這樣實作
+async function loadModule(moduleName) {
+  // ⭐ 先清理舊模組
+  if (window.activeModule && typeof window.activeModule.destroy === 'function') {
+    window.activeModule.destroy();
+    window.activeModule = null;
+  }
+  
+  try {
+    // 動態載入
+    const module = await import(`./modules/${moduleName}.js`);
+    const ModuleClass = module[Object.keys(module)[0]];
+    
+    // 建立實例
+    const instance = new ModuleClass();
+    
+    // 渲染（會自動設定 activeModule）
+    await instance.render(currentUser);
+    
+  } catch (error) {
+    console.error('模組載入失敗:', error);
+    showToast('模組載入失敗', 'error');
+  }
+}
+```
+
+**重要提醒：** 以上所有標記 ⭐ 的項目都是**必須實作**的，缺一不可！
+
 ---
 更新日期：2025-09-03
-版本：3.1 (完整譬喻版)
+版本：4.0 (加入實作細節版)
 編撰：角落大樓管委會
 
 ## 二、住戶使用流程

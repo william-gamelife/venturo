@@ -92,6 +92,9 @@ class TodosModule {
     }
 
     async render(uuid) {
+        // ⭐ 必須：第一行設定 activeModule
+        window.activeModule = this;
+        
         this.currentUser = { uuid };
         
         // 動態載入管委會
