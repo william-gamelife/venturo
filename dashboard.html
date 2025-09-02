@@ -1167,6 +1167,93 @@
             }
         }
 
+        // 生成手機版底部導航
+        function generateMobileNavigation() {
+            const user = getCurrentUser();
+            
+            // 導航項目配置（只顯示主要功能）
+            const navItems = [
+                { id: 'dashboard', icon: '📊', label: '總覽', module: 'dashboard' },
+                { id: 'todos', icon: '✓', label: '待辦', module: 'todos' },
+                { id: 'calendar', icon: '📅', label: '行事曆', module: 'calendar' },
+                { id: 'timebox', icon: '⏰', label: '時間', module: 'timebox' },
+                { id: 'settings', icon: '⚙️', label: '設定', module: 'settings' }
+            ];
+            
+            // 如果是管理員，添加人員管理
+            if (user && user.role === 'admin') {
+                navItems.splice(4, 0, { id: 'users', icon: '👥', label: '人員', module: 'users' });
+            }
+            
+            const mobileNavSlider = document.getElementById('mobileNavSlider');
+            const mobileNavDots = document.getElementById('mobileNavDots');
+            
+            if (!mobileNavSlider || !mobileNavDots) return;
+            
+            // 清空現有內容
+            mobileNavSlider.innerHTML = '';
+            mobileNavDots.innerHTML = '';
+            
+            // 每頁顯示 5 個項目
+            const itemsPerPage = 5;
+            const totalPages = Math.ceil(navItems.length / itemsPerPage);
+            
+            // 生成頁面
+            for (let page = 0; page < totalPages; page++) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'mobile-nav-page';
+                
+                const startIndex = page * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, navItems.length);
+                
+                for (let i = startIndex; i < endIndex; i++) {
+                    const item = navItems[i];
+                    const navItem = document.createElement('div');
+                    navItem.className = 'mobile-nav-item';
+                    navItem.onclick = () => {
+                        const navElement = document.querySelector(`[onclick*="'${item.module}'"]`);
+                        loadModule(item.module, navElement);
+                    };
+                    
+                    navItem.innerHTML = `
+                        <div class="mobile-nav-icon">${item.icon}</div>
+                        <div class="mobile-nav-text">${item.label}</div>
+                    `;
+                    
+                    pageDiv.appendChild(navItem);
+                }
+                
+                mobileNavSlider.appendChild(pageDiv);
+                
+                // 生成指示器圓點
+                const dot = document.createElement('div');
+                dot.className = 'mobile-nav-dot';
+                if (page === 0) dot.classList.add('active');
+                mobileNavDots.appendChild(dot);
+            }
+            
+            // 如果只有一頁，隱藏圓點指示器
+            if (totalPages <= 1) {
+                mobileNavDots.style.display = 'none';
+            }
+        }
+        
+        // 更新手機版導航狀態
+        function updateMobileNavigationState(moduleName) {
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 找到對應的手機版導航項目並設為 active
+            const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+            mobileNavItems.forEach(item => {
+                const onclick = item.getAttribute('onclick') || item.onclick?.toString() || '';
+                if (onclick.includes(`'${moduleName}'`)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
         // 初始化
         async function init() {
             if (!checkAuth()) return;
@@ -1176,6 +1263,9 @@
             
             loadUserInfo();
             checkPermissions();
+            
+            // 生成手機版導航
+            generateMobileNavigation();
             
             // 從 URL hash 或 localStorage 取得當前模組
             const currentHash = window.location.hash.slice(1);
@@ -1193,6 +1283,7 @@
             
             // 確保導航狀態正確
             updateNavigationState(moduleToLoad);
+            updateMobileNavigationState(moduleToLoad);
         }
         
         // 全域函數

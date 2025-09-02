@@ -748,6 +748,114 @@ class TodosModule {
                         min-width: auto;
                     }
 
+                    /* 手機版任務卡片展開功能 */
+                    .task-card.expanded {
+                        background: var(--card-bg-hover, var(--sidebar-hover, rgba(201, 169, 97, 0.05)));
+                        transform: none;
+                        box-shadow: var(--shadow-md, 0 4px 12px rgba(0,0,0,0.1));
+                    }
+                    
+                    .task-expanded-content {
+                        display: none;
+                        padding: 12px 0 0;
+                        border-top: 1px solid var(--border-light, var(--border, rgba(201, 169, 97, 0.2)));
+                        margin-top: 12px;
+                        animation: expandIn 0.3s ease-out;
+                    }
+                    
+                    .task-card.expanded .task-expanded-content {
+                        display: block;
+                    }
+                    
+                    .expanded-section {
+                        margin-bottom: 12px;
+                    }
+                    
+                    .expanded-section:last-child {
+                        margin-bottom: 0;
+                    }
+                    
+                    .expanded-label {
+                        font-size: 11px;
+                        font-weight: 600;
+                        color: var(--text-light);
+                        margin-bottom: 4px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+                    
+                    .expanded-value {
+                        font-size: 13px;
+                        color: var(--text);
+                        line-height: 1.4;
+                    }
+                    
+                    .expanded-actions {
+                        display: flex;
+                        gap: 8px;
+                        margin-top: 8px;
+                        flex-wrap: wrap;
+                    }
+                    
+                    .expanded-btn {
+                        flex: 1;
+                        min-width: 60px;
+                        padding: 6px 12px;
+                        background: var(--bg);
+                        border: 1px solid var(--border);
+                        border-radius: 6px;
+                        color: var(--text);
+                        font-size: 11px;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 4px;
+                    }
+                    
+                    .expanded-btn:hover {
+                        background: var(--primary);
+                        color: white;
+                        border-color: var(--primary);
+                    }
+                    
+                    .expanded-btn.danger {
+                        color: var(--error, #dc3545);
+                        border-color: var(--border-error, rgba(220, 53, 69, 0.3));
+                    }
+                    
+                    .expanded-btn.danger:hover {
+                        background: var(--error, #dc3545);
+                        color: var(--text-inverse, white);
+                        border-color: var(--error, #dc3545);
+                    }
+                    
+                    .expanded-btn.success {
+                        color: var(--success, #28a745);
+                        border-color: var(--border-success, rgba(40, 167, 69, 0.3));
+                    }
+                    
+                    .expanded-btn.success:hover {
+                        background: var(--success, #28a745);
+                        color: var(--text-inverse, white);
+                        border-color: var(--success, #28a745);
+                    }
+                    
+                    @keyframes expandIn {
+                        from {
+                            opacity: 0;
+                            max-height: 0;
+                            transform: translateY(-10px);
+                        }
+                        to {
+                            opacity: 1;
+                            max-height: 300px;
+                            transform: translateY(0);
+                        }
+                    }
+
                 }
             </style>
         `;
@@ -926,6 +1034,79 @@ class TodosModule {
                             <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2"/>
                         </svg>
                     </button>
+                </div>
+                
+                <!-- 手機版展開內容 -->
+                <div class="task-expanded-content">
+                    ${task.description ? `
+                        <div class="expanded-section">
+                            <div class="expanded-label">描述</div>
+                            <div class="expanded-value">${task.description}</div>
+                        </div>
+                    ` : ''}
+                    
+                    ${task.dueDate ? `
+                        <div class="expanded-section">
+                            <div class="expanded-label">截止日期</div>
+                            <div class="expanded-value">${this.formatDate(task.dueDate)}</div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="expanded-section">
+                        <div class="expanded-label">狀態</div>
+                        <div class="expanded-value">${this.getStatusLabel(task.status)}</div>
+                    </div>
+                    
+                    ${task.tags && task.tags.length > 0 ? `
+                        <div class="expanded-section">
+                            <div class="expanded-label">標籤</div>
+                            <div class="expanded-value">
+                                ${task.tags.map(tagId => {
+                                    const tag = this.quickTags.find(t => t.id === tagId);
+                                    return tag ? `<span style="color: ${tag.color}">#${tag.name}</span>` : '';
+                                }).filter(Boolean).join(' ')}
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${task.assignedTo ? `
+                        <div class="expanded-section">
+                            <div class="expanded-label">負責人</div>
+                            <div class="expanded-value">${task.assignedTo}</div>
+                        </div>
+                    ` : ''}
+                    
+                    <div class="expanded-actions">
+                        <button class="expanded-btn" onclick="window.activeModule.editTask('${task.id}'); event.stopPropagation();">
+                            <svg width="12" height="12" viewBox="0 0 14 14">
+                                <path d="M10 2l2 2-7 7-3 1 1-3z" fill="none" stroke="currentColor"/>
+                            </svg>
+                            編輯
+                        </button>
+                        
+                        ${task.status === 'pending' ? `
+                            <button class="expanded-btn success" onclick="window.activeModule.completeTask('${task.id}'); event.stopPropagation();">
+                                <svg width="12" height="12" viewBox="0 0 14 14">
+                                    <path d="M2 7l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/>
+                                </svg>
+                                完成
+                            </button>
+                        ` : `
+                            <button class="expanded-btn" onclick="window.activeModule.reopenTask('${task.id}'); event.stopPropagation();">
+                                <svg width="12" height="12" viewBox="0 0 14 14">
+                                    <path d="M1 7l2-2m0 0l2 2m-2-2v6a2 2 0 002 2h6" stroke="currentColor" fill="none" stroke-width="1.5"/>
+                                </svg>
+                                重開
+                            </button>
+                        `}
+                        
+                        <button class="expanded-btn danger" onclick="window.activeModule.deleteTask('${task.id}'); event.stopPropagation();">
+                            <svg width="12" height="12" viewBox="0 0 14 14">
+                                <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2"/>
+                            </svg>
+                            刪除
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -1527,7 +1708,7 @@ class TodosModule {
     // 新增方法：處理任務卡片點擊
     handleTaskCardClick(event, taskId) {
         // 如果點擊的是複選框或按鈕，不處理
-        if (event.target.closest('.task-checkbox') || event.target.closest('.task-btn')) {
+        if (event.target.closest('.task-checkbox') || event.target.closest('.task-btn') || event.target.closest('.expanded-btn')) {
             return;
         }
         
@@ -1537,8 +1718,28 @@ class TodosModule {
             return;
         }
         
-        // 單擊顯示任務詳情
-        this.showTaskDetails(taskId);
+        // 檢查螢幕寶度，手機版使用展開/折疊，桌面版顯示詳情對話框
+        if (window.innerWidth <= 768) {
+            this.toggleTaskExpanded(taskId);
+        } else {
+            this.showTaskDetails(taskId);
+        }
+    }
+    
+    // 新增方法：切換任務卡片展開/折疊狀態
+    toggleTaskExpanded(taskId) {
+        const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
+        if (!taskCard) return;
+        
+        // 先收起其他展開的卡片
+        document.querySelectorAll('.task-card.expanded').forEach(card => {
+            if (card !== taskCard) {
+                card.classList.remove('expanded');
+            }
+        });
+        
+        // 切換當前卡片狀態
+        taskCard.classList.toggle('expanded');
     }
     
     // 顯示任務詳情
