@@ -402,23 +402,6 @@ class CalendarModule {
         document.removeEventListener('keydown', this.attachEventListeners);
     }
 
-    // SignageHost 按鈕方法：上一個月
-    previousMonth() {
-        this.viewDate.setMonth(this.viewDate.getMonth() - 1);
-        this.renderCalendar(); // 刷新日曆顯示
-    }
-
-    // SignageHost 按鈕方法：回到今天
-    goToToday() {
-        this.viewDate = new Date();
-        this.renderCalendar(); // 刷新日曆顯示
-    }
-
-    // SignageHost 按鈕方法：下一個月
-    nextMonth() {
-        this.viewDate.setMonth(this.viewDate.getMonth() + 1);
-        this.renderCalendar(); // 刷新日曆顯示
-    }
 }
 
 export { CalendarModule };

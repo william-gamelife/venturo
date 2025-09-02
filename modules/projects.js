@@ -1776,35 +1776,6 @@ class ProjectsModule {
         toasts.forEach(toast => toast.remove());
     }
 
-    // SignageHost 按鈕方法：建立專案
-    showCreateProjectDialog() {
-        // TODO: 顯示建立專案對話框
-        console.log('建立專案功能待實現');
-        
-        // 可以在這裡實現：
-        // 1. 顯示建立專案表單對話框
-        // 2. 讓使用者填寫專案基本資訊
-        // 3. 設定專案成員和權限
-        // 4. 保存專案資料
-        
-        // 暫時顯示提示
-        alert('建立專案功能開發中...');
-    }
-
-    // SignageHost 按鈕方法：匯出報告
-    showExportDialog() {
-        // TODO: 顯示匯出報告對話框
-        console.log('匯出報告功能待實現');
-        
-        // 可以在這裡實現：
-        // 1. 顯示匯出選項對話框
-        // 2. 讓使用者選擇匯出格式（PDF、Excel等）
-        // 3. 選擇匯出內容範圍
-        // 4. 生成並下載報告
-        
-        // 暫時顯示提示
-        alert('匯出報告功能開發中...');
-    }
 }
 
 export { ProjectsModule };
