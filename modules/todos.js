@@ -136,73 +136,72 @@ class TodosModule {
     getHTML() {
         return `
             <div class="todos-container">
-                <!-- 頂部工具列 -->
-                <div class="todos-header">
-                    <div class="todos-title">
-                        <h2>待辦事項管理系統</h2>
-                        <span class="todos-count">${this.todos.length} 個任務</span>
-                        <span class="selected-count" ${this.selectedTodos.size > 0 ? '' : 'style="display: none;"'}>
-                            已選取 ${this.selectedTodos.size} 個
-                        </span>
-                    </div>
-                    
-                    <div class="todos-actions">
-                        <button class="btn-add" onclick="window.activeModule.showAddDialog()">
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M10 5v10M5 10h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            新增任務
-                        </button>
+                <!-- 模組歡迎卡片 -->
+                <div class="module-welcome-card">
+                    <div class="welcome-header">
+                        <div class="welcome-info">
+                            <div class="welcome-icon-title">
+                                <div class="welcome-icon">
+                                    ${TodosModule.moduleInfo.icon}
+                                </div>
+                                <div>
+                                    <h2>${TodosModule.moduleInfo.name}</h2>
+                                    <p class="welcome-subtitle">${TodosModule.moduleInfo.subtitle}</p>
+                                </div>
+                            </div>
+                            <div class="todos-stats">
+                                <span class="todos-count">${this.todos.length} 個任務</span>
+                                <span class="selected-count" ${this.selectedTodos.size > 0 ? '' : 'style="display: none;"'}>
+                                    已選取 ${this.selectedTodos.size} 個
+                                </span>
+                            </div>
+                        </div>
                         
-                        <button class="btn-batch ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
-                                onclick="window.activeModule.showBatchActions()"
-                                ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M3 6h14M3 12h14M3 18h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            批量操作
-                        </button>
-                        
-                        <button class="btn-merge ${this.selectedTodos.size >= 2 ? '' : 'disabled'}" 
-                                onclick="window.activeModule.showMergeDialog()"
-                                ${this.selectedTodos.size >= 2 ? '' : 'disabled'}>
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M5 10h10M5 5l5 5-5 5M15 5l-5 5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                            合併成專案
-                        </button>
-                        
-                        <button class="btn-clear ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
-                                onclick="window.activeModule.clearSelection()"
-                                ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
-                            <svg width="16" height="16" viewBox="0 0 16 16">
-                                <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            清除選取
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 增強篩選標籤列 -->
-                <div class="filter-tags">
-                    <div class="filter-section">
-                        <span class="filter-section-title">快速篩選：</span>
-                        <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
-                                onclick="window.activeModule.setFilter('all')">
-                            <svg class="tag-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3 3v4.5l11-7v4.5h7V3H3zm18 18v-4.5l-11 7v-4.5H3v2h18z"/></svg>
-                            全部
-                        </button>
-                        ${this.quickTags.map(tag => `
-                            <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
-                                    onclick="window.activeModule.setFilter('${tag.id}')"
-                                    style="--tag-color: ${tag.color}">
-                                <svg class="tag-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="${tag.icon}"/></svg>
-                                ${tag.name}
+                        <div class="welcome-actions">
+                            <button class="btn-add" onclick="window.activeModule.showAddDialog()">
+                                <svg width="16" height="16" viewBox="0 0 16 16">
+                                    <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                新增任務
                             </button>
-                        `).join('')}
+                            
+                            <button class="btn-batch ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
+                                    onclick="window.activeModule.showBatchActions()"
+                                    ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
+                                批量操作
+                            </button>
+                            
+                            <button class="btn-merge ${this.selectedTodos.size >= 2 ? '' : 'disabled'}" 
+                                    onclick="window.activeModule.showMergeDialog()"
+                                    ${this.selectedTodos.size >= 2 ? '' : 'disabled'}>
+                                合併專案
+                            </button>
+                            
+                            <button class="btn-clear ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
+                                    onclick="window.activeModule.clearSelection()"
+                                    ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
+                                清除選取
+                            </button>
+                        </div>
                     </div>
-                    
-                    <div class="filter-actions">
+
+                    <!-- 篩選標籤 -->
+                    <div class="welcome-filters">
+                        <div class="filter-section">
+                            <span class="filter-section-title">快速篩選：</span>
+                            <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
+                                    onclick="window.activeModule.setFilter('all')">
+                                全部
+                            </button>
+                            ${this.quickTags.map(tag => `
+                                <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
+                                        onclick="window.activeModule.setFilter('${tag.id}')"
+                                        style="--tag-color: ${tag.color}">
+                                    ${tag.name}
+                                </button>
+                            `).join('')}
+                        </div>
+                        
                         <button class="filter-search-btn" onclick="window.activeModule.showSearchDialog()">
                             <svg width="16" height="16" viewBox="0 0 16 16">
                                 <circle cx="7" cy="7" r="5" stroke="currentColor" fill="none"/>
@@ -213,9 +212,21 @@ class TodosModule {
                     </div>
                 </div>
 
-                <!-- 五欄看板 -->
+                <!-- 四欄看板 -->
                 <div class="kanban-board">
-                    ${this.getKanbanColumns()}
+                    ${this.getMainColumns()}
+                </div>
+
+                <!-- 專案區域 -->
+                <div class="projects-section">
+                    <div class="projects-header">
+                        <h3>專案</h3>
+                        <span class="projects-count">${this.getProjectTasks().length} 個專案</span>
+                    </div>
+                    <div class="projects-grid">
+                        ${this.getProjectTasks().map(task => this.getTaskCard(task)).join('')}
+                        ${this.getProjectTasks().length === 0 ? '<div class="empty-projects">暫無專案</div>' : ''}
+                    </div>
                 </div>
             </div>
 
@@ -224,88 +235,173 @@ class TodosModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    padding: 20px;
+                    padding: 20px 0;
                     gap: 20px;
                 }
 
-                /* 頂部工具列 */
-                .todos-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
+                /* 模組歡迎卡片 */
+                .module-welcome-card {
                     background: var(--card);
-                    padding: 20px;
                     border-radius: 16px;
+                    padding: 20px;
                     border: 1px solid var(--border);
+                    margin: 0 20px 20px;
+                    box-shadow: var(--shadow);
                 }
 
-                .todos-title h2 {
+                .welcome-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 16px;
+                    gap: 20px;
+                }
+
+                .welcome-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .welcome-icon-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .welcome-icon {
+                    width: 40px;
+                    height: 40px;
+                    background: linear-gradient(135deg, var(--primary), var(--accent));
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    flex-shrink: 0;
+                }
+
+                .welcome-icon svg {
+                    width: 20px;
+                    height: 20px;
+                }
+
+                .welcome-header h2 {
                     font-size: 1.5rem;
                     font-weight: 600;
                     color: var(--text);
                     margin: 0;
                 }
 
-                .todos-count {
-                    font-size: 0.9rem;
+                .welcome-subtitle {
+                    margin: 0;
                     color: var(--text-light);
-                    margin-left: 12px;
+                    font-size: 0.9rem;
                 }
 
-                .todos-actions {
+                .todos-stats {
                     display: flex;
                     gap: 12px;
+                    align-items: center;
                 }
 
-                .btn-add, .btn-merge {
+                .todos-count {
+                    font-size: 0.85rem;
+                    color: var(--text-light);
+                    background: var(--bg);
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                }
+
+                .selected-count {
+                    font-size: 0.85rem;
+                    color: var(--primary);
+                    background: var(--primary-light);
+                    padding: 4px 8px;
+                    border-radius: 12px;
+                }
+
+                .welcome-actions {
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                }
+
+                .btn-add, .btn-batch, .btn-merge, .btn-clear {
                     display: flex;
                     align-items: center;
                     gap: 6px;
-                    padding: 10px 16px;
-                    background: var(--primary);
-                    color: white;
+                    padding: 8px 12px;
                     border: none;
-                    border-radius: 8px;
+                    border-radius: 6px;
                     cursor: pointer;
                     transition: all 0.2s;
                     font-weight: 500;
+                    font-size: 0.85rem;
+                    white-space: nowrap;
                 }
 
-                .btn-add:hover, .btn-merge:hover:not(.disabled) {
+                .btn-add {
+                    background: var(--primary);
+                    color: white;
+                }
+
+                .btn-batch, .btn-merge, .btn-clear {
+                    background: var(--bg);
+                    color: var(--text);
+                    border: 1px solid var(--border);
+                }
+
+                .btn-add:hover {
                     background: var(--primary-dark);
                     transform: translateY(-1px);
                 }
 
-                .btn-merge {
-                    background: var(--accent);
+                .btn-batch:hover:not(.disabled), .btn-merge:hover:not(.disabled), .btn-clear:hover:not(.disabled) {
+                    background: var(--bg-dark);
+                    transform: translateY(-1px);
                 }
 
-                .btn-merge.disabled {
+                .disabled {
                     opacity: 0.5;
                     cursor: not-allowed;
                 }
 
-                /* 篩選標籤 */
-                .filter-tags {
+                /* 篩選區域 */
+                .welcome-filters {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding-top: 16px;
+                    border-top: 1px solid var(--border);
+                    gap: 16px;
+                }
+
+                .filter-section {
                     display: flex;
                     gap: 8px;
-                    padding: 12px 16px;
-                    background: var(--card);
-                    border-radius: 12px;
-                    border: 1px solid var(--border);
-                    overflow-x: auto;
+                    align-items: center;
+                    flex-wrap: wrap;
+                }
+
+                .filter-section-title {
+                    font-size: 0.85rem;
+                    color: var(--text-light);
+                    font-weight: 500;
+                    margin-right: 4px;
                 }
 
                 .filter-tag {
-                    padding: 6px 14px;
+                    padding: 4px 12px;
                     background: white;
                     border: 1px solid var(--border);
-                    border-radius: 20px;
+                    border-radius: 16px;
                     color: var(--text-light);
                     cursor: pointer;
                     transition: all 0.2s;
                     white-space: nowrap;
-                    font-size: 0.9rem;
+                    font-size: 0.8rem;
+                    font-weight: 500;
                 }
 
                 .filter-tag:hover {
@@ -318,14 +414,32 @@ class TodosModule {
                     border-color: var(--primary);
                 }
 
+                .filter-search-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    padding: 6px 12px;
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-size: 0.8rem;
+                    color: var(--text-light);
+                }
+
+                .filter-search-btn:hover {
+                    background: var(--bg);
+                }
+
                 /* 看板欄位 */
                 .kanban-board {
-                    flex: 1;
                     display: grid;
-                    grid-template-columns: repeat(5, 1fr);
+                    grid-template-columns: repeat(4, 1fr);
                     gap: 16px;
                     overflow-x: auto;
                     min-height: 400px;
+                    margin: 0 20px 20px;
                 }
 
                 .kanban-column {
@@ -363,6 +477,35 @@ class TodosModule {
                     font-weight: 600;
                 }
 
+                .add-task-btn {
+                    width: 28px;
+                    height: 28px;
+                    background: var(--primary);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s;
+                }
+
+                .add-task-btn:hover {
+                    background: var(--primary-dark);
+                    transform: translateY(-1px);
+                }
+
+                .empty-column {
+                    text-align: center;
+                    padding: 20px;
+                    color: var(--text-muted);
+                    font-size: 0.9rem;
+                    background: rgba(0,0,0,0.02);
+                    border-radius: 8px;
+                    border: 2px dashed var(--border);
+                }
+
                 .column-tasks {
                     flex: 1;
                     display: flex;
@@ -376,6 +519,57 @@ class TodosModule {
                     background: rgba(201, 169, 97, 0.1);
                     border: 2px dashed var(--primary);
                     border-radius: 8px;
+                }
+
+                /* 專案區域 */
+                .projects-section {
+                    margin: 20px 20px 0;
+                    background: var(--card);
+                    border-radius: 16px;
+                    padding: 20px;
+                    border: 1px solid var(--border);
+                    box-shadow: var(--shadow);
+                }
+
+                .projects-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 16px;
+                    padding-bottom: 12px;
+                    border-bottom: 2px solid var(--border);
+                }
+
+                .projects-header h3 {
+                    margin: 0;
+                    font-size: 1.2rem;
+                    font-weight: 600;
+                    color: var(--text);
+                }
+
+                .projects-count {
+                    background: var(--accent-light);
+                    color: var(--accent);
+                    padding: 4px 12px;
+                    border-radius: 12px;
+                    font-size: 0.8rem;
+                    font-weight: 600;
+                }
+
+                .projects-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 12px;
+                }
+
+                .empty-projects {
+                    text-align: center;
+                    padding: 40px 20px;
+                    color: var(--text-muted);
+                    font-size: 0.9rem;
+                    background: rgba(0,0,0,0.02);
+                    border-radius: 8px;
+                    border: 2px dashed var(--border);
                 }
 
                 /* 任務卡片 */
@@ -716,44 +910,64 @@ class TodosModule {
                 /* 手機版響應式 */
                 @media (max-width: 768px) {
                     .todos-container {
-                        padding: 12px;
+                        padding: 12px 0;
                     }
 
-                    .todos-header {
+                    .module-welcome-card {
+                        margin: 0 12px 20px;
+                        padding: 16px;
+                    }
+
+                    .welcome-header {
+                        flex-direction: column;
+                        gap: 16px;
+                        align-items: stretch;
+                    }
+
+                    .welcome-actions {
+                        justify-content: flex-start;
+                    }
+
+                    .welcome-filters {
                         flex-direction: column;
                         gap: 12px;
                         align-items: stretch;
                     }
 
-                    .todos-actions {
-                        flex-direction: column;
+                    .filter-section {
+                        overflow-x: auto;
+                        -webkit-overflow-scrolling: touch;
                     }
 
                     .kanban-board {
                         grid-template-columns: 1fr;
                         overflow-x: visible;
+                        margin: 0 12px;
                     }
 
                     .kanban-column {
                         min-width: auto;
                     }
 
-                    .filter-tags {
-                        overflow-x: scroll;
-                        -webkit-overflow-scrolling: touch;
+                    .projects-section {
+                        margin: 20px 12px 0;
+                        padding: 16px;
+                    }
+
+                    .projects-grid {
+                        grid-template-columns: 1fr;
                     }
                 }
             </style>
         `;
     }
 
-    getKanbanColumns() {
+    getMainColumns() {
         const columns = [
-            { id: 'pending', title: '待處理', icon: 'clipboard' },
-            { id: 'today', title: '今日執行', icon: 'fire' },
-            { id: 'week', title: '本週規劃', icon: 'calendar' },
-            { id: 'completed', title: '最近完成', icon: 'check' },
-            { id: 'project', title: '轉為專案', icon: 'folder' }
+            { id: 'pending', title: '待整理' },
+            { id: 'today', title: '今日執行' },
+            { id: 'week', title: '代辦事項' },
+            { id: 'completed', title: '完成' }
         ];
 
         return columns.map(column => {
@@ -764,16 +978,33 @@ class TodosModule {
                     <div class="column-header">
                         <div class="column-title">${column.title}</div>
                         <div class="column-count">${tasks.length}</div>
+                        <button class="add-task-btn" onclick="window.activeModule.showAddDialogForColumn('${column.id}')" title="新增任務">
+                            <svg width="16" height="16" viewBox="0 0 16 16">
+                                <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
                     </div>
                     <div class="column-tasks" 
                          ondrop="window.activeModule.handleDrop(event, '${column.id}')"
                          ondragover="window.activeModule.handleDragOver(event)"
                          ondragleave="window.activeModule.handleDragLeave(event)">
                         ${tasks.map(task => this.getTaskCard(task)).join('')}
+                        ${tasks.length === 0 ? `<div class="empty-column">暫無${column.title}</div>` : ''}
                     </div>
                 </div>
             `;
         }).join('');
+    }
+
+    getProjectTasks() {
+        let filtered = this.todos;
+
+        // 先套用標籤篩選
+        if (this.currentFilter !== 'all') {
+            filtered = filtered.filter(task => task.tags && task.tags.includes(this.currentFilter));
+        }
+
+        return filtered.filter(task => task.status === 'project');
     }
 
     getTasksByColumn(columnId) {
@@ -967,6 +1198,32 @@ class TodosModule {
                 this.closeDialog();
             }
         });
+    }
+
+    // 針對特定欄位的新增任務對話框
+    showAddDialogForColumn(columnId) {
+        const prefillData = {
+            status: 'pending'
+        };
+
+        // 根據欄位預設適當的到期日期
+        const today = new Date();
+        switch (columnId) {
+            case 'today':
+                prefillData.dueDate = today.toISOString().split('T')[0];
+                break;
+            case 'week':
+                const threeDaysLater = new Date(today);
+                threeDaysLater.setDate(today.getDate() + 3);
+                prefillData.dueDate = threeDaysLater.toISOString().split('T')[0];
+                break;
+            case 'completed':
+                prefillData.status = 'completed';
+                prefillData.completedAt = today.toISOString();
+                break;
+        }
+
+        this.showAddDialog(prefillData);
     }
 
     // 增強版新增任務對話框

@@ -4,6 +4,19 @@
  */
 
 class UsersModule {
+    // 靜態資訊（必填）- 店家招牌
+    static moduleInfo = {
+        name: '人員管理',
+        subtitle: '團隊成員管理與權限控制',
+        icon: `<svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" stroke="currentColor" stroke-width="2"/>
+               </svg>`,
+        version: '1.0.0',
+        author: 'william',
+        themeSupport: true,
+        mobileSupport: true
+    };
+
     constructor() {
         this.syncManager = null;
         this.userId = null;
@@ -45,18 +58,36 @@ class UsersModule {
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = `
             <div class="users-container" style="height: 100%; min-height: 500px;">
-                <!-- 工具列 -->
-                <div class="users-toolbar" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 16px;">
-                    <button class="add-user-btn" onclick="window.activeModule.showAddDialog()" 
-                            style="background: linear-gradient(135deg, var(--primary), var(--accent)); 
-                                   color: white; border: none; padding: 10px 20px; border-radius: 8px; 
-                                   cursor: pointer; font-weight: 500; transition: transform 0.2s;">
-                        ➕ 新增使用者
-                    </button>
+                <!-- 模組歡迎卡片 -->
+                <div class="module-welcome-card" style="background: var(--card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); margin: 0 20px 24px; box-shadow: var(--shadow);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                <div style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white;">
+                                    ${UsersModule.moduleInfo.icon}
+                                </div>
+                                <div>
+                                    <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: var(--text);">${UsersModule.moduleInfo.name}</h2>
+                                </div>
+                            </div>
+                            <p style="margin: 0; color: var(--text-light); font-size: 0.9rem;">${UsersModule.moduleInfo.subtitle}</p>
+                        </div>
+                        <div>
+                            <button class="add-user-btn" onclick="window.activeModule.showAddDialog()" 
+                                    style="background: linear-gradient(135deg, var(--primary), var(--accent)); 
+                                           color: white; border: none; padding: 10px 20px; border-radius: 8px; 
+                                           cursor: pointer; font-weight: 500; transition: transform 0.2s; display: flex; align-items: center; gap: 8px;">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                                </svg>
+                                新增使用者
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 使用者列表 -->
-                <div class="users-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+                <div class="users-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; margin: 0 20px;">
                     <!-- 使用者卡片將動態生成 -->
                 </div>
 
