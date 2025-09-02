@@ -62,6 +62,9 @@ class CalendarModule {
     }
 
     async render(uuid) {
+        // ⭐ 必須：第一行設定 activeModule
+        window.activeModule = this;
+        
         this.currentUser = { uuid };
         
         // 動態載入管委會
@@ -85,14 +88,14 @@ class CalendarModule {
     getHTML() {
         return `
             <div class="calendar-container">
-                <!-- 月曆標題和導航 -->
-                <div class="calendar-header">
-                    <div class="calendar-title">
-                        <h2>優雅月曆</h2>
-                        <p>莫蘭迪風格的時間管理藝術</p>
+                <!-- 歡迎卡片 -->
+                <div class="calendar-header" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden;">
+                    <div class="calendar-title" style="flex: 1;">
+                        <h2 style="margin: 0 0 4px 0; font-size: 1.8rem; line-height: 1.2;">優雅月曆</h2>
+                        <p style="margin: 0; font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">莫蘭迪風格的時間管理藝術</p>
                     </div>
                     
-                    <div class="calendar-navigation">
+                    <div class="calendar-navigation" style="flex-shrink: 0;">
                         <button class="nav-btn" onclick="window.activeModule.previousMonth()" aria-label="上個月">
                             <svg width="20" height="20" viewBox="0 0 20 20">
                                 <path d="M12 15l-5-5 5-5" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -704,14 +707,11 @@ class CalendarModule {
                     font-family: -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif;
                 }
                 
-                /* 標題區域 */
+                /* 歡迎卡片 */
                 .calendar-header {
-                    display: flex;
                     justify-content: space-between;
-                    align-items: flex-start;
                     margin-bottom: 32px;
                     background: var(--calendar-card);
-                    padding: 24px;
                     border-radius: 20px;
                     border: 1px solid var(--calendar-border);
                     backdrop-filter: blur(20px);

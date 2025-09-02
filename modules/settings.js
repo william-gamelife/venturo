@@ -29,6 +29,9 @@ class SettingsModule {
     }
 
     async render(userId) {
+        // ⭐ 必須：第一行設定 activeModule
+        window.activeModule = this;
+        
         this.userId = userId;
         
         // 動態導入 sync manager
@@ -41,7 +44,13 @@ class SettingsModule {
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = `
             <div class="settings-container" style="height: 100%; min-height: 500px;">
-                <!-- 設定區塊 - 不需要標題，dashboard已有 -->
+                <!-- 歡迎卡片 -->
+                <div class="welcome-card" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; margin-bottom: 24px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <div style="flex: 1; text-align: center;">
+                        <h2 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.8rem; line-height: 1.2;">系統設定</h2>
+                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">個人化設定與偏好管理</p>
+                    </div>
+                </div>
 
                 <!-- 設定區塊 -->
                 <div class="settings-sections" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
@@ -210,7 +219,7 @@ class SettingsModule {
                 </div>
 
                 <!-- 底部資訊 -->
-                <div class="settings-footer" style="margin-top: 32px; padding: 20px; background: rgba(139, 115, 85, 0.05); border-radius: 12px; text-align: center;">
+                <div class="settings-footer" style="margin-top: 24px; padding: 20px; background: rgba(139, 115, 85, 0.05); border-radius: 12px; text-align: center;">
                     <p style="margin: 0; font-size: 13px; color: var(--text-light);">
                         設定會自動儲存到雲端，並在所有裝置間同步<br>
                         變更會立即生效，無需重新載入頁面
@@ -219,6 +228,15 @@ class SettingsModule {
             </div>
 
             <style>
+            .welcome-card {
+                transition: all 0.3s ease;
+            }
+            
+            .welcome-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            }
+            
             .setting-section:hover {
                 transform: translateY(-2px);
                 box-shadow: 0 8px 30px rgba(0,0,0,0.12);

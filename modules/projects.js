@@ -197,11 +197,11 @@ class ProjectsModule {
         
         return `
             <div class="projects-container">
-                <!-- 頂部工具列 -->
-                <div class="projects-header">
-                    <div class="projects-title">
-                        <h2>專案管理系統</h2>
-                        <span class="projects-count">${this.projects.length} 個專案</span>
+                <!-- 歡迎卡片 -->
+                <div class="projects-header" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden;">
+                    <div class="projects-title" style="flex: 1;">
+                        <h2 style="margin: 0 0 4px 0; font-size: 1.8rem; line-height: 1.2;">專案管理系統</h2>
+                        <span class="projects-count" style="font-size: 1rem; line-height: 1.3; color: var(--text-light);">${this.projects.length} 個專案</span>
                     </div>
                     
                     <div class="projects-actions">
@@ -281,33 +281,23 @@ class ProjectsModule {
                     gap: 20px;
                 }
 
-                /* 頂部工具列 */
+                /* 歡迎卡片 */
                 .projects-header {
-                    display: flex;
                     justify-content: space-between;
-                    align-items: center;
                     background: var(--card);
-                    padding: 20px;
                     border-radius: 16px;
                     border: 1px solid var(--border);
                 }
 
                 .projects-title h2 {
-                    font-size: 1.5rem;
                     font-weight: 600;
                     color: var(--text);
-                    margin: 0;
-                }
-
-                .projects-count {
-                    font-size: 0.9rem;
-                    color: var(--text-light);
-                    margin-left: 12px;
                 }
 
                 .projects-actions {
                     display: flex;
                     gap: 12px;
+                    flex-shrink: 0;
                 }
 
                 .btn-primary, .btn-secondary {

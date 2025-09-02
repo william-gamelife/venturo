@@ -31,12 +31,23 @@ class UsersModule {
     }
 
     async render(userId) {
+        // ⭐ 必須：第一行設定 activeModule
+        window.activeModule = this;
+        
         this.userId = userId;
         
         // 檢查權限
         if (!this.adminUUIDs.includes(userId)) {
             const moduleContainer = document.getElementById('moduleContainer');
             moduleContainer.innerHTML = `
+                <!-- 歡迎卡片 -->
+                <div class="welcome-card" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; margin-bottom: 20px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <div style="flex: 1; text-align: center;">
+                        <h2 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.8rem; line-height: 1.2;">人員管理</h2>
+                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">團隊成員管理與權限控制</p>
+                    </div>
+                </div>
+                
                 <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
                     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 20px;">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
@@ -59,6 +70,14 @@ class UsersModule {
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = `
             <div class="users-container" style="height: 100%; min-height: 500px;">
+                <!-- 歡迎卡片 -->
+                <div class="welcome-card" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; margin-bottom: 20px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <div style="flex: 1; text-align: center;">
+                        <h2 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.8rem; line-height: 1.2;">人員管理</h2>
+                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">團隊成員管理與權限控制</p>
+                    </div>
+                </div>
+
                 <!-- 使用者列表 -->
                 <div class="users-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
                     <!-- 使用者卡片將動態生成 -->
@@ -110,6 +129,15 @@ class UsersModule {
             </div>
 
             <style>
+            .welcome-card {
+                transition: all 0.3s ease;
+            }
+            
+            .welcome-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            }
+            
             .add-user-btn:hover {
                 transform: translateY(-2px);
             }

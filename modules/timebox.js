@@ -117,9 +117,9 @@ class TimeboxModule {
     getHTML() {
         return `
             <div class="timebox-container">
-                <!-- 頂部工具列 -->
-                <div class="timebox-header">
-                    <div class="week-navigator">
+                <!-- 歡迎卡片 -->
+                <div class="timebox-header" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; flex-wrap: nowrap;">
+                    <div class="week-navigator" style="flex: 1;">
                         <button class="week-btn prev" onclick="window.activeModule.changeWeek(-1)">
                             <svg width="20" height="20" viewBox="0 0 20 20">
                                 <path d="M12 15l-5-5 5-5" stroke="currentColor" fill="none" stroke-width="2"/>
@@ -136,7 +136,7 @@ class TimeboxModule {
                         </button>
                     </div>
                     
-                    <div class="timebox-tools">
+                    <div class="timebox-tools" style="flex-shrink: 0;">
                         <!-- 時間單位切換 -->
                         <div class="time-unit-selector">
                             <button class="unit-btn ${this.timeUnit === 15 ? 'active' : ''}" 
@@ -196,15 +196,11 @@ class TimeboxModule {
                     padding: 20px;
                 }
 
-                /* 頂部工具列 */
+                /* 歡迎卡片 */
                 .timebox-header {
-                    display: flex;
                     justify-content: space-between;
-                    align-items: center;
-                    flex-wrap: wrap;
                     gap: 16px;
                     background: var(--card);
-                    padding: 16px 20px;
                     border-radius: 16px;
                     border: 1px solid var(--border);
                 }
@@ -721,6 +717,8 @@ class TimeboxModule {
                     .timebox-header {
                         flex-direction: column;
                         padding: 12px;
+                        min-height: 140px !important;
+                        max-height: 140px !important;
                     }
 
                     .timebox-tools {

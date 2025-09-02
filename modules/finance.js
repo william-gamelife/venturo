@@ -27,6 +27,9 @@ class FinanceModule {
     }
 
     async render(uuid) {
+        // ⭐ 必須：第一行設定 activeModule
+        window.activeModule = this;
+        
         this.currentUser = { uuid };
         
         // 動態載入管委會
@@ -47,10 +50,12 @@ class FinanceModule {
     getHTML() {
         return `
             <div class="finance-container" style="height: 100%; padding: 20px;">
-                <!-- 標題區域 -->
-                <div style="text-align: center; margin-bottom: 30px;">
-                    <h2 style="margin-bottom: 16px; color: var(--text); font-size: 2rem;">財務管理</h2>
-                    <p style="color: var(--text-light); margin-bottom: 24px;">掌握您的財務狀況，規劃美好未來</p>
+                <!-- 歡迎卡片 -->
+                <div class="welcome-card" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; text-align: center; margin-bottom: 30px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                    <div style="flex: 1;">
+                        <h2 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.8rem; line-height: 1.2;">財務管理</h2>
+                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">掌握您的財務狀況，規劃美好未來</p>
+                    </div>
                 </div>
 
                 <!-- 功能區域 -->
