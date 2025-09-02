@@ -1035,7 +1035,8 @@ class TimeboxModule {
                                  data-time="${timeStr}"
                                  data-key="${slotKey}"
                                  data-task-id="${taskBlock.taskId}"
-                                 style="grid-row: span ${rowSpan}; background: ${activity?.color}; border-color: ${activity?.color};">
+                                 style="grid-row: span ${rowSpan}; background: ${activity?.color}; border-color: ${activity?.color};"
+                                 onclick="window.activeModule.onSlotClick('${slotKey}')">
                                 <div class="time-slot-content">
                                     <div>${taskBlock.content || activity?.name}</div>
                                     <div style="font-size: 0.7em; opacity: 0.8;">${timeText}</div>
@@ -1062,7 +1063,8 @@ class TimeboxModule {
                                  data-date="${dateStr}" 
                                  data-time="${timeStr}"
                                  data-key="${slotKey}"
-                                 style="${slotStyle}">
+                                 style="${slotStyle}"
+                                 onclick="window.activeModule.onSlotClick('${slotKey}')">
                             </div>
                         `;
                         
@@ -1439,6 +1441,15 @@ class TimeboxModule {
     clearSelection() {
         this.selectedTimeSlots.clear();
         this.updateSlotSelection();
+    }
+
+    // 點擊時段處理
+    onSlotClick(slotKey) {
+        // 清除之前的選擇
+        this.selectedTimeSlots.clear();
+        this.selectedTimeSlots.add(slotKey);
+        this.updateSlotSelection();
+        this.showSlotEditDialog();
     }
 
     // 顯示時段編輯對話框

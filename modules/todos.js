@@ -473,6 +473,8 @@ class TodosModule {
                     border-radius: 8px;
                     font-size: 0.95rem;
                     transition: all 0.2s;
+                    height: 40px; /* 明確設定高度 */
+                    box-sizing: border-box;
                 }
 
                 .form-input:focus, .form-textarea:focus, .form-select:focus {
@@ -490,6 +492,10 @@ class TodosModule {
                     display: flex;
                     gap: 8px;
                     align-items: center;
+                    justify-content: center;
+                    height: 40px; /* 與 form-input 相同高度 */
+                    box-sizing: border-box;
+                    padding: 8px 12px; /* 與 form-input 相同內距 */
                 }
 
                 .priority-dot {
@@ -516,7 +522,7 @@ class TodosModule {
                     display: flex;
                     gap: 16px;
                     margin-bottom: 20px;
-                    align-items: flex-end;
+                    align-items: center;
                     justify-content: center;
                 }
 
@@ -986,15 +992,18 @@ class TodosModule {
                     <div class="form-row form-row-centered">
                         <div class="form-group form-group-center">
                             <div class="priority-selector" id="prioritySelector">
-                                <svg class="priority-star" data-priority="1" viewBox="0 0 24 24" width="24" height="24">
+                                <svg class="priority-star" data-priority="1" viewBox="0 0 24 24" width="24" height="24" 
+                                     onclick="window.activeModule.setPriority(1)">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
                                           stroke="currentColor" stroke-width="2" fill="none"/>
                                 </svg>
-                                <svg class="priority-star" data-priority="2" viewBox="0 0 24 24" width="24" height="24">
+                                <svg class="priority-star" data-priority="2" viewBox="0 0 24 24" width="24" height="24"
+                                     onclick="window.activeModule.setPriority(2)">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
                                           stroke="currentColor" stroke-width="2" fill="none"/>
                                 </svg>
-                                <svg class="priority-star" data-priority="3" viewBox="0 0 24 24" width="24" height="24">
+                                <svg class="priority-star" data-priority="3" viewBox="0 0 24 24" width="24" height="24"
+                                     onclick="window.activeModule.setPriority(3)">
                                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
                                           stroke="currentColor" stroke-width="2" fill="none"/>
                                 </svg>
@@ -1075,21 +1084,11 @@ class TodosModule {
         // 事件綁定
         this.attachDialogEvents(dialog);
         
-        // 初始化優先級顯示和星星事件
+        // 初始化優先級顯示
         setTimeout(() => {
             if (this.selectedPriority > 0) {
                 this.setPriority(this.selectedPriority);
             }
-            // 確保星星可以點擊
-            document.querySelectorAll('.priority-star').forEach(star => {
-                star.style.pointerEvents = 'auto';
-                star.style.cursor = 'pointer';
-                star.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const priority = parseInt(star.dataset.priority);
-                    this.setPriority(priority);
-                });
-            });
         }, 50);
         
         // 聚焦到標題輸入框
@@ -1106,11 +1105,17 @@ class TodosModule {
 
     // 增強版設定優先級
     setPriority(level) {
-        this.selectedPriority = level;
+        // 如果點擊已選中的星星，則取消選擇
+        if (this.selectedPriority === level) {
+            this.selectedPriority = 0;
+        } else {
+            this.selectedPriority = level;
+        }
+        
         const stars = document.querySelectorAll('.priority-star');
         stars.forEach(star => {
             const starLevel = parseInt(star.dataset.priority);
-            if (starLevel <= level) {
+            if (starLevel <= this.selectedPriority) {
                 star.classList.add('active');
             } else {
                 star.classList.remove('active');

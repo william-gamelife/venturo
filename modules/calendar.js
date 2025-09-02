@@ -483,15 +483,15 @@ class CalendarModule {
         const startDate = new Date(firstDay);
         startDate.setDate(startDate.getDate() - firstDay.getDay());
         
-        // 重新設計為支援跨日事件長條的格式
-        container.innerHTML = this.renderCalendarWithEventBars(startDate, month);
+        // 渲染日期格子
+        container.innerHTML = this.renderCalendarDays(startDate, month);
     }
 
-    renderCalendarWithEventBars(startDate, currentMonth) {
+    renderCalendarDays(startDate, currentMonth) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
-        let html = '<div class="calendar-grid">';
+        let html = '';
         
         // 渲染日期格子
         for (let i = 0; i < 42; i++) {
@@ -500,7 +500,7 @@ class CalendarModule {
             
             const isToday = date.getTime() === today.getTime();
             const isCurrentMonth = date.getMonth() === currentMonth;
-            const dayEvents = this.getEventsForDate(date).filter(e => !e.multiDay && !e.startDate); // 只顯示單日事件的點
+            const dayEvents = this.getEventsForDate(date).filter(e => !e.multiDay && !e.startDate);
             
             html += `
                 <div class="calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}"
@@ -519,12 +519,6 @@ class CalendarModule {
                 </div>
             `;
         }
-        html += '</div>';
-        
-        // 添加跨日事件長條
-        html += '<div class="calendar-event-bars">';
-        html += this.renderEventBars(startDate);
-        html += '</div>';
         
         return html;
     }
@@ -642,9 +636,20 @@ class CalendarModule {
     }
 
     updateMonthDisplay() {
+        // 更新 SignageHost 的 subtitle
+        const subtitle = `${this.monthNames[this.viewDate.getMonth()]} ${this.viewDate.getFullYear()}`;
+        CalendarModule.signage.subtitle = subtitle;
+        
+        // 更新頁面上的顯示
+        const signageSubtitle = document.querySelector('.signage-sub');
+        if (signageSubtitle) {
+            signageSubtitle.textContent = subtitle;
+        }
+        
+        // 兼容舊的月份顯示
         const display = document.querySelector('.month-display');
         if (display) {
-            display.textContent = `${this.monthNames[this.viewDate.getMonth()]} ${this.viewDate.getFullYear()}`;
+            display.textContent = subtitle;
         }
     }
 
@@ -820,6 +825,96 @@ class CalendarModule {
         this.refreshView();
         this.showToast('事件建立成功', 'success');
     }
+
+    async updateEvent(eventId) {
+        const title = document.getElementById('eventTitle').value.trim();
+        if (!title) {
+            this.showToast('請輸入事件標題', 'error');
+            return;
+        }
+
+        const eventType = this.selectedEventType;
+        const priority = document.getElementById('eventPriority').value;
+        const description = document.getElementById('eventDescription').value.trim();
+
+        // 找到要更新的事件
+        const eventIndex = this.events.findIndex(e => e.id === eventId);
+        if (eventIndex === -1) {
+            this.showToast('找不到事件', 'error');
+            return;
+        }
+
+        // 更新事件資料
+        this.events[eventIndex] = {
+            ...this.events[eventIndex],
+            title,
+            description,
+            priority,
+            type: eventType,
+            updatedAt: new Date().toISOString()
+        };
+
+        // 根據事件類型處理時間
+        if (eventType === 'timed') {
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endDate = document.getElementById('endDate').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            this.events[eventIndex].startDateTime = `${startDate}T${startTime}:00`;
+            this.events[eventIndex].endDateTime = `${endDate}T${endTime}:00`;
+            
+            // 清除其他類型的資料
+            delete this.events[eventIndex].date;
+            delete this.events[eventIndex].startDate;
+            delete this.events[eventIndex].endDate;
+            delete this.events[eventIndex].allDay;
+            delete this.events[eventIndex].multiDay;
+        } else if (eventType === 'allday') {
+            const date = document.getElementById('alldayDate').value;
+            this.events[eventIndex].date = date;
+            this.events[eventIndex].allDay = true;
+            
+            // 清除其他類型的資料
+            delete this.events[eventIndex].startDateTime;
+            delete this.events[eventIndex].endDateTime;
+            delete this.events[eventIndex].startDate;
+            delete this.events[eventIndex].endDate;
+            delete this.events[eventIndex].multiDay;
+        } else if (eventType === 'multiday') {
+            const startDate = document.getElementById('multidayStartDate').value;
+            const endDate = document.getElementById('multidayEndDate').value;
+            
+            this.events[eventIndex].startDate = startDate;
+            this.events[eventIndex].endDate = endDate;
+            this.events[eventIndex].multiDay = true;
+            
+            // 清除其他類型的資料
+            delete this.events[eventIndex].startDateTime;
+            delete this.events[eventIndex].endDateTime;
+            delete this.events[eventIndex].date;
+            delete this.events[eventIndex].allDay;
+        }
+
+        await this.saveData();
+        
+        this.closeDialog();
+        this.refreshView();
+        this.showToast('事件更新成功', 'success');
+    }
+
+    async deleteEvent(eventId) {
+        if (confirm('確定要刪除此事件嗎？')) {
+            const eventIndex = this.events.findIndex(e => e.id === eventId);
+            if (eventIndex !== -1) {
+                this.events.splice(eventIndex, 1);
+                await this.saveData();
+                this.closeDialog();
+                this.refreshView();
+                this.showToast('事件已刪除', 'success');
+            }
+        }
+    }
     
     closeDialog() {
         if (this.currentDialog) {
@@ -841,7 +936,112 @@ class CalendarModule {
         
         // 顯示編輯對話框，預填事件資料
         setTimeout(() => {
-            this.createEventDialog(event);
+            this.showEditEventDialog(event);
+        }, 100);
+    }
+
+    showEditEventDialog(event) {
+        const dialog = document.createElement('div');
+        dialog.className = 'calendar-dialog-overlay';
+        dialog.innerHTML = `
+            <div class="calendar-dialog">
+                <div class="dialog-header">
+                    <h3>編輯事件</h3>
+                    <button class="dialog-close" onclick="window.activeModule.closeDialog()">×</button>
+                </div>
+                
+                <div class="dialog-content">
+                    <div class="form-group">
+                        <label>事件標題</label>
+                        <input type="text" id="eventTitle" placeholder="輸入事件標題" maxlength="50" value="${event.title || ''}">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>事件類型</label>
+                        <div class="event-type-selector">
+                            <button class="type-btn ${event.type === 'timed' ? 'active' : ''}" data-type="timed" onclick="window.activeModule.selectEventType('timed')">定時事件</button>
+                            <button class="type-btn ${event.type === 'allday' ? 'active' : ''}" data-type="allday" onclick="window.activeModule.selectEventType('allday')">全日事件</button>
+                            <button class="type-btn ${event.type === 'multiday' ? 'active' : ''}" data-type="multiday" onclick="window.activeModule.selectEventType('multiday')">跨日事件</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 定時事件設定 -->
+                    <div id="timedEventSettings" class="event-settings" style="display: ${event.type === 'timed' ? 'block' : 'none'};">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>開始日期</label>
+                                <input type="date" id="startDate" value="${event.startDateTime ? event.startDateTime.split('T')[0] : ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>開始時間</label>
+                                <input type="time" id="startTime" value="${event.startDateTime ? event.startDateTime.split('T')[1].substring(0, 5) : '09:00'}">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>結束日期</label>
+                                <input type="date" id="endDate" value="${event.endDateTime ? event.endDateTime.split('T')[0] : ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>結束時間</label>
+                                <input type="time" id="endTime" value="${event.endDateTime ? event.endDateTime.split('T')[1].substring(0, 5) : '10:00'}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 全日事件設定 -->
+                    <div id="alldayEventSettings" class="event-settings" style="display: ${event.type === 'allday' ? 'block' : 'none'};">
+                        <div class="form-group">
+                            <label>日期</label>
+                            <input type="date" id="alldayDate" value="${event.date || ''}">
+                        </div>
+                    </div>
+                    
+                    <!-- 跨日事件設定 -->
+                    <div id="multidayEventSettings" class="event-settings" style="display: ${event.type === 'multiday' ? 'block' : 'none'};">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>開始日期</label>
+                                <input type="date" id="multidayStartDate" value="${event.startDate || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>結束日期</label>
+                                <input type="date" id="multidayEndDate" value="${event.endDate || ''}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>備註</label>
+                        <textarea id="eventDescription" placeholder="事件詳細說明（選填）" rows="3">${event.description || ''}</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>優先級</label>
+                        <select id="eventPriority">
+                            <option value="low" ${event.priority === 'low' ? 'selected' : ''}>低</option>
+                            <option value="medium" ${event.priority === 'medium' ? 'selected' : ''}>中</option>
+                            <option value="high" ${event.priority === 'high' ? 'selected' : ''}>高</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="dialog-actions">
+                    <button class="btn btn-secondary" onclick="window.activeModule.deleteEvent('${event.id}')">刪除</button>
+                    <button class="btn btn-secondary" onclick="window.activeModule.closeDialog()">取消</button>
+                    <button class="btn btn-primary" onclick="window.activeModule.updateEvent('${event.id}')">更新事件</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        this.currentDialog = dialog;
+        this.selectedEventType = event.type || 'timed';
+        this.editingEventId = event.id;
+        
+        // 聚焦標題輸入框
+        setTimeout(() => {
+            document.getElementById('eventTitle').focus();
         }, 100);
     }
 
