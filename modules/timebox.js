@@ -66,6 +66,9 @@ class TimeboxModule {
         // 初始化當前週
         this.initCurrentWeek();
         
+        // 更新SignageHost subtitle
+        this.updateSignageSubtitle();
+        
         // 載入資料
         await this.loadData();
         
@@ -140,8 +143,6 @@ class TimeboxModule {
     getHTML() {
         return `
             <div class="timebox-container">
-                <!-- 頂部工具列 -->
-                <!-- 週導航區（只保留日期導航）-->
 
                 <!-- 番茄鐘面板（初始隱藏）-->
                 <div class="pomodoro-panel" id="pomodoroPanel" style="display: none;">
@@ -170,65 +171,7 @@ class TimeboxModule {
                     padding: 0;
                 }
 
-                /* 週導航區（簡化版）*/
-                .week-navigator-only {
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    gap: 12px;
-                    background: var(--card);
-                    padding: 12px 20px;
-                    border-radius: 12px;
-                    border: 1px solid var(--border);
-                }
-
-                .week-btn {
-                    width: 32px;
-                    height: 32px;
-                    border-radius: 8px;
-                    border: 1px solid var(--border);
-                    background: white;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s;
-                }
-
-                .week-btn:hover {
-                    background: var(--primary-light);
-                    transform: scale(1.05);
-                }
-
-                .week-title {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                }
-
-                .week-text {
-                    font-weight: 600;
-                    font-size: 1.1rem;
-                    color: var(--text);
-                    min-width: 180px;
-                    text-align: center;
-                }
-
-                .today-btn {
-                    padding: 6px 12px;
-                    background: var(--primary);
-                    color: white;
-                    border: none;
-                    border-radius: 6px;
-                    font-size: 0.85rem;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-
-                .today-btn:hover {
-                    background: var(--primary-dark);
-                    transform: translateY(-1px);
-                }
+                /* 時間方塊容器 */
 
 
                 /* 時間格子網格 */
@@ -1633,8 +1576,19 @@ class TimeboxModule {
     }
 
     // 週導航
+    // 更新SignageHost的subtitle
+    updateSignageSubtitle() {
+        TimeboxModule.signage.subtitle = this.getWeekTitle();
+        // 觸發SignageHost重新渲染
+        const signageSubtitle = document.querySelector('.signage-subtitle');
+        if (signageSubtitle) {
+            signageSubtitle.textContent = this.getWeekTitle();
+        }
+    }
+
     changeWeek(direction) {
         this.currentWeekStart.setDate(this.currentWeekStart.getDate() + (direction * 7));
+        this.updateSignageSubtitle();
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = this.getHTML();
         this.attachEventListeners();
@@ -1642,6 +1596,7 @@ class TimeboxModule {
 
     goToToday() {
         this.initCurrentWeek();
+        this.updateSignageSubtitle();
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = this.getHTML();
         this.attachEventListeners();
@@ -1871,7 +1826,6 @@ class TimeboxModule {
         }
     }
 
-    // SignageHost 按鈕方法：每週切換
     // SignageHost 按鈕方法：上一週
     prevWeek() {
         this.changeWeek(-1);
