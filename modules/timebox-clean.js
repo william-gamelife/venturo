@@ -66,8 +66,7 @@ class TimeboxModule {
     initCurrentWeek() {
         const today = new Date();
         const dayOfWeek = today.getDay();
-        // 修正為週一開始
-        const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+        const diff = today.getDate() - dayOfWeek;
         this.currentWeekStart = new Date(today.setDate(diff));
         this.currentWeekStart.setHours(0, 0, 0, 0);
     }
@@ -107,11 +106,11 @@ class TimeboxModule {
 
     getDefaultActivityTypes() {
         return [
-            { id: 'work', name: '工作', color: '#c9a961', countType: 'time' },
-            { id: 'exercise', name: '運動', color: '#7a8b74', countType: 'time' },
-            { id: 'workout', name: '重訓', color: '#d4a574', countType: 'time' },
-            { id: 'study', name: '學習', color: '#6b8e9f', countType: 'time' },
-            { id: 'rest', name: '休息', color: '#b87d8b', countType: 'time' }
+            { id: 'work', name: '工作', color: '#c9a961', icon: '💼', countType: 'time' },
+            { id: 'exercise', name: '運動', color: '#7a8b74', icon: '🏃', countType: 'time' },
+            { id: 'study', name: '學習', color: '#6b8e9f', icon: '📚', countType: 'time' },
+            { id: 'rest', name: '休息', color: '#d4a574', icon: '☕', countType: 'time' },
+            { id: 'social', name: '社交', color: '#b87d8b', icon: '👥', countType: 'count' }
         ];
     }
 
@@ -762,7 +761,7 @@ class TimeboxModule {
     }
 
     getTimeGridHTML() {
-        const days = ['一', '二', '三', '四', '五', '六', '日'];  // 週一到週日
+        const days = ['日', '一', '二', '三', '四', '五', '六'];
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -1483,7 +1482,9 @@ class TimeboxModule {
         
         // 關閉對話框
         this.closeDialog();
+    }
 }
 
 // ES6 模組匯出
-export { TimeboxModule };
+export { TimeboxModule };,
+                activityName: '專注時間'
