@@ -387,6 +387,7 @@ class TimeboxModule {
                     transition: all 0.2s;
                     position: relative;
                     user-select: none;
+                    border: 1px solid var(--border);
                 }
 
                 .time-slot:hover {
@@ -404,6 +405,26 @@ class TimeboxModule {
                     cursor: default;
                     position: relative;
                     overflow: hidden;
+                    border: none;
+                }
+                
+                /* 合併邊框樣式 */
+                .time-slot.merge-top {
+                    border-top: none;
+                    margin-top: -1px;
+                }
+                
+                .time-slot.merge-bottom {
+                    border-bottom: none;
+                }
+                
+                .time-slot.merge-left {
+                    border-left: none;
+                    margin-left: -1px;
+                }
+                
+                .time-slot.merge-right {
+                    border-right: none;
                 }
 
                 .time-slot.completed {
@@ -815,6 +836,42 @@ class TimeboxModule {
                             slotClass += ' completed';
                         }
                         
+                        // 檢查是否需要合併邊框
+                        if (slotData.taskId) {
+                            // 檢查上下（同一天的不同時間）
+                            const prevTimeStr = this.getTimeString(hour, minutes - this.timeUnit);
+                            const nextTimeStr = this.getTimeString(hour, minutes + this.timeUnit);
+                            const prevSlot = prevTimeStr ? this.timeboxData[`${dateStr}_${prevTimeStr}`] : null;
+                            const nextSlot = nextTimeStr ? this.timeboxData[`${dateStr}_${nextTimeStr}`] : null;
+                            
+                            // 檢查左右（不同天的同一時間）
+                            if (d > 0) {
+                                const leftDate = new Date(date);
+                                leftDate.setDate(leftDate.getDate() - 1);
+                                const leftSlot = this.timeboxData[`${this.formatDate(leftDate)}_${timeStr}`];
+                                if (leftSlot && leftSlot.taskId === slotData.taskId) {
+                                    slotClass += ' merge-left';
+                                }
+                            }
+                            
+                            if (d < 6) {
+                                const rightDate = new Date(date);
+                                rightDate.setDate(rightDate.getDate() + 1);
+                                const rightSlot = this.timeboxData[`${this.formatDate(rightDate)}_${timeStr}`];
+                                if (rightSlot && rightSlot.taskId === slotData.taskId) {
+                                    slotClass += ' merge-right';
+                                }
+                            }
+                            
+                            // 添加合併類別
+                            if (prevSlot && prevSlot.taskId === slotData.taskId) {
+                                slotClass += ' merge-top';
+                            }
+                            if (nextSlot && nextSlot.taskId === slotData.taskId) {
+                                slotClass += ' merge-bottom';
+                            }
+                        }
+                        
                         const activity = this.activityTypes.find(a => a.id === slotData.activityId);
                         if (activity) {
                             slotStyle = `background-color: ${activity.color};`;
@@ -1015,6 +1072,21 @@ class TimeboxModule {
 
     formatDate(date) {
         return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    }
+    
+    getTimeString(hour, minutes) {
+        // 處理時間溢出
+        while (minutes >= 60) {
+            hour++;
+            minutes -= 60;
+        }
+        while (minutes < 0) {
+            hour--;
+            minutes += 60;
+        }
+        if (hour < 6 || hour >= 23) return null;
+        
+        return `${hour.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
     }
 
     // 事件處理方法
