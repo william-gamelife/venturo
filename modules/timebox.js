@@ -109,9 +109,14 @@ class TimeboxModule {
         return [
             { id: 'work', name: '工作', color: '#c9a961', countType: 'time' },
             { id: 'exercise', name: '運動', color: '#7a8b74', countType: 'time' },
-            { id: 'workout', name: '重訓', color: '#d4a574', countType: 'time' },
+            { id: 'workout', name: '重訓', color: '#d4a574', countType: 'workout' },  // 特殊類型
             { id: 'study', name: '學習', color: '#6b8e9f', countType: 'time' },
-            { id: 'rest', name: '休息', color: '#b87d8b', countType: 'time' }
+            { id: 'rest', name: '休息', color: '#b87d8b', countType: 'time' },
+            { id: 'meal', name: '用餐', color: '#9b7e6b', countType: 'time' },
+            { id: 'social', name: '社交', color: '#8b9dc3', countType: 'time' },
+            { id: 'entertainment', name: '娛樂', color: '#a8a878', countType: 'time' },
+            { id: 'commute', name: '通勤', color: '#98a8b8', countType: 'time' },
+            { id: 'meeting', name: '會議', color: '#c87e8a', countType: 'time' }
         ];
     }
 
@@ -603,6 +608,151 @@ class TimeboxModule {
                     bottom: 0;
                     background: rgba(0,0,0,0.5);
                     z-index: 999;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    animation: fadeIn 0.2s;
+                }
+                
+                /* 美化的活動選擇 */
+                .activity-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+                    gap: 10px;
+                    margin: 16px 0;
+                }
+                
+                .activity-option {
+                    padding: 12px 6px;
+                    border-radius: 10px;
+                    text-align: center;
+                    cursor: pointer;
+                    color: white;
+                    font-weight: 500;
+                    font-size: 13px;
+                    transition: all 0.2s;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    position: relative;
+                }
+                
+                .activity-option:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                }
+                
+                .activity-option.selected {
+                    box-shadow: 0 0 0 3px rgba(0,0,0,0.3);
+                    transform: scale(1.05);
+                }
+                
+                .activity-option.selected::after {
+                    content: '✓';
+                    position: absolute;
+                    top: 2px;
+                    right: 2px;
+                    background: white;
+                    color: #333;
+                    width: 18px;
+                    height: 18px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 12px;
+                    font-weight: bold;
+                }
+                
+                /* 重訓區域 */
+                .workout-inputs {
+                    background: var(--bg);
+                    padding: 16px;
+                    border-radius: 10px;
+                    margin: 12px 0;
+                }
+                
+                .workout-inputs h4 {
+                    margin: 0 0 12px 0;
+                    color: var(--text);
+                    font-size: 14px;
+                }
+                
+                .exercise-item {
+                    display: grid;
+                    grid-template-columns: 2fr 1fr 1fr 1fr 35px;
+                    gap: 6px;
+                    margin-bottom: 10px;
+                    align-items: center;
+                }
+                
+                .exercise-item input {
+                    padding: 6px 8px;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    font-size: 13px;
+                    background: white;
+                }
+                
+                .exercise-item input:focus {
+                    outline: none;
+                    border-color: var(--primary);
+                }
+                
+                .btn-add-exercise {
+                    width: 100%;
+                    padding: 8px;
+                    background: transparent;
+                    border: 2px dashed var(--primary);
+                    border-radius: 8px;
+                    color: var(--primary);
+                    font-size: 13px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .btn-add-exercise:hover {
+                    background: var(--primary-light);
+                }
+                
+                .btn-remove {
+                    width: 28px;
+                    height: 28px;
+                    border: none;
+                    background: #ff6b6b;
+                    color: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 18px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .btn-danger {
+                    background: #ff6b6b;
+                    color: white;
+                }
+                
+                .btn-danger:hover {
+                    background: #ff5252;
+                }
+                
+                .checkbox-label {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    cursor: pointer;
+                }
+                
+                .checkbox-label input[type="checkbox"] {
+                    width: 16px;
+                    height: 16px;
+                    cursor: pointer;
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
                 }
 
                 .dialog-header {
@@ -1070,6 +1220,85 @@ class TimeboxModule {
         return slotDate >= this.currentWeekStart && slotDate < weekEnd;
     }
 
+    // 顏色處理函數
+    lightenColor(color, percent) {
+        const num = parseInt(color.replace('#', ''), 16);
+        const amt = Math.round(2.55 * percent);
+        const R = (num >> 16) + amt;
+        const G = (num >> 8 & 0x00FF) + amt;
+        const B = (num & 0x0000FF) + amt;
+        return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+            (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+            (B < 255 ? B < 1 ? 0 : B : 255))
+            .toString(16).slice(1);
+    }
+    
+    // 選擇活動類型
+    selectActivity(activityId) {
+        // 移除所有選中狀態
+        document.querySelectorAll('.activity-option').forEach(opt => {
+            opt.classList.remove('selected');
+        });
+        
+        // 添加選中狀態
+        const selected = document.querySelector(`.activity-option[data-id="${activityId}"]`);
+        if (selected) {
+            selected.classList.add('selected');
+            
+            // 檢查是否為重訓
+            const isWorkout = selected.dataset.type === 'workout';
+            document.getElementById('workoutSection').style.display = isWorkout ? 'block' : 'none';
+            document.getElementById('normalSection').style.display = isWorkout ? 'none' : 'block';
+        }
+    }
+    
+    // 渲染重訓項目
+    renderWorkoutExercises(exercises = [{}]) {
+        if (!exercises || exercises.length === 0) exercises = [{}];
+        
+        return exercises.map((ex, index) => `
+            <div class="exercise-item" data-index="${index}">
+                <input type="text" class="exercise-equipment" placeholder="器材名稱" value="${ex.equipment || ''}">
+                <input type="number" class="exercise-weight" placeholder="重量(kg)" value="${ex.weight || ''}" min="0" step="0.5">
+                <input type="number" class="exercise-reps" placeholder="次數" value="${ex.reps || ''}" min="1">
+                <input type="number" class="exercise-sets" placeholder="組數" value="${ex.sets || ''}" min="1">
+                ${exercises.length > 1 ? `<button class="btn-remove" onclick="window.activeModule.removeExercise(${index})">×</button>` : ''}
+            </div>
+        `).join('');
+    }
+    
+    // 新增重訓項目
+    addExercise() {
+        const container = document.getElementById('workoutExercises');
+        const currentExercises = this.getWorkoutInputs();
+        currentExercises.push({});
+        container.innerHTML = this.renderWorkoutExercises(currentExercises);
+    }
+    
+    // 移除重訓項目
+    removeExercise(index) {
+        const container = document.getElementById('workoutExercises');
+        const currentExercises = this.getWorkoutInputs();
+        currentExercises.splice(index, 1);
+        container.innerHTML = this.renderWorkoutExercises(currentExercises);
+    }
+    
+    // 取得重訓輸入值
+    getWorkoutInputs() {
+        const exercises = [];
+        document.querySelectorAll('.exercise-item').forEach(item => {
+            const equipment = item.querySelector('.exercise-equipment').value;
+            const weight = parseFloat(item.querySelector('.exercise-weight').value) || 0;
+            const reps = parseInt(item.querySelector('.exercise-reps').value) || 0;
+            const sets = parseInt(item.querySelector('.exercise-sets').value) || 0;
+            
+            if (equipment || weight || reps || sets) {
+                exercises.push({ equipment, weight, reps, sets });
+            }
+        });
+        return exercises;
+    }
+
     formatDate(date) {
         return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
     }
@@ -1186,49 +1415,70 @@ class TimeboxModule {
 
     // 顯示時段編輯對話框
     showSlotEditDialog(slots = null) {
-        const slotsToEdit = slots || Array.from(this.selectedTimeSlots);
-        if (slotsToEdit.length === 0) return;
-        
-        const existingData = this.timeboxData[slotsToEdit[0]];
-        
-        const dialog = document.createElement('div');
-        dialog.className = 'dialog-overlay';
-        dialog.innerHTML = `
-            <div class="activity-dialog">
-                <div class="dialog-header">編輯時段</div>
-                <div class="dialog-content">
-                    <div class="form-group">
-                        <label class="form-label">活動類型</label>
-                        <select class="form-select" id="activitySelect">
-                            ${this.activityTypes.map(a => `
-                                <option value="${a.id}" ${existingData?.activityId === a.id ? 'selected' : ''}>
-                                    ${a.name}
-                                </option>
-                            `).join('')}
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">內容描述（選填）</label>
-                        <textarea class="form-textarea" id="contentInput" rows="3" 
-                                  placeholder="例如：跑步 5公里">${existingData?.content || ''}</textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label class="form-label">
-                            <input type="checkbox" id="completedCheck" 
-                                   ${existingData?.completed ? 'checked' : ''}>
-                            標記為已完成
-                        </label>
+    const slotsToEdit = slots || Array.from(this.selectedTimeSlots);
+    if (slotsToEdit.length === 0) return;
+    
+    const existingData = this.timeboxData[slotsToEdit[0]];
+    
+    const dialog = document.createElement('div');
+    dialog.className = 'dialog-overlay';
+    dialog.innerHTML = `
+    <div class="activity-dialog">
+    <div class="dialog-header">編輯時段</div>
+    <div class="dialog-content">
+    <!-- 活動類型選擇（美化版） -->
+    <div class="form-group">
+    <label class="form-label">選擇活動類型</label>
+    <div class="activity-grid">
+    ${this.activityTypes.map(a => `
+    <div class="activity-option ${existingData?.activityId === a.id ? 'selected' : ''}" 
+         data-id="${a.id}"
+             data-type="${a.countType}"
+                 style="background: linear-gradient(135deg, ${a.color} 0%, ${this.lightenColor(a.color, 20)} 100%);"
+                     onclick="window.activeModule.selectActivity('${a.id}')">
+                    <span>${a.name}</span>
+                </div>
+        `).join('')}
+    </div>
+    </div>
+    
+    <!-- 重訓特殊輸入區（預設隱藏） -->
+    <div id="workoutSection" style="display: ${existingData?.activityId === 'workout' ? 'block' : 'none'};">
+    <div class="workout-inputs">
+    <h4>重訓記錄</h4>
+    <div id="workoutExercises">
+        ${existingData?.workoutData ? this.renderWorkoutExercises(existingData.workoutData) : this.renderWorkoutExercises([{}])}
+        </div>
+            <button class="btn-add-exercise" onclick="window.activeModule.addExercise()">
+                    + 新增器材
+                </button>
+            </div>
+    </div>
+    
+    <!-- 一般內容輸入 -->
+    <div id="normalSection" style="display: ${existingData?.activityId === 'workout' ? 'none' : 'block'};">
+        <div class="form-group">
+            <label class="form-label">內容描述（選填）</label>
+                <textarea class="form-textarea" id="contentInput" rows="3"
+                               placeholder="例如：跑步 5公里">${existingData?.content || ''}</textarea>
                     </div>
                 </div>
                 
-                <div class="dialog-actions">
-                    ${existingData ? 
-                        `<button class="btn" onclick="window.activeModule.deleteSelectedSlots()" style="margin-right: auto;">刪除</button>` : 
-                        ''
-                    }
-                    <button class="btn" onclick="window.activeModule.closeDialog()">取消</button>
+                <div class="form-group">
+                    <label class="form-label checkbox-label">
+                        <input type="checkbox" id="completedCheck"
+                            ${existingData?.completed ? 'checked' : ''}>
+                <span>標記為已完成</span>
+                </label>
+                </div>
+            </div>
+            
+            <div class="dialog-actions">
+            ${existingData ? 
+            `<button class="btn btn-danger" onclick="window.activeModule.deleteSelectedSlots()">刪除</button>` : 
+            ''
+            }
+                <button class="btn" onclick="window.activeModule.closeDialog()">取消</button>
                     <button class="btn btn-primary" onclick="window.activeModule.saveSlotEdit()">儲存</button>
                 </div>
             </div>
@@ -1244,18 +1494,47 @@ class TimeboxModule {
         });
         
         // Enter 儲存
-        document.getElementById('contentInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                this.saveSlotEdit();
-            }
-        });
+        const contentInput = document.getElementById('contentInput');
+        if (contentInput) {
+            contentInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.saveSlotEdit();
+                }
+            });
+        }
     }
 
     async saveSlotEdit() {
-        const activityId = document.getElementById('activitySelect').value;
-        const content = document.getElementById('contentInput').value;
+        // 取得選中的活動ID
+        const selectedOption = document.querySelector('.activity-option.selected');
+        if (!selectedOption) {
+            this.showToast('請選擇活動類型', 'error');
+            return;
+        }
+        
+        const activityId = selectedOption.dataset.id;
+        const isWorkout = selectedOption.dataset.type === 'workout';
         const completed = document.getElementById('completedCheck').checked;
+        
+        // 建立資料物件
+        let content = '';
+        let workoutData = null;
+        
+        if (isWorkout) {
+            // 重訓資料
+            workoutData = this.getWorkoutInputs();
+            if (workoutData.length === 0) {
+                this.showToast('請至少輸入一組重訓資料', 'error');
+                return;
+            }
+            // 產生摘要
+            const totalWeight = workoutData.reduce((sum, ex) => sum + (ex.weight * ex.reps * ex.sets), 0);
+            content = `總重量: ${totalWeight}kg`;
+        } else {
+            // 一般內容
+            content = document.getElementById('contentInput').value;
+        }
         
         // 將選取的格子合併成一個任務
         const slots = Array.from(this.selectedTimeSlots);
@@ -1270,6 +1549,7 @@ class TimeboxModule {
                 taskId,        // 同一個任務ID
                 activityId,
                 content,
+                workoutData,   // 重訓資料
                 completed,
                 isMainSlot: slotKey === slots[0],  // 第一個格子為主格子
                 totalSlots: slots.length,          // 總格子數
