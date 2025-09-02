@@ -63,9 +63,18 @@ class OverviewModule {
             {
                 name: '待辦事項',
                 desc: '管理日常任務',
-                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
+                icon: `<svg viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="brownToGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                <stop offset="30%" style="stop-color:#8b6914;stop-opacity:1" />
+                                <stop offset="60%" style="stop-color:#4a6b4a;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="3" y="3" width="18" height="18" rx="2" fill="url(#brownToGreen)" opacity="0.3"/>
+                        <rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="#4a6b4a" stroke-width="2"/>
+                        <path d="M9 11l3 3L20 5" fill="none" stroke="#355e3b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
                        </svg>`,
                 color: 'rgba(139, 115, 85, 0.1)',
                 module: 'todos'
@@ -73,9 +82,19 @@ class OverviewModule {
             {
                 name: '行事曆',
                 desc: '時間管理規劃',
-                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="4" width="18" height="18" rx="2"/>
-                        <line x1="3" y1="10" x2="21" y2="10"/>
+                icon: `<svg viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="brownToGreen2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="3" y="4" width="18" height="18" rx="2" fill="url(#brownToGreen2)" opacity="0.3"/>
+                        <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="#4a6b4a" stroke-width="2"/>
+                        <line x1="16" y1="2" x2="16" y2="6" stroke="#4a6b4a" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="8" y1="2" x2="8" y2="6" stroke="#4a6b4a" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="3" y1="10" x2="21" y2="10" stroke="#4a6b4a" stroke-width="2"/>
+                        <circle cx="12" cy="16" r="2" fill="#355e3b"/>
                        </svg>`,
                 color: 'rgba(122, 139, 116, 0.1)',
                 module: 'calendar'
@@ -83,9 +102,17 @@ class OverviewModule {
             {
                 name: '箱型時間',
                 desc: '視覺化時間規劃',
-                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="3" y="3" width="18" height="18" rx="3"/>
-                        <path d="M3 9h18M9 3v18"/>
+                icon: `<svg viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="brownToGreen3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="12" cy="12" r="10" fill="url(#brownToGreen3)" opacity="0.3"/>
+                        <circle cx="12" cy="12" r="10" fill="none" stroke="#4a6b4a" stroke-width="2"/>
+                        <polyline points="12 6 12 12 16 14" fill="none" stroke="#355e3b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="12" cy="12" r="1.5" fill="#355e3b"/>
                        </svg>`,
                 color: 'rgba(107, 142, 159, 0.1)',
                 module: 'timebox'
@@ -93,9 +120,17 @@ class OverviewModule {
             {
                 name: '財務管理',
                 desc: '收支記帳管理',
-                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="12" y1="1" x2="12" y2="23"/>
-                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                icon: `<svg viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="brownToGreen4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="12" cy="12" r="10" fill="url(#brownToGreen4)" opacity="0.3"/>
+                        <circle cx="12" cy="12" r="10" fill="none" stroke="#4a6b4a" stroke-width="2"/>
+                        <path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5" 
+                              fill="none" stroke="#355e3b" stroke-width="2" stroke-linecap="round"/>
                        </svg>`,
                 color: 'rgba(212, 165, 116, 0.1)',
                 module: 'finance'
@@ -103,9 +138,19 @@ class OverviewModule {
             {
                 name: '專案管理',
                 desc: '專案進度追蹤',
-                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
+                icon: `<svg viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="brownToGreen5" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                              fill="url(#brownToGreen5)" opacity="0.3"/>
+                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                              fill="none" stroke="#4a6b4a" stroke-width="2"/>
+                        <line x1="7" y1="13" x2="17" y2="13" stroke="#355e3b" stroke-width="1" opacity="0.5"/>
+                        <line x1="7" y1="16" x2="14" y2="16" stroke="#355e3b" stroke-width="1" opacity="0.5"/>
                        </svg>`,
                 color: 'rgba(184, 125, 139, 0.1)',
                 module: 'projects'
@@ -113,9 +158,20 @@ class OverviewModule {
             {
                 name: '人員管理',
                 desc: '管理團隊成員',
-                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                        <circle cx="9" cy="7" r="4"/>
+                icon: `<svg viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="lightBrownToGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#deb887;stop-opacity:1" />
+                                <stop offset="50%" style="stop-color:#8b6914;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#4a6b4a;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <circle cx="9" cy="7" r="4" fill="url(#lightBrownToGreen)" opacity="0.3"/>
+                        <circle cx="9" cy="7" r="4" fill="none" stroke="#4a6b4a" stroke-width="2"/>
+                        <path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="url(#lightBrownToGreen)" opacity="0.2"/>
+                        <path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="none" stroke="#4a6b4a" stroke-width="2"/>
+                        <circle cx="17" cy="7" r="3" fill="none" stroke="#8fbc8f" stroke-width="1.5" opacity="0.5"/>
+                        <path d="M23 21v-2a3 3 0 0 0-2.5-2.95" stroke="#8fbc8f" stroke-width="1.5" opacity="0.5"/>
                        </svg>`,
                 color: 'rgba(139, 157, 195, 0.1)',
                 module: 'users'
@@ -123,9 +179,17 @@ class OverviewModule {
             {
                 name: '系統設定',
                 desc: '個人化設定',
-                icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="3"/>
-                        <path d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M18.36 5.64l4.24 4.24"/>
+                icon: `<svg viewBox="0 0 24 24">
+                        <defs>
+                            <linearGradient id="brownToGreen6" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z" 
+                              fill="url(#brownToGreen6)" opacity="0.3"/>
+                        <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z" 
+                              fill="none" stroke="#4a6b4a" stroke-width="2"/>
                        </svg>`,
                 color: 'rgba(160, 196, 160, 0.1)',
                 module: 'settings'
@@ -330,9 +394,17 @@ class OverviewModule {
                     <!-- 時鐘 -->
                     <div class="tool-card">
                         <div class="tool-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <polyline points="12,6 12,12 16,14"/>
+                            <svg viewBox="0 0 24 24">
+                                <defs>
+                                    <linearGradient id="clockGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="12" cy="12" r="10" fill="url(#clockGradient)" opacity="0.3"/>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/>
+                                <polyline points="12,6 12,12 16,14" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="12" cy="12" r="1.5" fill="white"/>
                             </svg>
                         </div>
                         <div class="tool-content">
@@ -344,16 +416,22 @@ class OverviewModule {
                     <!-- 天氣 -->
                     <div class="tool-card">
                         <div class="tool-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="5"/>
-                                <line x1="12" y1="1" x2="12" y2="3"/>
-                                <line x1="12" y1="21" x2="12" y2="23"/>
-                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                                <line x1="1" y1="12" x2="3" y2="12"/>
-                                <line x1="21" y1="12" x2="23" y2="12"/>
-                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                            <svg viewBox="0 0 24 24">
+                                <defs>
+                                    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#deb887;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="12" cy="12" r="5" fill="url(#sunGradient)"/>
+                                <line x1="12" y1="1" x2="12" y2="3" stroke="white" stroke-width="2"/>
+                                <line x1="12" y1="21" x2="12" y2="23" stroke="white" stroke-width="2"/>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="white" stroke-width="2"/>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="white" stroke-width="2"/>
+                                <line x1="1" y1="12" x2="3" y2="12" stroke="white" stroke-width="2"/>
+                                <line x1="21" y1="12" x2="23" y2="12" stroke="white" stroke-width="2"/>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="white" stroke-width="2"/>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="white" stroke-width="2"/>
                             </svg>
                         </div>
                         <div class="tool-content">
@@ -365,9 +443,16 @@ class OverviewModule {
                     <!-- 快速記事 -->
                     <div class="tool-card clickable" onclick="window.activeModule.openQuickNote()">
                         <div class="tool-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                                <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            <svg viewBox="0 0 24 24">
+                                <defs>
+                                    <linearGradient id="noteGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="url(#noteGradient)" opacity="0.8"/>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
                             </svg>
                         </div>
                         <div class="tool-content">
@@ -379,9 +464,19 @@ class OverviewModule {
                     <!-- 番茄鐘 -->
                     <div class="tool-card clickable" onclick="window.activeModule.startPomodoro()">
                         <div class="tool-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <polyline points="12,6 12,12 16,14"/>
+                            <svg viewBox="0 0 24 24">
+                                <defs>
+                                    <linearGradient id="pomodoroGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                        <stop offset="50%" style="stop-color:#8b6914;stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="12" cy="12" r="10" fill="url(#pomodoroGradient)" opacity="0.4"/>
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="white" stroke-width="2"/>
+                                <polyline points="12,6 12,12 16,14" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="12" cy="12" r="1.5" fill="white"/>
+                                <circle cx="12" cy="12" r="6" fill="none" stroke="white" stroke-width="1" opacity="0.3"/>
                             </svg>
                         </div>
                         <div class="tool-content">

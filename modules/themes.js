@@ -24,6 +24,12 @@ class ThemeManager {
                 cssFile: './themes/ivory-charcoal.css',
                 gradient: 'linear-gradient(135deg, #f5deb3 0%, #696969 100%)'
             },
+            'autumn-golden': {
+                name: '秋日黃金',
+                description: '溫暖的秋日黃金配深綠，如同秋葉與森林的完美融合',
+                cssFile: './themes/autumn-golden.css',
+                gradient: 'linear-gradient(135deg, #cd853f 0%, #355e3b 100%)'
+            },
             'dark': {
                 name: '深色模式',
                 description: '適合夜晚使用的深色主題',
@@ -41,7 +47,7 @@ class ThemeManager {
             }
         };
         
-        this.currentTheme = localStorage.getItem('selected-theme') || 'zen';
+        this.currentTheme = localStorage.getItem('selected-theme') || 'autumn-golden';
         this.loadedThemeLinks = new Map(); // 追蹤已載入的主題CSS
     }
 

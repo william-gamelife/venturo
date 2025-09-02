@@ -1,0 +1,362 @@
+/* 秋日黃金主題 CSS 變數覆蓋 */
+:root[data-theme="autumn-golden"] {
+    /* 主漸變：秋日黃金到深綠 */
+    --gradient-primary: linear-gradient(135deg, #cd853f 0%, #355e3b 100%);
+    --gradient-secondary: linear-gradient(135deg, #deb887 0%, #4a6b4a 100%);
+    --gradient-background: linear-gradient(135deg, #faf8f3 0%, #f4f2e8 100%);
+    --gradient-warm: linear-gradient(135deg, #f4e4bc 0%, #cd853f 50%, #8b6914 100%);
+    --gradient-nature: linear-gradient(135deg, #8fbc8f 0%, #355e3b 50%, #2d4f34 100%);
+    
+    /* 主色系 - 秋日黃金系 */
+    --primary: #cd853f;           /* 秋日金黃 */
+    --primary-light: #deb887;     /* 淺金黃 */
+    --primary-dark: #8b6914;      /* 深金黃 */
+    --primary-soft: #f4e4bc;      /* 柔和金黃 */
+    
+    /* 輔助色 - 深綠森林系 */
+    --secondary: #355e3b;         /* 深森綠 */
+    --secondary-light: #4a6b4a;   /* 中森綠 */
+    --accent: #8fbc8f;            /* 淺森綠 */
+    --accent-warm: #d2b48c;       /* 暖米色 */
+    --accent-deep: #2d4f34;       /* 深邃綠 */
+    
+    /* 背景系統 - 溫暖層次 */
+    --bg: #faf8f3;               /* 溫暖象牙白 */
+    --bg-dark: #f4f2e8;          /* 淺暖米背景 */
+    --bg-elevated: #ffffff;       /* 純白卡片 */
+    --card: rgba(255, 248, 243, 0.95);  /* 透明卡片背景 */
+    --card-hover: rgba(244, 228, 188, 0.8);  /* 懸停卡片 */
+    
+    /* 文字系統 - 自然對比 */
+    --text: #2d3e2f;             /* 深綠主文字 */
+    --text-light: #4a5a4c;       /* 中綠次要文字 */
+    --text-muted: #6b7a6d;       /* 淺綠輔助文字 */
+    --text-accent: #8b6914;      /* 金黃強調文字 */
+    
+    /* 邊框與陰影 - 秋日質感 */
+    --border: rgba(205, 133, 63, 0.3);
+    --border-light: rgba(205, 133, 63, 0.15);
+    --shadow-sm: 0 2px 8px rgba(205, 133, 63, 0.15);
+    --shadow: 0 10px 25px rgba(205, 133, 63, 0.2);
+    --shadow-lg: 0 20px 40px rgba(205, 133, 63, 0.25);
+    --shadow-warm: 0 8px 32px rgba(139, 105, 20, 0.3);
+    
+    /* 互動狀態色 */
+    --hover: rgba(205, 133, 63, 0.1);
+    --active: rgba(205, 133, 63, 0.2);
+    --focus: rgba(205, 133, 63, 0.3);
+    
+    /* 側邊欄色彩 */
+    --sidebar-active-bg: rgba(205, 133, 63, 0.15);
+    --sidebar-hover: rgba(205, 133, 63, 0.08);
+    
+    /* 功能色彩 */
+    --success: #6a8f6a;
+    --warning: #d4a574;
+    --error: #c17b5a;
+    --info: #7ba4a8;
+}
+
+/* 全域美化效果 */
+[data-theme="autumn-golden"] {
+    /* 背景紋理效果 */
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(205, 133, 63, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(53, 94, 59, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(244, 228, 188, 0.04) 0%, transparent 50%);
+}
+
+/* 組件特殊樣式 - 歡迎卡片 */
+[data-theme="autumn-golden"] .module-welcome-card {
+    background: var(--gradient-background);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="autumn-golden"] .module-welcome-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-primary);
+}
+
+/* 模組卡片美化 */
+[data-theme="autumn-golden"] .module-card {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="autumn-golden"] .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+[data-theme="autumn-golden"] .module-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: var(--shadow-warm);
+    border-color: var(--primary);
+}
+
+[data-theme="autumn-golden"] .module-card:hover::before {
+    opacity: 0.05;
+}
+
+/* 按鈕美化 */
+[data-theme="autumn-golden"] .btn-primary {
+    background: var(--gradient-primary);
+    border: none;
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="autumn-golden"] .btn-primary:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-warm);
+    background: var(--gradient-warm);
+}
+
+[data-theme="autumn-golden"] .btn-secondary {
+    background: var(--card);
+    border: 2px solid var(--border);
+    color: var(--text);
+    transition: all 0.3s ease;
+}
+
+[data-theme="autumn-golden"] .btn-secondary:hover {
+    background: var(--card-hover);
+    border-color: var(--primary);
+    color: var(--primary);
+    transform: translateY(-2px);
+}
+
+/* 輸入框美化 */
+[data-theme="autumn-golden"] input,
+[data-theme="autumn-golden"] textarea,
+[data-theme="autumn-golden"] select {
+    background: var(--bg-elevated);
+    border: 2px solid var(--border-light);
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+[data-theme="autumn-golden"] input:focus,
+[data-theme="autumn-golden"] textarea:focus,
+[data-theme="autumn-golden"] select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px var(--focus);
+    transform: scale(1.02);
+}
+
+/* 工具卡片美化 */
+[data-theme="autumn-golden"] .tool-card {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+}
+
+[data-theme="autumn-golden"] .tool-card.clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: var(--primary);
+}
+
+[data-theme="autumn-golden"] .tool-icon {
+    background: var(--gradient-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+/* 任務卡片美化 */
+[data-theme="autumn-golden"] .task-card {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="autumn-golden"] .task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--primary-light);
+}
+
+[data-theme="autumn-golden"] .task-card.completed {
+    background: linear-gradient(135deg, rgba(106, 143, 106, 0.1), rgba(143, 188, 143, 0.05));
+    border-color: var(--success);
+}
+
+/* 時間格子美化 */
+[data-theme="autumn-golden"] .time-slot {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+[data-theme="autumn-golden"] .time-slot:hover {
+    background: var(--card-hover);
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+[data-theme="autumn-golden"] .time-slot.selected {
+    background: var(--gradient-primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: var(--shadow);
+}
+
+/* 統計卡片美化 */
+[data-theme="autumn-golden"] .stat-card {
+    background: var(--card);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="autumn-golden"] .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+}
+
+[data-theme="autumn-golden"] .stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow);
+}
+
+/* 對話框美化 */
+[data-theme="autumn-golden"] .calendar-dialog,
+[data-theme="autumn-golden"] .finance-dialog {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-lg);
+    backdrop-filter: blur(20px);
+}
+
+[data-theme="autumn-golden"] .dialog-header {
+    border-bottom: 2px solid var(--border-light);
+    background: var(--gradient-background);
+}
+
+/* 側邊欄美化 */
+[data-theme="autumn-golden"] .sidebar-item.active {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+}
+
+[data-theme="autumn-golden"] .sidebar-item:hover {
+    background: var(--sidebar-hover);
+    border-radius: 8px;
+    transform: translateX(4px);
+}
+
+/* 標籤美化 */
+[data-theme="autumn-golden"] .tag,
+[data-theme="autumn-golden"] .badge {
+    background: var(--gradient-primary);
+    color: white;
+    border-radius: 20px;
+    font-weight: 500;
+    box-shadow: var(--shadow-sm);
+}
+
+/* 進度條美化 */
+[data-theme="autumn-golden"] .progress-bar {
+    background: var(--border-light);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+[data-theme="autumn-golden"] .progress-fill {
+    background: var(--gradient-primary);
+    transition: all 0.3s ease;
+    border-radius: 10px;
+}
+
+/* 表格美化 */
+[data-theme="autumn-golden"] .table th {
+    background: var(--gradient-background);
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+}
+
+[data-theme="autumn-golden"] .table tr:hover {
+    background: var(--card-hover);
+}
+
+/* 滾動條美化 */
+[data-theme="autumn-golden"] ::-webkit-scrollbar {
+    width: 8px;
+}
+
+[data-theme="autumn-golden"] ::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+    border-radius: 4px;
+}
+
+[data-theme="autumn-golden"] ::-webkit-scrollbar-thumb {
+    background: var(--gradient-primary);
+    border-radius: 4px;
+}
+
+[data-theme="autumn-golden"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--gradient-warm);
+}
+
+/* 動畫增強 */
+[data-theme="autumn-golden"] * {
+    scroll-behavior: smooth;
+}
+
+/* 特殊光效 */
+[data-theme="autumn-golden"] .glow-effect {
+    box-shadow: 
+        0 0 20px rgba(205, 133, 63, 0.3),
+        0 0 40px rgba(205, 133, 63, 0.2),
+        0 0 60px rgba(205, 133, 63, 0.1);
+}
+
+/* 響應式優化 */
+@media (max-width: 768px) {
+    [data-theme="autumn-golden"] .module-card:hover {
+        transform: translateY(-4px) scale(1.01);
+    }
+    
+    [data-theme="autumn-golden"] .btn-primary:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* 深色模式支援 */
+@media (prefers-color-scheme: dark) {
+    [data-theme="autumn-golden"] {
+        --bg: #2a2520;
+        --bg-dark: #332a23;
+        --text: #f4e4bc;
+        --text-light: #deb887;
+    }
+}

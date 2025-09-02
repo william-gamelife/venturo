@@ -58,3 +58,93 @@
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
+
+/* 全域美化效果 */
+[data-theme="desert-oasis"] {
+    /* 背景紋理效果 */
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(244, 164, 96, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(47, 79, 47, 0.02) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(255, 192, 138, 0.04) 0%, transparent 50%);
+}
+
+/* 模組卡片美化 */
+[data-theme="desert-oasis"] .module-card {
+    background: var(--card);
+    border: 1px solid rgba(244, 164, 96, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="desert-oasis"] .module-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--gradient-primary);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+[data-theme="desert-oasis"] .module-card:hover::before {
+    opacity: 0.05;
+}
+
+/* 工具卡片美化 */
+[data-theme="desert-oasis"] .tool-card.clickable:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+    border-color: var(--primary);
+}
+
+/* 任務卡片美化 */
+[data-theme="desert-oasis"] .task-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+    border-color: var(--primary-light);
+}
+
+/* 時間格子美化 */
+[data-theme="desert-oasis"] .time-slot:hover {
+    background: rgba(255, 192, 138, 0.3);
+    border-color: var(--primary);
+    transform: scale(1.05);
+}
+
+/* 統計卡片美化 */
+[data-theme="desert-oasis"] .stat-card {
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="desert-oasis"] .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-primary);
+}
+
+/* 滾動條美化 */
+[data-theme="desert-oasis"] ::-webkit-scrollbar {
+    width: 8px;
+}
+
+[data-theme="desert-oasis"] ::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+    border-radius: 4px;
+}
+
+[data-theme="desert-oasis"] ::-webkit-scrollbar-thumb {
+    background: var(--gradient-primary);
+    border-radius: 4px;
+}
+
+[data-theme="desert-oasis"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--gradient-secondary);
+}
