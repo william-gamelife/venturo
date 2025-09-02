@@ -146,6 +146,11 @@ class TodosModule {
                 <div class="todos-header">
                     <div class="todos-title">
                         <h2>待辦事項管理系統</h2>
+                        <button class="btn-add-task" onclick="window.activeModule.showAddDialog()" title="新增任務">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            </svg>
+                        </button>
                     </div>
                     
                     <div class="todos-actions">
@@ -198,17 +203,49 @@ class TodosModule {
                     justify-content: space-between;
                     align-items: center;
                     background: var(--card);
-                    padding: 20px;
+                    padding: 16px 20px;
                     border-radius: 16px;
                     border: 1px solid var(--border);
                 }
-
-                .todos-title h2 {
-                    font-size: 1.5rem;
-                    font-weight: 600;
-                    color: var(--text);
-                    margin: 0;
+                
+                .todos-title {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
                 }
+                
+                .todos-title h2 {
+                    margin: 0;
+                    color: var(--text);
+                    font-size: 1.4rem;
+                }
+                
+                /* 新增按鈕樣式 */
+                .btn-add-task {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+                    border: none;
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+                
+                .btn-add-task:hover {
+                    transform: rotate(90deg) scale(1.1);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                }
+                
+                .btn-add-task svg {
+                    pointer-events: none;
+                }
+
+
 
                 .todos-count {
                     font-size: 0.9rem;
@@ -728,11 +765,11 @@ class TodosModule {
 
     getKanbanColumns() {
         const columns = [
-            { id: 'pending', title: '📋 待處理', icon: 'clipboard' },
-            { id: 'today', title: '🔥 今日執行', icon: 'fire' },
-            { id: 'week', title: '📅 本週規劃', icon: 'calendar' },
-            { id: 'completed', title: '✅ 最近完成', icon: 'check' },
-            { id: 'project', title: '📁 轉為專案', icon: 'folder' }
+            { id: 'pending', title: '待處理', icon: 'clipboard' },
+            { id: 'today', title: '今日執行', icon: 'fire' },
+            { id: 'week', title: '本週規劃', icon: 'calendar' },
+            { id: 'completed', title: '最近完成', icon: 'check' },
+            { id: 'project', title: '轉為專案', icon: 'folder' }
         ];
 
         return columns.map(column => {
@@ -847,7 +884,6 @@ class TodosModule {
                         
                         ${tagInfo ? `
                             <div class="task-tag" style="background: ${tagInfo.color}; color: white;">
-                                <span class="tag-icon">${tagInfo.icon}</span>
                                 ${tagInfo.name}
                             </div>
                         ` : ''}
@@ -1630,7 +1666,7 @@ class TodosModule {
                             <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right: 4px;">
                                 <path d="M2 8l3 3 7-7" stroke="currentColor" fill="none" stroke-width="2"/>
                             </svg>
-                            標記完成
+                            完成
                         </button>
                     ` : task.status === 'completed' ? `
                         <button class="btn" onclick="window.activeModule.reopenTask('${task.id}')">
