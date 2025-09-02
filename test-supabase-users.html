@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試 Supabase Users 表</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+        }
+        .error { color: #f00; }
+        .success { color: #0f0; }
+        .info { color: #ff0; }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #0a0;
+        }
+        pre {
+            background: #000;
+            padding: 10px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Supabase Users 表測試工具</h1>
+    
+    <div class="section">
+        <h2>1. 連線狀態</h2>
+        <div id="connectionStatus">檢查中...</div>
+    </div>
+
+    <div class="section">
+        <h2>2. Users 表結構</h2>
+        <button onclick="checkUsersTable()">檢查 users 表</button>
+        <button onclick="checkUserData()">檢查 user_data 表</button>
+        <pre id="tableStructure"></pre>
+    </div>
+
+    <div class="section">
+        <h2>3. 現有使用者資料</h2>
+        <button onclick="loadUsers()">載入所有使用者</button>
+        <pre id="usersData"></pre>
+    </div>
+
+    <div class="section">
+        <h2>4. 建立測試使用者</h2>
+        <button onclick="createTestUsers()">建立預設使用者（William, Carson, Jess）</button>
+        <pre id="createResult"></pre>
+    </div>
+
+    <div class="section">
+        <h2>5. UUID 測試</h2>
+        <button onclick="testUUID()">測試 UUID 生成與儲存</button>
+        <pre id="uuidTest"></pre>
+    </div>
+
+    <script>
+        // Supabase 設定
+        const SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
+        
+        let supabase = null;
+
+        // 初始化
+        function init() {
+            try {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                document.getElementById('connectionStatus').innerHTML = 
+                    '<span class="success">✅ Supabase 連線成功</span>';
+            } catch (error) {
+                document.getElementById('connectionStatus').innerHTML = 
+                    `<span class="error">❌ 連線失敗: ${error.message}</span>`;
+            }
+        }
+
+        // 檢查 users 表
+        async function checkUsersTable() {
+            const output = document.getElementById('tableStructure');
+            output.innerHTML = '檢查中...';
+            
+            try {
+                // 嘗試查詢 users 表
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    if (error.code === '42P01') {
+                        output.innerHTML = `<span class="info">⚠️ users 表不存在，需要建立</span>\n\n建議的表結構：
+CREATE TABLE users (
+  uuid UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  username TEXT UNIQUE NOT NULL,
+  display_name TEXT NOT NULL,
+  password TEXT NOT NULL,
+  role TEXT DEFAULT 'user',
+  title TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);`;
+                    } else {
+                        output.innerHTML = `<span class="error">錯誤: ${JSON.stringify(error, null, 2)}</span>`;
+                    }
+                } else {
+                    output.innerHTML = `<span class="success">✅ users 表存在</span>\n\n範例資料：\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (err) {
+                output.innerHTML = `<span class="error">錯誤: ${err.message}</span>`;
+            }
+        }
+
+        // 檢查 user_data 表
+        async function checkUserData() {
+            const output = document.getElementById('tableStructure');
+            output.innerHTML = '檢查中...';
+            
+            try {
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .select('*')
+                    .limit(1);
+                
+                if (error) {
+                    output.innerHTML = `<span class="error">錯誤: ${JSON.stringify(error, null, 2)}</span>`;
+                } else {
+                    output.innerHTML = `<span class="success">✅ user_data 表存在</span>\n\n範例資料：\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (err) {
+                output.innerHTML = `<span class="error">錯誤: ${err.message}</span>`;
+            }
+        }
+
+        // 載入使用者
+        async function loadUsers() {
+            const output = document.getElementById('usersData');
+            output.innerHTML = '載入中...';
+            
+            try {
+                // 先嘗試從 users 表載入
+                let { data, error } = await supabase
+                    .from('users')
+                    .select('*');
+                
+                if (error) {
+                    // 如果 users 表不存在，嘗試從 user_data 載入
+                    const { data: userData, error: userDataError } = await supabase
+                        .from('user_data')
+                        .select('*')
+                        .eq('module', 'users');
+                    
+                    if (userDataError) {
+                        output.innerHTML = `<span class="error">兩個表都無法讀取：\n${JSON.stringify(userDataError, null, 2)}</span>`;
+                    } else {
+                        output.innerHTML = `<span class="info">從 user_data 表載入：</span>\n${JSON.stringify(userData, null, 2)}`;
+                    }
+                } else {
+                    output.innerHTML = `<span class="success">從 users 表載入：</span>\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (err) {
+                output.innerHTML = `<span class="error">錯誤: ${err.message}</span>`;
+            }
+        }
+
+        // 建立測試使用者
+        async function createTestUsers() {
+            const output = document.getElementById('createResult');
+            output.innerHTML = '建立中...';
+            
+            const testUsers = [
+                {
+                    username: 'william',
+                    display_name: 'William',
+                    password: 'pass1234',
+                    role: 'admin',
+                    title: 'IT主管'
+                },
+                {
+                    username: 'carson',
+                    display_name: 'Carson',
+                    password: 'pass1234',
+                    role: 'admin',
+                    title: '工程師'
+                },
+                {
+                    username: 'jess',
+                    display_name: 'Jess',
+                    password: 'pass1234',
+                    role: 'user',
+                    title: '專案經理'
+                }
+            ];
+            
+            try {
+                // 嘗試插入到 users 表
+                const { data, error } = await supabase
+                    .from('users')
+                    .upsert(testUsers, { onConflict: 'username' })
+                    .select();
+                
+                if (error) {
+                    output.innerHTML = `<span class="error">建立失敗：\n${JSON.stringify(error, null, 2)}</span>`;
+                } else {
+                    output.innerHTML = `<span class="success">✅ 建立成功：</span>\n${JSON.stringify(data, null, 2)}`;
+                }
+            } catch (err) {
+                output.innerHTML = `<span class="error">錯誤: ${err.message}</span>`;
+            }
+        }
+
+        // 測試 UUID
+        async function testUUID() {
+            const output = document.getElementById('uuidTest');
+            output.innerHTML = '測試中...';
+            
+            try {
+                // 生成測試 UUID
+                const testUUID = crypto.randomUUID();
+                output.innerHTML = `生成的 UUID: ${testUUID}\n\n`;
+                
+                // 檢查每個使用者是否有 UUID
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('username, uuid');
+                
+                if (error) {
+                    output.innerHTML += `<span class="error">無法檢查 UUID：${error.message}</span>`;
+                } else {
+                    output.innerHTML += '使用者 UUID 狀態：\n';
+                    data.forEach(user => {
+                        const status = user.uuid ? '✅ 有 UUID' : '❌ 缺少 UUID';
+                        output.innerHTML += `${user.username}: ${status} ${user.uuid || ''}\n`;
+                    });
+                }
+            } catch (err) {
+                output.innerHTML = `<span class="error">錯誤: ${err.message}</span>`;
+            }
+        }
+
+        // 初始化
+        window.onload = init;
+    </script>
+</body>
+</html>

@@ -18,12 +18,7 @@ class TimeboxModule {
         actions: [
             { id:'prevWeek', label:'←', kind:'secondary', onClick:'prevWeek' },
             { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' },
-            { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' },
-            { id:'slot15',  label:'15分',  kind:'secondary', onClick:'setSlot15'  },
-            { id:'slot30',  label:'30分',  kind:'secondary', onClick:'setSlot30'  },
-            { id:'slot60',  label:'60分',  kind:'secondary', onClick:'setSlot60'  },
-            { id:'pomodoro',label:'番茄鐘', kind:'primary',   onClick:'togglePomodoro' },
-            { id:'types',   label:'活動類型', kind:'secondary', onClick:'openActivityTypes' }
+            { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' }
         ]
     };
 
@@ -127,22 +122,55 @@ class TimeboxModule {
 
     getDefaultActivityTypes() {
         return [
-            { id: 'work', name: '工作', color: '#c9a961', countType: 'time' },
-            { id: 'exercise', name: '運動', color: '#7a8b74', countType: 'time' },
-            { id: 'workout', name: '重訓', color: '#d4a574', countType: 'workout' },  // 特殊類型
-            { id: 'study', name: '學習', color: '#6b8e9f', countType: 'time' },
-            { id: 'rest', name: '休息', color: '#b87d8b', countType: 'time' },
-            { id: 'meal', name: '用餐', color: '#9b7e6b', countType: 'time' },
-            { id: 'social', name: '社交', color: '#8b9dc3', countType: 'time' },
-            { id: 'entertainment', name: '娛樂', color: '#a8a878', countType: 'time' },
-            { id: 'commute', name: '通勤', color: '#98a8b8', countType: 'time' },
-            { id: 'meeting', name: '會議', color: '#c87e8a', countType: 'time' }
+            { id: 'work', name: '工作', color: '#8b9690', countType: 'time' },
+            { id: 'exercise', name: '運動', color: '#7a8471', countType: 'time' },
+            { id: 'workout', name: '重訓', color: '#9a8c7a', countType: 'workout' },  // 特殊類型
+            { id: 'study', name: '學習', color: '#6b7b8a', countType: 'time' },
+            { id: 'rest', name: '休息', color: '#8a7a7a', countType: 'time' },
+            { id: 'meal', name: '用餐', color: '#8b7e71', countType: 'time' },
+            { id: 'social', name: '社交', color: '#7a8491', countType: 'time' },
+            { id: 'entertainment', name: '娛樂', color: '#8a8a73', countType: 'time' },
+            { id: 'commute', name: '通勤', color: '#8a9299', countType: 'time' },
+            { id: 'meeting', name: '會議', color: '#967a7a', countType: 'time' }
         ];
     }
 
     getHTML() {
         return `
             <div class="timebox-container">
+
+                <!-- 工具列 -->
+                <div class="timebox-tools">
+                    <!-- 時間單位切換 -->
+                    <div class="time-unit-selector">
+                        <button class="unit-btn ${this.timeUnit === 15 ? 'active' : ''}" 
+                                onclick="window.activeModule.setTimeUnit(15)">15分</button>
+                        <button class="unit-btn ${this.timeUnit === 30 ? 'active' : ''}" 
+                                onclick="window.activeModule.setTimeUnit(30)">30分</button>
+                        <button class="unit-btn ${this.timeUnit === 60 ? 'active' : ''}" 
+                                onclick="window.activeModule.setTimeUnit(60)">60分</button>
+                    </div>
+                    
+                    <!-- 番茄鐘按鈕 -->
+                    <button class="pomodoro-btn" onclick="window.activeModule.togglePomodoroPanel()">
+                        <svg width="20" height="20" viewBox="0 0 20 20">
+                            <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M10 6v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>番茄鐘</span>
+                    </button>
+                    
+                    <!-- 活動類型管理 -->
+                    <button class="activity-btn" onclick="window.activeModule.showActivityManager()">
+                        <svg width="20" height="20" viewBox="0 0 20 20">
+                            <rect x="3" y="3" width="6" height="6" fill="currentColor" opacity="0.3"/>
+                            <rect x="11" y="3" width="6" height="6" fill="currentColor" opacity="0.5"/>
+                            <rect x="3" y="11" width="6" height="6" fill="currentColor" opacity="0.7"/>
+                            <rect x="11" y="11" width="6" height="6" fill="currentColor"/>
+                        </svg>
+                        <span>活動類型</span>
+                    </button>
+                </div>
 
                 <!-- 番茄鐘面板（初始隱藏）-->
                 <div class="pomodoro-panel" id="pomodoroPanel" style="display: none;">
@@ -171,8 +199,62 @@ class TimeboxModule {
                     padding: 0;
                 }
 
-                /* 時間方塊容器 */
+                /* 工具列 */
+                .timebox-tools {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 16px 20px;
+                    background: var(--card);
+                    border-radius: 16px;
+                    border: 1px solid var(--border);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                }
 
+                .time-unit-selector {
+                    display: flex;
+                    background: var(--bg);
+                    border-radius: 8px;
+                    padding: 2px;
+                    border: 1px solid var(--border);
+                }
+
+                .unit-btn {
+                    padding: 6px 12px;
+                    background: transparent;
+                    border: none;
+                    color: var(--text-light);
+                    cursor: pointer;
+                    border-radius: 6px;
+                    font-size: 0.85rem;
+                    transition: all 0.2s;
+                }
+
+                .unit-btn.active {
+                    background: white;
+                    color: var(--primary);
+                    font-weight: 600;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                }
+
+                .pomodoro-btn, .activity-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 8px 14px;
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    color: var(--text);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-size: 0.9rem;
+                }
+
+                .pomodoro-btn:hover, .activity-btn:hover {
+                    background: var(--primary-light);
+                    transform: translateY(-1px);
+                }
 
                 /* 時間格子網格 */
                 .timebox-grid-wrapper {
@@ -188,9 +270,9 @@ class TimeboxModule {
                     display: grid;
                     grid-template-columns: 60px repeat(7, 1fr);
                     grid-template-rows: 40px repeat(${17 * (60/this.timeUnit)}, 30px);
-                    gap: 3px;
-                    background: transparent;
-                    padding: 8px;
+                    gap: 1px;
+                    background: var(--border);
+                    padding: 1px;
                     min-width: 700px;
                 }
 
@@ -299,23 +381,16 @@ class TimeboxModule {
                 }
                 
                 .time-slot.completed::after {
-                    content: '✓';
+                    content: '●';
                     position: absolute;
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%);
                     color: white;
                     font-weight: bold;
-                    font-size: 16px;
+                    font-size: 12px;
                     text-shadow: 0 2px 4px rgba(0,0,0,0.3);
                     z-index: 2;
-                    background: rgba(255,255,255,0.2);
-                    border-radius: 50%;
-                    width: 20px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
                 }
 
                 .time-slot-content {
@@ -511,20 +586,14 @@ class TimeboxModule {
                 }
                 
                 .activity-option.selected::after {
-                    content: '✓';
+                    content: '●';
                     position: absolute;
-                    top: 2px;
-                    right: 2px;
-                    background: white;
-                    color: #333;
-                    width: 18px;
-                    height: 18px;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 12px;
+                    top: 6px;
+                    right: 6px;
+                    color: white;
+                    font-size: 14px;
                     font-weight: bold;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
                 }
                 
                 /* 重訓區域 */
@@ -1498,13 +1567,13 @@ class TimeboxModule {
                                     <div class="activity-name">${a.name}</div>
                                     <div class="activity-meta">
                                         <select class="activity-select" onchange="window.activeModule.updateActivityCountType(${i}, this.value)">
-                                            <option value="time" ${a.countType === 'time' ? 'selected' : ''}>⏰ 計時型</option>
-                                            <option value="count" ${a.countType === 'count' ? 'selected' : ''}>🔢 計次型</option>
+                                            <option value="time" ${a.countType === 'time' ? 'selected' : ''}>○ 計時型</option>
+                                            <option value="count" ${a.countType === 'count' ? 'selected' : ''}>□ 計次型</option>
                                         </select>
                                     </div>
                                 </div>
                                 <button class="activity-delete-btn" onclick="window.activeModule.deleteActivity(${i})" title="刪除活動類型">
-                                    🗑️
+                                    ×
                                 </button>
                             </div>
                         `).join('')}
@@ -1523,7 +1592,7 @@ class TimeboxModule {
                                 <label class="count-type-option">
                                     <input type="radio" name="countType" value="time" checked>
                                     <div class="count-type-card">
-                                        <div class="count-type-icon">⏰</div>
+                                        <div class="count-type-icon">○</div>
                                         <div class="count-type-title">計時型</div>
                                         <div class="count-type-desc">記錄花費時間</div>
                                     </div>
@@ -1531,7 +1600,7 @@ class TimeboxModule {
                                 <label class="count-type-option">
                                     <input type="radio" name="countType" value="count">
                                     <div class="count-type-card">
-                                        <div class="count-type-icon">🔢</div>
+                                        <div class="count-type-icon">□</div>
                                         <div class="count-type-title">計次型</div>
                                         <div class="count-type-desc">記錄完成次數</div>
                                     </div>

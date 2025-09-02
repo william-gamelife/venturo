@@ -11,6 +11,19 @@
  */
 
 class FinanceModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '財務管理',
+        subtitle: '個人財務規劃與記錄',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+        actions: [
+            { id: 'addTransaction', label: '新增交易', kind: 'primary', onClick: 'showAddDialog' },
+            { id: 'overview', label: '總覽', kind: 'secondary', onClick: 'switchToOverview' },
+            { id: 'company', label: '公司代墊款', kind: 'secondary', onClick: 'switchToCompany' },
+            { id: 'transactions', label: '交易記錄', kind: 'secondary', onClick: 'switchToTransactions' }
+        ]
+    };
+
     static moduleInfo = {
         name: '財務管理',
         subtitle: '個人財務規劃與記錄',
@@ -103,44 +116,34 @@ class FinanceModule {
     getHTML() {
         return `
             <div class="finance-container">
-                <!-- 統一招牌系統 -->
-                <div class="module-welcome-card">
-                    <div class="welcome-left">
-                        <div class="module-icon-wrapper">
-                            ${FinanceModule.moduleInfo.icon}
-                        </div>
-                        <div class="module-text">
-                            <h2 class="module-title">${FinanceModule.moduleInfo.name}</h2>
-                            <p class="module-subtitle">${FinanceModule.moduleInfo.subtitle}</p>
-                        </div>
+                <!-- 工具列 -->
+                <div class="finance-tools">
+                    <!-- 模式切換 -->
+                    <div class="mode-selector">
+                        <button class="mode-btn ${this.currentView === 'overview' ? 'active' : ''}" 
+                                onclick="window.activeModule.switchView('overview')">總覽</button>
+                        <button class="mode-btn ${this.currentView === 'company' ? 'active' : ''}" 
+                                onclick="window.activeModule.switchView('company')">公司代墊款</button>
+                        <button class="mode-btn ${this.currentView === 'transactions' ? 'active' : ''}" 
+                                onclick="window.activeModule.switchView('transactions')">交易記錄</button>
+                        <button class="mode-btn ${this.currentView === 'investments' ? 'active' : ''}" 
+                                onclick="window.activeModule.switchView('investments')">投資組合</button>
+                        <button class="mode-btn ${this.currentView === 'assets' ? 'active' : ''}" 
+                                onclick="window.activeModule.switchView('assets')">資產管理</button>
                     </div>
-                    <div class="welcome-right">
-                        <button class="btn-add-transaction" onclick="window.activeModule.showAddDialog()">
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            新增交易
-                        </button>
-                    </div>
+                    
+                    <!-- 新增按鈕 -->
+                    <button class="add-btn" onclick="window.activeModule.showAddDialog()">
+                        <svg width="20" height="20" viewBox="0 0 20 20">
+                            <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>新增交易</span>
+                    </button>
                 </div>
 
                 <!-- 頂部統計卡片 -->
                 <div class="finance-stats">
                     ${this.getStatsCards()}
-                </div>
-
-                <!-- 頁籤切換 -->
-                <div class="finance-tabs">
-                    <button class="tab-btn ${this.currentView === 'overview' ? 'active' : ''}" 
-                            onclick="window.activeModule.switchView('overview')">總覽</button>
-                    <button class="tab-btn ${this.currentView === 'transactions' ? 'active' : ''}" 
-                            onclick="window.activeModule.switchView('transactions')">交易記錄</button>
-                    <button class="tab-btn ${this.currentView === 'budgets' ? 'active' : ''}" 
-                            onclick="window.activeModule.switchView('budgets')">預算管理</button>
-                    <button class="tab-btn ${this.currentView === 'investments' ? 'active' : ''}" 
-                            onclick="window.activeModule.switchView('investments')">投資組合</button>
-                    <button class="tab-btn ${this.currentView === 'goals' ? 'active' : ''}" 
-                            onclick="window.activeModule.switchView('goals')">儲蓄目標</button>
                 </div>
 
                 <!-- 主要內容區 -->
@@ -222,14 +225,16 @@ class FinanceModule {
         switch(this.currentView) {
             case 'overview':
                 return this.getOverviewContent();
+            case 'company':
+                return this.getCompanyContent();
             case 'transactions':
                 return this.getTransactionsContent();
             case 'budgets':
                 return this.getBudgetsContent();
             case 'investments':
                 return this.getInvestmentsContent();
-            case 'goals':
-                return this.getGoalsContent();
+            case 'assets':
+                return this.getAssetsContent();
             default:
                 return this.getOverviewContent();
         }
@@ -329,6 +334,60 @@ class FinanceModule {
         `;
     }
 
+    getCompanyContent() {
+        const companyAdvances = this.transactions.filter(t => t.companyAdvance);
+        const totalAdvance = companyAdvances.reduce((sum, t) => sum + t.amount, 0);
+        
+        return `
+            <div class="company-container">
+                <div class="company-summary">
+                    <div class="summary-card">
+                        <h3>公司代墊款總額</h3>
+                        <div class="total-amount">NT$ ${totalAdvance.toLocaleString()}</div>
+                        <div class="total-count">${companyAdvances.length} 筆代墊</div>
+                    </div>
+                </div>
+                
+                <div class="company-transactions">
+                    <h3>代墊款明細</h3>
+                    <div class="transactions-list">
+                        ${this.getCompanyAdvancesList()}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getAssetsContent() {
+        return `
+            <div class="assets-container">
+                <div class="assets-header">
+                    <h3>資產管理</h3>
+                    <button class="btn-add" onclick="window.activeModule.showAssetDialog()">
+                        新增資產
+                    </button>
+                </div>
+                
+                <div class="assets-summary">
+                    <div class="asset-categories">
+                        <div class="category-card">
+                            <h4>現金與存款</h4>
+                            <div class="amount">NT$ 0</div>
+                        </div>
+                        <div class="category-card">
+                            <h4>投資</h4>
+                            <div class="amount">NT$ 0</div>
+                        </div>
+                        <div class="category-card">
+                            <h4>其他資產</h4>
+                            <div class="amount">NT$ 0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
     getGoalsContent() {
         return `
             <div class="goals-container">
@@ -385,6 +444,13 @@ class FinanceModule {
                     <input type="date" id="transactionDate" value="${new Date().toISOString().split('T')[0]}">
                 </div>
                 
+                <div class="form-group" id="companyAdvanceGroup" style="display: none;">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="companyAdvance">
+                        <span>公司代墊款</span>
+                    </label>
+                </div>
+                
                 <div class="dialog-actions">
                     <button onclick="window.activeModule.closeDialog()">取消</button>
                     <button class="btn-primary" onclick="window.activeModule.saveTransaction()">儲存</button>
@@ -407,6 +473,12 @@ class FinanceModule {
         
         // 更新分類選項
         document.getElementById('categoryGrid').innerHTML = this.getCategoryOptions(type);
+        
+        // 顯示/隱藏公司代墊選項（只在支出時顯示）
+        const companyAdvanceGroup = document.getElementById('companyAdvanceGroup');
+        if (companyAdvanceGroup) {
+            companyAdvanceGroup.style.display = type === 'expense' ? 'block' : 'none';
+        }
     }
 
     getCategoryOptions(type) {
@@ -431,6 +503,7 @@ class FinanceModule {
         const amount = parseFloat(document.getElementById('transactionAmount').value);
         const description = document.getElementById('transactionDescription').value;
         const date = document.getElementById('transactionDate').value;
+        const companyAdvance = document.getElementById('companyAdvance')?.checked || false;
         
         if (!amount || !this.selectedCategory) {
             this.showToast('請填寫必要欄位', 'error');
@@ -444,6 +517,10 @@ class FinanceModule {
             category: this.selectedCategory,
             description,
             date,
+            companyAdvance,
+            advanceStatus: companyAdvance ? 'pending' : null, // pending/claimed/paid
+            claimDate: null,
+            paidDate: null,
             createdAt: new Date().toISOString()
         };
         
@@ -574,6 +651,64 @@ class FinanceModule {
                     flex-direction: column;
                     padding: 20px;
                     gap: 20px;
+                }
+
+                /* 工具列樣式 */
+                .finance-tools {
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    padding: 16px 20px;
+                    background: var(--card);
+                    border-radius: 16px;
+                    border: 1px solid var(--border);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                }
+
+                .mode-selector {
+                    display: flex;
+                    background: var(--bg);
+                    border-radius: 8px;
+                    padding: 2px;
+                    border: 1px solid var(--border);
+                }
+
+                .mode-btn {
+                    padding: 6px 12px;
+                    background: transparent;
+                    border: none;
+                    color: var(--text-light);
+                    cursor: pointer;
+                    border-radius: 6px;
+                    font-size: 0.85rem;
+                    transition: all 0.2s;
+                    white-space: nowrap;
+                }
+
+                .mode-btn.active {
+                    background: white;
+                    color: var(--primary);
+                    font-weight: 600;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                }
+
+                .add-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    padding: 8px 14px;
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    color: var(--text);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-size: 0.9rem;
+                }
+
+                .add-btn:hover {
+                    background: var(--primary-light);
+                    transform: translateY(-1px);
                 }
 
                 /* 統一招牌樣式 */
@@ -970,6 +1105,126 @@ class FinanceModule {
                 }
             </style>
         `;
+    }
+
+    getCompanyAdvancesList() {
+        const companyAdvances = this.transactions.filter(t => t.companyAdvance);
+        
+        if (companyAdvances.length === 0) {
+            return '<p class="no-data">尚無代墊款記錄</p>';
+        }
+        
+        return companyAdvances.map(t => {
+            const category = this.categories[t.type].find(c => c.id === t.category);
+            const statusText = {
+                'pending': '未請款',
+                'claimed': '已請款',
+                'paid': '已入帳'
+            };
+            
+            return `
+                <div class="company-transaction-item">
+                    <div class="transaction-main">
+                        <div class="transaction-icon" style="background: ${category?.color};">
+                            ${category?.icon || '💰'}
+                        </div>
+                        <div class="transaction-details">
+                            <div class="transaction-desc">${t.description || category?.name}</div>
+                            <div class="transaction-date">${this.formatDate(t.date)}</div>
+                        </div>
+                        <div class="transaction-amount">
+                            NT$ ${t.amount.toLocaleString()}
+                        </div>
+                    </div>
+                    
+                    <div class="advance-controls">
+                        <div class="status-group">
+                            <label class="status-option">
+                                <input type="radio" name="status_${t.id}" value="pending" 
+                                       ${t.advanceStatus === 'pending' ? 'checked' : ''}
+                                       onchange="window.activeModule.updateAdvanceStatus('${t.id}', 'pending')">
+                                <span>未請款</span>
+                            </label>
+                            <label class="status-option">
+                                <input type="radio" name="status_${t.id}" value="claimed"
+                                       ${t.advanceStatus === 'claimed' ? 'checked' : ''}
+                                       onchange="window.activeModule.updateAdvanceStatus('${t.id}', 'claimed')">
+                                <span>已請款</span>
+                            </label>
+                            <label class="status-option">
+                                <input type="radio" name="status_${t.id}" value="paid"
+                                       ${t.advanceStatus === 'paid' ? 'checked' : ''}
+                                       onchange="window.activeModule.updateAdvanceStatus('${t.id}', 'paid')">
+                                <span>已入帳</span>
+                            </label>
+                        </div>
+                        
+                        ${t.advanceStatus === 'claimed' || t.advanceStatus === 'paid' ? `
+                            <div class="date-inputs">
+                                ${t.advanceStatus === 'claimed' || t.advanceStatus === 'paid' ? `
+                                    <input type="date" class="date-input" value="${t.claimDate || ''}"
+                                           onchange="window.activeModule.updateClaimDate('${t.id}', this.value)"
+                                           placeholder="請款日期">
+                                ` : ''}
+                                ${t.advanceStatus === 'paid' ? `
+                                    <input type="date" class="date-input" value="${t.paidDate || ''}"
+                                           onchange="window.activeModule.updatePaidDate('${t.id}', this.value)"
+                                           placeholder="入帳日期">
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    async updateAdvanceStatus(transactionId, status) {
+        const transaction = this.transactions.find(t => t.id === transactionId);
+        if (!transaction) return;
+        
+        transaction.advanceStatus = status;
+        
+        // 設定日期
+        if (status === 'claimed' && !transaction.claimDate) {
+            transaction.claimDate = new Date().toISOString().split('T')[0];
+        }
+        if (status === 'paid' && !transaction.paidDate) {
+            transaction.paidDate = new Date().toISOString().split('T')[0];
+        }
+        
+        await this.saveData();
+        this.refresh();
+        this.showToast('狀態已更新', 'success');
+    }
+
+    async updateClaimDate(transactionId, date) {
+        const transaction = this.transactions.find(t => t.id === transactionId);
+        if (!transaction) return;
+        
+        transaction.claimDate = date;
+        await this.saveData();
+    }
+
+    async updatePaidDate(transactionId, date) {
+        const transaction = this.transactions.find(t => t.id === transactionId);
+        if (!transaction) return;
+        
+        transaction.paidDate = date;
+        await this.saveData();
+    }
+
+    // SignageHost 按鈕方法
+    switchToOverview() {
+        this.switchView('overview');
+    }
+
+    switchToTransactions() {
+        this.switchView('transactions');
+    }
+
+    switchToBudgets() {
+        this.switchView('budgets');
     }
 }
 

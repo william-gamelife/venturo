@@ -394,6 +394,32 @@ class TodosModule {
                     box-shadow: var(--shadow-lg);
                 }
 
+                .enhanced-dialog {
+                    max-width: 600px;
+                    width: 95%;
+                }
+
+                .dialog-content {
+                    padding: 0;
+                }
+
+                .form-row {
+                    display: flex;
+                    gap: 16px;
+                    margin-bottom: 20px;
+                }
+
+                .form-group-full {
+                    flex: 1;
+                }
+
+                .form-hint {
+                    font-size: 0.8rem;
+                    color: var(--text-light);
+                    margin-top: 4px;
+                    opacity: 0.7;
+                }
+
                 .dialog-header {
                     font-size: 1.2rem;
                     font-weight: 600;
@@ -436,15 +462,27 @@ class TodosModule {
                 .priority-selector {
                     display: flex;
                     gap: 8px;
+                    align-items: center;
                 }
 
-                .priority-star {
+                .priority-dot {
+                    width: 16px;
+                    height: 16px;
+                    border-radius: 50%;
+                    border: 2px solid var(--border);
                     cursor: pointer;
                     transition: all 0.2s;
+                    position: relative;
                 }
 
-                .priority-star:hover path {
-                    fill: var(--primary-light, #a89080);
+                .priority-dot:hover {
+                    border-color: var(--primary);
+                    transform: scale(1.1);
+                }
+
+                .priority-dot.active {
+                    background: var(--primary);
+                    border-color: var(--primary);
                 }
                 
                 /* 對話框關閉按鈕 */
@@ -595,7 +633,23 @@ class TodosModule {
                     background: #27ae60;
                 }
 
-                /* 手機版響應式 */
+                /* 平板響應式 - 三欄 */
+                @media (max-width: 1200px) {
+                    .kanban-board {
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 12px;
+                    }
+                }
+
+                /* 小平板響應式 - 兩欄 */
+                @media (max-width: 900px) {
+                    .kanban-board {
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 12px;
+                    }
+                }
+
+                /* 手機版響應式 - 單欄 */
                 @media (max-width: 768px) {
                     .todos-container {
                         padding: 12px;
@@ -627,11 +681,11 @@ class TodosModule {
 
     getKanbanColumns() {
         const columns = [
-            { id: 'pending', title: '待處理', icon: 'clipboard' },
-            { id: 'today', title: '今日執行', icon: 'fire' },
-            { id: 'week', title: '本週規劃', icon: 'calendar' },
-            { id: 'completed', title: '最近完成', icon: 'check' },
-            { id: 'project', title: '轉為專案', icon: 'folder' }
+            { id: 'pending', title: '等待中', icon: 'clipboard' },
+            { id: 'today', title: '進行中', icon: 'fire' },
+            { id: 'week', title: '待整理', icon: 'calendar' },
+            { id: 'completed', title: '完成', icon: 'check' },
+            { id: 'project', title: '專案', icon: 'folder' }
         ];
 
         return columns.map(column => {
@@ -710,7 +764,7 @@ class TodosModule {
         const isSelected = this.selectedTodos.has(task.id);
         const priorityStars = this.getPriorityStars(task.priority);
         const tagInfo = this.quickTags.find(t => t.id === task.tags?.[0]);
-        const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status === 'pending';
+        const isOverdue = false; // 關閉過期檢查功能
         const commentsCount = task.comments ? task.comments.length : 0;
         
         return `
@@ -781,13 +835,6 @@ class TodosModule {
                 </div>
                 
                 <div class="task-actions">
-                    <button class="task-btn" onclick="window.activeModule.showTaskDetails('${task.id}'); event.stopPropagation();" title="查看詳情">
-                        <svg width="14" height="14" viewBox="0 0 14 14">
-                            <circle cx="7" cy="7" r="1" fill="currentColor"/>
-                            <circle cx="7" cy="7" r="5" stroke="currentColor" fill="none"/>
-                        </svg>
-                    </button>
-                    
                     <button class="task-btn" onclick="window.activeModule.editTask('${task.id}'); event.stopPropagation();" title="編輯">
                         <svg width="14" height="14" viewBox="0 0 14 14">
                             <path d="M10 2l2 2-7 7-3 1 1-3z" fill="none" stroke="currentColor"/>
@@ -865,10 +912,27 @@ class TodosModule {
                         <div class="form-group form-group-full">
                             <label class="form-label">任務標題 <span class="required">*</span></label>
                             <input type="text" class="form-input" id="taskTitle" 
-                                   placeholder="輸入清晰具體的任務標題"
+                                   placeholder="輸入任務標題"
                                    value="${prefillData?.title || ''}"
                                    maxlength="100">
-                            <div class="form-hint">建議：使用動詞開頭，如「完成報價單」、「聯繫客戶」</div>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">優先級</label>
+                            <div class="priority-selector" id="prioritySelector">
+                                <div class="priority-dot" data-priority="1" onclick="window.activeModule.setPriority(1)"></div>
+                                <div class="priority-dot" data-priority="2" onclick="window.activeModule.setPriority(2)"></div>
+                                <div class="priority-dot" data-priority="3" onclick="window.activeModule.setPriority(3)"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">到期日</label>
+                            <input type="date" class="form-input" id="dueDate" 
+                                   value="${prefillData?.dueDate || ''}">
                         </div>
                     </div>
                     
@@ -876,71 +940,17 @@ class TodosModule {
                         <div class="form-group form-group-full">
                             <label class="form-label">詳細描述</label>
                             <textarea class="form-textarea" id="taskDesc" 
-                                      placeholder="補充說明、注意事項、相關連結等（選填）"
+                                      placeholder="詳細描述（選填）"
                                       rows="3">${prefillData?.description || ''}</textarea>
                         </div>
                     </div>
                     
                     <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">優先級</label>
-                            <div class="priority-selector" id="prioritySelector">
-                                <svg class="priority-star" data-priority="1" onclick="window.activeModule.setPriority(1)" viewBox="0 0 24 24" width="28" height="28">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
-                                <svg class="priority-star" data-priority="2" onclick="window.activeModule.setPriority(2)" viewBox="0 0 24 24" width="28" height="28">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
-                                <svg class="priority-star" data-priority="3" onclick="window.activeModule.setPriority(3)" viewBox="0 0 24 24" width="28" height="28">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
-                            </div>
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">到期日期</label>
-                            <input type="date" class="form-input" id="dueDate" 
-                                   min="${new Date().toISOString().split('T')[0]}"
-                                   value="${prefillData?.dueDate || ''}">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
                         <div class="form-group form-group-full">
-                            <label class="form-label">快速分類標籤</label>
-                            <div class="tag-selector">
-                                ${this.quickTags.map(tag => `
-                                    <div class="tag-option ${prefillData?.tags?.includes(tag.id) ? 'selected' : ''}" 
-                                         data-tag="${tag.id}" 
-                                         onclick="window.activeModule.toggleTag('${tag.id}')"
-                                         style="--tag-color: ${tag.color}">
-                                        <span class="tag-name">${tag.name}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group">
                             <label class="form-label">專案識別標籤</label>
                             <input type="text" class="form-input" id="projectTag" 
                                    placeholder="例如：王小姐、ABC公司"
                                    value="${prefillData?.projectTag || ''}">
-                        </div>
-                        
-                        <div class="form-group">
-                            <label class="form-label">指派對象</label>
-                            <select class="form-select" id="assignedTo">
-                                <option value="">指派給...</option>
-                                <option value="自己" ${prefillData?.assignedTo === '自己' ? 'selected' : ''}>自己</option>
-                                <option value="小美" ${prefillData?.assignedTo === '小美' ? 'selected' : ''}>小美</option>
-                                <option value="小明" ${prefillData?.assignedTo === '小明' ? 'selected' : ''}>小明</option>
-                                <option value="經理" ${prefillData?.assignedTo === '經理' ? 'selected' : ''}>經理</option>
-                            </select>
                         </div>
                     </div>
                     
@@ -994,6 +1004,11 @@ class TodosModule {
         // 事件綁定
         this.attachDialogEvents(dialog);
         
+        // 初始化優先級顯示
+        if (this.selectedPriority > 0) {
+            setTimeout(() => this.setPriority(this.selectedPriority), 50);
+        }
+        
         // 聚焦到標題輸入框
         setTimeout(() => {
             const titleInput = document.getElementById('taskTitle');
@@ -1009,13 +1024,13 @@ class TodosModule {
     // 增強版設定優先級
     setPriority(level) {
         this.selectedPriority = level;
-        const stars = document.querySelectorAll('.priority-star');
-        stars.forEach(star => {
-            const starLevel = parseInt(star.dataset.priority);
-            if (starLevel <= level) {
-                star.querySelector('path').setAttribute('fill', 'var(--primary)');
+        const dots = document.querySelectorAll('.priority-dot');
+        dots.forEach(dot => {
+            const dotLevel = parseInt(dot.dataset.priority);
+            if (dotLevel <= level) {
+                dot.classList.add('active');
             } else {
-                star.querySelector('path').setAttribute('fill', 'none');
+                dot.classList.remove('active');
             }
         });
     }
@@ -1102,19 +1117,6 @@ class TodosModule {
     }
 
     // 編輯任務
-    editTask(taskId) {
-        const task = this.todos.find(t => t.id === taskId);
-        if (!task) return;
-        
-        // 使用類似新增的對話框，但填入現有資料
-        // 這裡簡化處理，實際可以重用 showAddDialog 並修改
-        this.showEditDialog(task);
-    }
-
-    showEditDialog(task) {
-        // 與 showAddDialog 類似，但預填資料
-        // 省略具體實現，邏輯相同
-    }
 
     // 完成任務
     async completeTask(taskId) {
@@ -1418,7 +1420,7 @@ class TodosModule {
         if (!task) return;
         
         const tagInfo = this.quickTags.find(t => t.id === task.tags?.[0]);
-        const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status === 'pending';
+        const isOverdue = false; // 關閉過期檢查功能
         
         const dialog = document.createElement('div');
         dialog.className = 'dialog-overlay';

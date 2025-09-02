@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檢查實際使用者資料</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #0f0;
+        }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            border: 1px solid #0f0;
+            overflow: auto;
+            white-space: pre-wrap;
+        }
+        .warning { color: #ff0; }
+        .error { color: #f00; }
+        .info { color: #0ff; }
+    </style>
+</head>
+<body>
+    <h1>🔍 檢查 user_data 表的實際使用者</h1>
+    
+    <button onclick="loadAllUserData()">載入所有 user_data 記錄</button>
+    <button onclick="findUsersModule()">只找 users 模組</button>
+    <button onclick="checkUsersStructure()">分析使用者結構</button>
+    
+    <pre id="output"></pre>
+
+    <script>
+        const SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const output = document.getElementById('output');
+
+        // 載入所有 user_data 記錄
+        async function loadAllUserData() {
+            output.innerHTML = '載入所有 user_data 記錄...\n\n';
+            
+            try {
+                // 不加任何過濾，載入所有記錄
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .select('*')
+                    .order('updated_at', { ascending: false });
+                
+                if (error) {
+                    output.innerHTML = `<span class="error">錯誤: ${JSON.stringify(error, null, 2)}</span>`;
+                    return;
+                }
+                
+                output.innerHTML = `<span class="info">找到 ${data.length} 筆記錄</span>\n\n`;
+                
+                // 分析每筆記錄
+                data.forEach((record, index) => {
+                    output.innerHTML += `<span class="warning">記錄 ${index + 1}:</span>\n`;
+                    output.innerHTML += `  ID: ${record.id}\n`;
+                    output.innerHTML += `  user_id: ${record.user_id}\n`;
+                    output.innerHTML += `  module: <span class="info">${record.module}</span>\n`;
+                    output.innerHTML += `  updated_at: ${record.updated_at}\n`;
+                    
+                    // 如果是 users 模組或包含使用者資料
+                    if (record.module === 'users' || 
+                        (record.data && Array.isArray(record.data) && 
+                         record.data.length > 0 && 
+                         record.data[0].username)) {
+                        output.innerHTML += `  <span class="warning">📌 可能是使用者資料！</span>\n`;
+                        output.innerHTML += `  資料內容:\n`;
+                        if (Array.isArray(record.data)) {
+                            record.data.forEach(user => {
+                                output.innerHTML += `    - ${user.username || user.display_name}: ${user.role || '?'} (${user.title || '?'})\n`;
+                            });
+                        } else {
+                            output.innerHTML += `    ${JSON.stringify(record.data).substring(0, 100)}...\n`;
+                        }
+                        
+                        // 儲存找到的使用者資料
+                        window.foundUsersRecord = record;
+                    }
+                    
+                    output.innerHTML += '\n';
+                });
+                
+            } catch (err) {
+                output.innerHTML = `<span class="error">錯誤: ${err.message}</span>`;
+            }
+        }
+
+        // 只找 users 模組
+        async function findUsersModule() {
+            output.innerHTML = '搜尋 users 模組...\n\n';
+            
+            try {
+                // 直接搜尋 module = 'users'
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .select('*')
+                    .eq('module', 'users');
+                
+                if (error) {
+                    output.innerHTML = `<span class="error">錯誤: ${JSON.stringify(error, null, 2)}</span>`;
+                    return;
+                }
+                
+                if (data.length === 0) {
+                    output.innerHTML = '<span class="warning">沒有找到 module = "users" 的記錄</span>\n\n';
+                    output.innerHTML += '可能原因：\n';
+                    output.innerHTML += '1. 使用者資料存在其他模組名稱下\n';
+                    output.innerHTML += '2. 使用者資料使用不同的 user_id\n';
+                    output.innerHTML += '3. 從未正確儲存過使用者資料\n';
+                } else {
+                    output.innerHTML = `<span class="info">找到 ${data.length} 筆 users 模組記錄</span>\n\n`;
+                    
+                    data.forEach((record, index) => {
+                        output.innerHTML += `<span class="warning">使用者資料 ${index + 1}:</span>\n`;
+                        output.innerHTML += `user_id: ${record.user_id}\n`;
+                        output.innerHTML += `更新時間: ${record.updated_at}\n`;
+                        output.innerHTML += `使用者列表:\n`;
+                        
+                        if (Array.isArray(record.data)) {
+                            record.data.forEach(user => {
+                                output.innerHTML += `\n<span class="info">👤 ${user.display_name || user.username}</span>\n`;
+                                output.innerHTML += `   帳號: ${user.username}\n`;
+                                output.innerHTML += `   UUID: ${user.uuid || '<span class="error">無UUID</span>'}\n`;
+                                output.innerHTML += `   角色: ${user.role}\n`;
+                                output.innerHTML += `   職稱: ${user.title}\n`;
+                                output.innerHTML += `   密碼: ${user.password ? '已設定' : '<span class="error">無密碼</span>'}\n`;
+                            });
+                            
+                            // 儲存資料
+                            window.actualUsers = record.data;
+                            window.usersRecord = record;
+                        } else {
+                            output.innerHTML += JSON.stringify(record.data, null, 2);
+                        }
+                        output.innerHTML += '\n---\n';
+                    });
+                }
+                
+            } catch (err) {
+                output.innerHTML = `<span class="error">錯誤: ${err.message}</span>`;
+            }
+        }
+
+        // 分析使用者結構
+        async function checkUsersStructure() {
+            output.innerHTML = '分析使用者資料結構...\n\n';
+            
+            if (!window.actualUsers && !window.foundUsersRecord) {
+                output.innerHTML += '<span class="warning">請先執行「載入所有 user_data 記錄」或「只找 users 模組」</span>\n';
+                return;
+            }
+            
+            const users = window.actualUsers || window.foundUsersRecord?.data;
+            
+            if (!Array.isArray(users)) {
+                output.innerHTML += '<span class="error">找不到有效的使用者陣列資料</span>\n';
+                return;
+            }
+            
+            output.innerHTML += `<span class="info">=== 發現 ${users.length} 個使用者 ===</span>\n\n`;
+            
+            // 分析每個使用者
+            const problems = [];
+            const validUsers = [];
+            
+            users.forEach((user, index) => {
+                output.innerHTML += `${index + 1}. <span class="warning">${user.display_name || user.username || '未知'}</span>\n`;
+                
+                const userProblems = [];
+                
+                // 檢查必要欄位
+                if (!user.username) userProblems.push('缺少 username');
+                if (!user.uuid) userProblems.push('缺少 UUID');
+                if (!user.password) userProblems.push('缺少密碼');
+                if (!user.display_name) userProblems.push('缺少顯示名稱');
+                
+                if (userProblems.length > 0) {
+                    output.innerHTML += `   <span class="error">問題: ${userProblems.join(', ')}</span>\n`;
+                    problems.push({ user, problems: userProblems });
+                } else {
+                    output.innerHTML += `   <span class="info">✅ 資料完整</span>\n`;
+                    validUsers.push(user);
+                }
+                
+                // 顯示現有資料
+                output.innerHTML += `   現有資料:\n`;
+                Object.keys(user).forEach(key => {
+                    const value = key === 'password' ? '***' : user[key];
+                    output.innerHTML += `     ${key}: ${value}\n`;
+                });
+                output.innerHTML += '\n';
+            });
+            
+            // 總結
+            output.innerHTML += '\n<span class="warning">=== 總結 ===</span>\n';
+            output.innerHTML += `✅ 完整的使用者: ${validUsers.length}\n`;
+            output.innerHTML += `❌ 有問題的使用者: ${problems.length}\n`;
+            
+            if (problems.length > 0) {
+                output.innerHTML += '\n<span class="error">需要修復的問題:</span>\n';
+                problems.forEach(({ user, problems }) => {
+                    output.innerHTML += `- ${user.username || user.display_name || '未知'}: ${problems.join(', ')}\n`;
+                });
+                
+                output.innerHTML += '\n<span class="info">建議修復方案:</span>\n';
+                output.innerHTML += '1. 為缺少 UUID 的使用者生成新的 UUID\n';
+                output.innerHTML += '2. 設定預設密碼 (如 pass1234)\n';
+                output.innerHTML += '3. 補充缺少的欄位\n';
+                output.innerHTML += '4. 更新 auth.js 來讀取這些資料\n';
+            }
+            
+            window.analyzedUsers = { valid: validUsers, problems };
+        }
+    </script>
+</body>
+</html>

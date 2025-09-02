@@ -8,8 +8,7 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
-    <!-- Auth Module -->
-    <script type="module" src="./modules/auth.js"></script>
+    <!-- Auth Module removed to avoid CORS -->
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
@@ -417,11 +416,11 @@
                 icon: 'icon-admin'
             },
             {
-                id: 'jess',
-                username: 'jess',
-                display_name: 'Jess',
+                id: 'KAI',
+                username: 'KAI',
+                display_name: 'KAI',
                 role: 'user',
-                title: '專案經理',
+                title: '使用者',
                 icon: 'icon-manager'
             }
         ];
@@ -441,27 +440,44 @@
             }));
         }
 
-        // 從雲端載入使用者
+        // 從雲端載入使用者 - 直接從 Supabase
         async function fetchUsersFromCloud() {
-            if (!sb) return defaultUsers; // 如果沒有 Supabase，使用預設資料
-            
             try {
-                const { data, error } = await sb
-                    .from('user_data')
-                    .select('data')
-                    .eq('user_id', ORG_ID)
-                    .eq('module', USERS_MODULE_KEY)
-                    .single();
-
-                if (error || !data || !Array.isArray(data.data)) {
-                    console.log('使用預設用戶資料');
+                const USERS_STORAGE_UUID = '550e8400-e29b-41d4-a716-446655440001';
+                
+                if (!sb) {
+                    console.log('Supabase 未初始化，使用預設資料');
                     return defaultUsers;
                 }
                 
-                return data.data.map(user => ({
-                    ...user,
-                    icon: user.role === 'admin' ? 'icon-admin' : 'icon-manager'
-                }));
+                const { data, error } = await sb
+                    .from('user_data')
+                    .select('*')
+                    .eq('user_id', USERS_STORAGE_UUID)
+                    .eq('module', 'users')
+                    .single();
+
+                if (error) {
+                    console.error('載入使用者失敗:', error);
+                    return defaultUsers;
+                }
+
+                if (data && Array.isArray(data.data)) {
+                    console.log('成功載入使用者:', data.data.length, '位');
+                    
+                    // 確保每個使用者都有完整資料
+                    const users = data.data.map(user => ({
+                        ...user,
+                        uuid: user.uuid || genUUID(),
+                        password: user.password || 'pass1234',
+                        display_name: user.display_name || user.username,
+                        icon: user.role === 'admin' ? 'icon-admin' : 'icon-manager'
+                    }));
+                    
+                    return users;
+                }
+
+                return defaultUsers;
             } catch (error) {
                 console.error('載入用戶失敗:', error);
                 return defaultUsers;
@@ -501,17 +517,28 @@
             }
         }
 
-        // 載入使用者（簡化版本）
-        function loadUsers() {
+        // 載入使用者 - 從 Supabase 載入真實資料
+        async function loadUsers() {
             const container = document.getElementById('usersContainer');
-            container.innerHTML = '';
+            container.innerHTML = '<div style="text-align:center; color:#c9a961;">載入中...</div>';
             
-            const users = defaultUsers;
-            
-            users.forEach(user => {
-                const userCard = createUserCard(user);
-                container.appendChild(userCard);
-            });
+            try {
+                const users = await fetchUsersFromCloud();
+                container.innerHTML = '';
+                
+                users.forEach(user => {
+                    const userCard = createUserCard(user);
+                    container.appendChild(userCard);
+                });
+            } catch (error) {
+                console.error('載入使用者失敗:', error);
+                container.innerHTML = '';
+                // 使用預設資料
+                defaultUsers.forEach(user => {
+                    const userCard = createUserCard(user);
+                    container.appendChild(userCard);
+                });
+            }
         }
 
         // 創建使用者卡片
@@ -617,16 +644,51 @@
             loginBtn.textContent = '登入中...';
             
             try {
-                // 動態導入 auth 模組
-                const { validateLogin } = await import('./modules/auth.js');
-                const result = validateLogin(selectedUser.username, password);
+                // 直接驗證登入（不使用模組）
+                const users = await fetchUsersFromCloud();
+                const user = users.find(u => 
+                    u.username && u.username.toLowerCase() === selectedUser.username.toLowerCase()
+                );
                 
-                if (result.success) {
-                    // 跳轉到儀表板（使用原本的方式）
-                    window.location.href = './dashboard.html';
-                } else {
-                    showError(result.message);
+                if (!user) {
+                    showError('找不到此使用者');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '登入';
+                    return;
                 }
+                
+                if (!user.password || user.password !== password) {
+                    showError('密碼錯誤');
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = '登入';
+                    return;
+                }
+                
+                // 登入成功，儲存資訊
+                const loginData = {
+                    uuid: user.uuid,
+                    display_name: user.display_name,
+                    role: user.role,
+                    username: user.username,
+                    title: user.title,
+                    loginTime: Date.now(),
+                    expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000)
+                };
+                
+                // 儲存到 localStorage
+                localStorage.setItem('gamelife_auth', JSON.stringify(loginData));
+                
+                // 儲存到 sessionStorage（相容舊版）
+                sessionStorage.setItem('user_uuid', user.uuid);
+                sessionStorage.setItem('display_name', user.display_name);
+                sessionStorage.setItem('role', user.role);
+                sessionStorage.setItem('username', user.username);
+                sessionStorage.setItem('title', user.title);
+                
+                console.log('登入成功:', user.username);
+                
+                // 跳轉到儀表板
+                window.location.href = './dashboard.html';
             } catch (error) {
                 console.error('登入錯誤:', error);
                 showError('登入失敗，請稍後再試');

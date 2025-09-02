@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試新認證系統</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #f4f1eb;
+        }
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 {
+            color: #8b7355;
+            border-bottom: 2px solid #e4d4a8;
+            padding-bottom: 10px;
+        }
+        button {
+            background: #c9a961;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            margin: 5px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #8b7355;
+        }
+        .user-card {
+            background: #f8f6f2;
+            border: 1px solid #e4d4a8;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-info {
+            flex: 1;
+        }
+        .user-name {
+            font-weight: 600;
+            color: #3a3833;
+        }
+        .user-details {
+            color: #6d685f;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .success {
+            background: #d4f4dd;
+            color: #22c55e;
+            border: 1px solid #22c55e;
+        }
+        .error {
+            background: #fef2f2;
+            color: #ef4444;
+            border: 1px solid #ef4444;
+        }
+        .info {
+            background: #fef3c7;
+            color: #f59e0b;
+            border: 1px solid #f59e0b;
+        }
+        input, select {
+            padding: 8px 12px;
+            border: 1px solid #e4d4a8;
+            border-radius: 6px;
+            margin: 5px;
+        }
+        pre {
+            background: #1a1a1a;
+            color: #0f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow: auto;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 測試新認證系統</h1>
+
+    <!-- 1. 載入使用者 -->
+    <div class="section">
+        <h2>1. 載入使用者資料</h2>
+        <button onclick="loadAndDisplayUsers()">從 Supabase 載入使用者</button>
+        <div id="usersDisplay"></div>
+    </div>
+
+    <!-- 2. 測試登入 -->
+    <div class="section">
+        <h2>2. 測試登入功能</h2>
+        <div>
+            <input type="text" id="loginUsername" placeholder="使用者名稱" value="william">
+            <input type="password" id="loginPassword" placeholder="密碼" value="pass1234">
+            <button onclick="testLogin()">測試登入</button>
+        </div>
+        <div id="loginResult"></div>
+    </div>
+
+    <!-- 3. 新增使用者 -->
+    <div class="section">
+        <h2>3. 新增使用者</h2>
+        <div>
+            <input type="text" id="newUsername" placeholder="使用者名稱">
+            <input type="text" id="newDisplayName" placeholder="顯示名稱">
+            <input type="password" id="newPassword" placeholder="密碼" value="pass1234">
+            <select id="newRole">
+                <option value="user">一般使用者</option>
+                <option value="admin">管理員</option>
+            </select>
+            <input type="text" id="newTitle" placeholder="職稱">
+            <button onclick="testAddUser()">新增使用者</button>
+        </div>
+        <div id="addResult"></div>
+    </div>
+
+    <!-- 4. 刪除使用者 -->
+    <div class="section">
+        <h2>4. 刪除使用者</h2>
+        <div>
+            <input type="text" id="deleteUsername" placeholder="要刪除的使用者名稱">
+            <button onclick="testDeleteUser()">刪除使用者</button>
+        </div>
+        <div id="deleteResult"></div>
+    </div>
+
+    <!-- 5. 檢查登入狀態 -->
+    <div class="section">
+        <h2>5. 檢查目前登入狀態</h2>
+        <button onclick="checkLoginStatus()">檢查狀態</button>
+        <button onclick="testLogout()">登出</button>
+        <div id="statusDisplay"></div>
+    </div>
+
+    <!-- 6. 原始資料檢視 -->
+    <div class="section">
+        <h2>6. 原始資料檢視</h2>
+        <button onclick="showRawData()">顯示 Supabase 原始資料</button>
+        <pre id="rawDataDisplay"></pre>
+    </div>
+
+    <script>
+        // Supabase 配置
+        const SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
+        const USERS_STORAGE_UUID = '550e8400-e29b-41d4-a716-446655440001';
+        
+        // 初始化 Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 生成 UUID
+        function generateUUID() {
+            if (crypto && crypto.randomUUID) {
+                return crypto.randomUUID();
+            }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                const r = Math.random() * 16 | 0;
+                const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+
+        // 載入使用者
+        async function loadUsers() {
+            try {
+                console.log('從 Supabase 載入使用者...');
+                
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .select('*')
+                    .eq('user_id', USERS_STORAGE_UUID)
+                    .eq('module', 'users')
+                    .single();
+
+                if (error) {
+                    console.error('載入失敗:', error);
+                    throw error;
+                }
+
+                if (data && Array.isArray(data.data)) {
+                    console.log('成功載入使用者:', data.data);
+                    
+                    // 確保每個使用者都有 UUID
+                    const users = data.data.map(user => {
+                        if (!user.uuid) {
+                            user.uuid = generateUUID();
+                        }
+                        if (!user.password) {
+                            user.password = 'pass1234';
+                        }
+                        return user;
+                    });
+                    
+                    return users;
+                }
+
+                return [];
+            } catch (error) {
+                console.error('載入使用者發生錯誤:', error);
+                // 返回預設資料
+                return [
+                    {
+                        uuid: generateUUID(),
+                        username: 'william',
+                        display_name: 'William',
+                        password: 'pass1234',
+                        role: 'admin',
+                        title: 'IT主管'
+                    }
+                ];
+            }
+        }
+
+        // 儲存使用者
+        async function saveUsers(users) {
+            try {
+                console.log('儲存使用者到 Supabase...');
+                
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .upsert({
+                        user_id: USERS_STORAGE_UUID,
+                        module: 'users',
+                        data: users,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id,module'
+                    });
+
+                if (error) {
+                    console.error('儲存失敗:', error);
+                    return false;
+                }
+
+                console.log('使用者資料已儲存');
+                return true;
+            } catch (error) {
+                console.error('儲存發生錯誤:', error);
+                return false;
+            }
+        }
+
+        // 載入並顯示使用者
+        async function loadAndDisplayUsers() {
+            const display = document.getElementById('usersDisplay');
+            display.innerHTML = '<div class="info status">載入中...</div>';
+            
+            try {
+                const users = await loadUsers();
+                
+                // 先清空
+                display.innerHTML = `<div class="success status">成功載入 ${users.length} 位使用者</div>`;
+                
+                // 為每個使用者創建卡片
+                users.forEach((user, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'user-card';
+                    
+                    const info = document.createElement('div');
+                    info.className = 'user-info';
+                    info.innerHTML = `
+                        <div class="user-name">${user.display_name || user.username} (@${user.username})</div>
+                        <div class="user-details">
+                            角色: ${user.role} | 職稱: ${user.title || '未設定'}
+                            <br>UUID: ${user.uuid || '無'}
+                            <br>密碼: ${user.password ? '已設定' : '未設定'}
+                        </div>
+                    `;
+                    
+                    const button = document.createElement('button');
+                    button.textContent = '快速登入';
+                    button.onclick = function() {
+                        testLoginAs(user.username);
+                    };
+                    
+                    card.appendChild(info);
+                    card.appendChild(button);
+                    display.appendChild(card);
+                });
+                
+                // 儲存到全域
+                window.currentUsers = users;
+            } catch (error) {
+                display.innerHTML = `<div class="error status">載入失敗: ${error.message}</div>`;
+            }
+        }
+
+        // 測試登入
+        async function testLogin() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+            const resultDiv = document.getElementById('loginResult');
+            
+            try {
+                const users = await loadUsers();
+                const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
+                
+                if (!user) {
+                    resultDiv.innerHTML = `<div class="error status">❌ 找不到此使用者</div>`;
+                    return;
+                }
+                
+                if (user.password !== password) {
+                    resultDiv.innerHTML = `<div class="error status">❌ 密碼錯誤</div>`;
+                    return;
+                }
+                
+                // 儲存登入資訊
+                sessionStorage.setItem('user_uuid', user.uuid);
+                sessionStorage.setItem('display_name', user.display_name || user.username);
+                sessionStorage.setItem('username', user.username);
+                sessionStorage.setItem('role', user.role);
+                sessionStorage.setItem('title', user.title || '');
+                
+                resultDiv.innerHTML = `
+                    <div class="success status">
+                        ✅ 登入成功！<br>
+                        使用者: ${user.display_name || user.username}<br>
+                        UUID: ${user.uuid}
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error status">錯誤: ${error.message}</div>`;
+            }
+        }
+
+        // 快速登入
+        function testLoginAs(username) {
+            document.getElementById('loginUsername').value = username;
+            document.getElementById('loginPassword').value = 'pass1234';
+            testLogin();
+        }
+
+        // 新增使用者
+        async function testAddUser() {
+            const userData = {
+                username: document.getElementById('newUsername').value,
+                display_name: document.getElementById('newDisplayName').value,
+                password: document.getElementById('newPassword').value,
+                role: document.getElementById('newRole').value,
+                title: document.getElementById('newTitle').value,
+                uuid: generateUUID()
+            };
+            
+            const resultDiv = document.getElementById('addResult');
+            
+            if (!userData.username) {
+                resultDiv.innerHTML = `<div class="error status">❌ 請輸入使用者名稱</div>`;
+                return;
+            }
+            
+            try {
+                const users = await loadUsers();
+                
+                // 檢查是否已存在
+                if (users.find(u => u.username === userData.username)) {
+                    resultDiv.innerHTML = `<div class="error status">❌ 使用者名稱已存在</div>`;
+                    return;
+                }
+                
+                users.push(userData);
+                
+                const saved = await saveUsers(users);
+                
+                if (saved) {
+                    resultDiv.innerHTML = `
+                        <div class="success status">
+                            ✅ 新增成功！<br>
+                            UUID: ${userData.uuid}
+                        </div>
+                    `;
+                    // 重新載入使用者列表
+                    loadAndDisplayUsers();
+                } else {
+                    resultDiv.innerHTML = `<div class="error status">❌ 儲存失敗</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error status">錯誤: ${error.message}</div>`;
+            }
+        }
+
+        // 刪除使用者
+        async function testDeleteUser() {
+            const username = document.getElementById('deleteUsername').value;
+            const resultDiv = document.getElementById('deleteResult');
+            
+            if (!username) {
+                resultDiv.innerHTML = `<div class="error status">❌ 請輸入要刪除的使用者名稱</div>`;
+                return;
+            }
+            
+            if (!confirm(`確定要刪除使用者 ${username} 嗎？`)) {
+                return;
+            }
+            
+            try {
+                const users = await loadUsers();
+                const filtered = users.filter(u => u.username !== username);
+                
+                if (filtered.length === users.length) {
+                    resultDiv.innerHTML = `<div class="error status">❌ 找不到該使用者</div>`;
+                    return;
+                }
+                
+                const saved = await saveUsers(filtered);
+                
+                if (saved) {
+                    resultDiv.innerHTML = `<div class="success status">✅ 使用者已刪除</div>`;
+                    // 重新載入使用者列表
+                    loadAndDisplayUsers();
+                } else {
+                    resultDiv.innerHTML = `<div class="error status">❌ 刪除失敗</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error status">錯誤: ${error.message}</div>`;
+            }
+        }
+
+        // 檢查登入狀態
+        function checkLoginStatus() {
+            const display = document.getElementById('statusDisplay');
+            const uuid = sessionStorage.getItem('user_uuid');
+            
+            if (uuid) {
+                const user = {
+                    uuid: uuid,
+                    display_name: sessionStorage.getItem('display_name'),
+                    username: sessionStorage.getItem('username'),
+                    role: sessionStorage.getItem('role'),
+                    title: sessionStorage.getItem('title')
+                };
+                
+                display.innerHTML = `
+                    <div class="success status">
+                        已登入<br>
+                        使用者: ${user.display_name} (@${user.username})<br>
+                        UUID: ${user.uuid}<br>
+                        角色: ${user.role}
+                    </div>
+                `;
+            } else {
+                display.innerHTML = `<div class="info status">未登入</div>`;
+            }
+        }
+
+        // 登出
+        function testLogout() {
+            if (confirm('確定要登出嗎？')) {
+                sessionStorage.clear();
+                localStorage.removeItem('gamelife_auth');
+                checkLoginStatus();
+            }
+        }
+
+        // 顯示原始資料
+        async function showRawData() {
+            const display = document.getElementById('rawDataDisplay');
+            display.textContent = '載入中...';
+            
+            try {
+                const users = await loadUsers();
+                display.textContent = JSON.stringify(users, null, 2);
+            } catch (error) {
+                display.textContent = `錯誤: ${error.message}`;
+            }
+        }
+
+        // 初始載入
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('頁面載入完成，開始初始化...');
+            loadAndDisplayUsers();
+            checkLoginStatus();
+        });
+    </script>
+</body>
+</html>

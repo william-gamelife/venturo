@@ -1,176 +1,455 @@
-const users = [
-  {
-    uuid: '550e8400-e29b-41d4-a716-446655440001',
-    username: 'william',
-    display_name: 'William',
-    password: 'pass1234',
-    role: 'admin',
-    title: 'IT主管',
-    avatar: '👨‍💼'
-  },
-  {
-    uuid: '550e8400-e29b-41d4-a716-446655440002',
-    username: 'carson',
-    display_name: 'Carson',
-    password: 'pass1234',
-    role: 'admin',
-    title: '工程師',
-    avatar: '👨‍💻'
-  },
-  {
-    uuid: '550e8400-e29b-41d4-a716-446655440003',
-    username: 'jess',
-    display_name: 'Jess',
-    password: 'pass1234',
-    role: 'user',
-    title: '專案經理',
-    avatar: '👩‍💼'
-  }
-];
+/**
+ * 認證模組 V2 - 真正連接 Supabase
+ * 取代原本寫死的 auth.js
+ */
 
-function validateLogin(username, password) {
-  const user = users.find(u => u.username.toLowerCase() === username.toLowerCase());
-  
-  if (!user) {
-    return { success: false, message: '找不到此使用者' };
-  }
-  
-  if (user.password !== password) {
-    return { success: false, message: '密碼錯誤' };
-  }
-  
-  try {
-    // 使用 localStorage 代替 sessionStorage，但加上過期時間
-    const loginData = {
-      uuid: user.uuid,
-      display_name: user.display_name,
-      role: user.role,
-      username: user.username,
-      title: user.title,
-      avatar: user.avatar,
-      loginTime: Date.now(),
-      // 設定 7 天過期
-      expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000)
-    };
-    
-    localStorage.setItem('gamelife_auth', JSON.stringify(loginData));
-    
-    // 同時保留 sessionStorage 以確保相容性
-    sessionStorage.setItem('user_uuid', user.uuid);
-    sessionStorage.setItem('display_name', user.display_name);
-    sessionStorage.setItem('role', user.role);
-    sessionStorage.setItem('username', user.username);
-    sessionStorage.setItem('title', user.title);
-    sessionStorage.setItem('avatar', user.avatar);
-    
-    return { 
-      success: true, 
-      user: loginData
-    };
-  } catch (error) {
-    return { success: false, message: '登入失敗，請稍後再試' };
-  }
-}
+// Supabase 配置
+const SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
 
-function getCurrentUser() {
-  try {
-    // 先檢查 localStorage
-    const authData = localStorage.getItem('gamelife_auth');
-    if (authData) {
-      const data = JSON.parse(authData);
-      
-      // 檢查是否過期
-      if (data.expireTime && Date.now() < data.expireTime) {
-        // 同步到 sessionStorage
-        sessionStorage.setItem('user_uuid', data.uuid);
-        sessionStorage.setItem('display_name', data.display_name);
-        sessionStorage.setItem('role', data.role);
-        sessionStorage.setItem('username', data.username);
-        sessionStorage.setItem('title', data.title);
-        sessionStorage.setItem('avatar', data.avatar);
+// 使用固定的 UUID 來存取使用者列表（因為你現在是這樣存的）
+const USERS_STORAGE_UUID = '550e8400-e29b-41d4-a716-446655440001';
+
+class AuthManagerV2 {
+    constructor() {
+        if (typeof window.supabase === 'undefined') {
+            console.error('Supabase 未載入');
+            this.supabase = null;
+        } else {
+            this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        }
+        this.cachedUsers = null;
+    }
+
+    /**
+     * 從 Supabase 載入真實的使用者資料
+     */
+    async loadUsers() {
+        if (!this.supabase) {
+            console.error('Supabase 未初始化');
+            // 返回備用資料
+            return [
+                {
+                    uuid: this.generateUUID(),
+                    username: 'william',
+                    display_name: 'William',
+                    password: 'pass1234',
+                    role: 'admin',
+                    title: 'IT主管'
+                },
+                {
+                    uuid: this.generateUUID(),
+                    username: 'carson',
+                    display_name: 'Carson',
+                    password: 'pass1234',
+                    role: 'admin',
+                    title: '工程師'
+                },
+                {
+                    uuid: this.generateUUID(),
+                    username: 'KAI',
+                    display_name: 'KAI',
+                    password: 'pass1234',
+                    role: 'user',
+                    title: '使用者'
+                }
+            ];
+        }
+
+        try {
+            console.log('從 Supabase 載入使用者...');
+            
+            // 使用你現有的存儲方式
+            const { data, error } = await this.supabase
+                .from('user_data')
+                .select('*')
+                .eq('user_id', USERS_STORAGE_UUID)
+                .eq('module', 'users')
+                .single();
+
+            if (error) {
+                console.error('載入使用者失敗:', error);
+                return this.getDefaultUsers();
+            }
+
+            if (data && Array.isArray(data.data)) {
+                console.log('成功載入使用者:', data.data.length, '位');
+                
+                // 確保每個使用者都有完整資料
+                const users = data.data.map(user => this.ensureUserComplete(user));
+                this.cachedUsers = users;
+                return users;
+            }
+
+            return this.getDefaultUsers();
+            
+        } catch (error) {
+            console.error('載入使用者發生錯誤:', error);
+            return this.getDefaultUsers();
+        }
+    }
+
+    /**
+     * 確保使用者資料完整
+     */
+    ensureUserComplete(user) {
+        // 生成缺少的 UUID
+        if (!user.uuid) {
+            user.uuid = this.generateUUID();
+            console.log(`為 ${user.username} 生成 UUID: ${user.uuid}`);
+        }
+
+        // 確保有顯示名稱
+        if (!user.display_name) {
+            user.display_name = user.username ? 
+                user.username.charAt(0).toUpperCase() + user.username.slice(1) : 
+                '使用者';
+        }
+
+        // 確保有密碼（預設）
+        if (!user.password) {
+            user.password = 'pass1234';
+        }
+
+        // 確保有角色
+        if (!user.role) {
+            user.role = 'user';
+        }
+
+        // 確保有職稱
+        if (!user.title) {
+            user.title = user.role === 'admin' ? '管理員' : '使用者';
+        }
+
+        return user;
+    }
+
+    /**
+     * 取得預設使用者（備用）
+     */
+    getDefaultUsers() {
+        console.log('使用預設使用者資料');
+        return [
+            {
+                uuid: '550e8400-e29b-41d4-a716-446655440001',
+                username: 'william',
+                display_name: 'William',
+                password: 'pass1234',
+                role: 'admin',
+                title: 'IT主管'
+            },
+            {
+                uuid: '550e8400-e29b-41d4-a716-446655440002',
+                username: 'carson',
+                display_name: 'Carson',
+                password: 'pass1234',
+                role: 'admin',
+                title: '工程師'
+            },
+            {
+                uuid: '550e8400-e29b-41d4-a716-446655440003',
+                username: 'KAI',
+                display_name: 'KAI',
+                password: 'pass1234',
+                role: 'user',
+                title: '使用者'
+            }
+        ];
+    }
+
+    /**
+     * 驗證登入
+     */
+    async validateLogin(username, password) {
+        // 載入最新的使用者資料
+        const users = await this.loadUsers();
+        
+        // 尋找使用者（不分大小寫）
+        const user = users.find(u => 
+            u.username && u.username.toLowerCase() === username.toLowerCase()
+        );
+        
+        if (!user) {
+            return { 
+                success: false, 
+                message: '找不到此使用者' 
+            };
+        }
+        
+        // 驗證密碼
+        if (user.password !== password) {
+            return { 
+                success: false, 
+                message: '密碼錯誤' 
+            };
+        }
+        
+        try {
+            // 準備登入資料
+            const loginData = {
+                uuid: user.uuid,
+                display_name: user.display_name,
+                role: user.role,
+                username: user.username,
+                title: user.title,
+                loginTime: Date.now(),
+                expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7天
+            };
+            
+            // 儲存到 localStorage（持久）
+            localStorage.setItem('gamelife_auth', JSON.stringify(loginData));
+            
+            // 儲存到 sessionStorage（相容舊版）
+            sessionStorage.setItem('user_uuid', user.uuid);
+            sessionStorage.setItem('display_name', user.display_name);
+            sessionStorage.setItem('role', user.role);
+            sessionStorage.setItem('username', user.username);
+            sessionStorage.setItem('title', user.title);
+            
+            console.log('登入成功:', user.username, '(UUID:', user.uuid, ')');
+            
+            return { 
+                success: true, 
+                user: loginData 
+            };
+            
+        } catch (error) {
+            console.error('儲存登入資料失敗:', error);
+            return { 
+                success: false, 
+                message: '登入失敗，請稍後再試' 
+            };
+        }
+    }
+
+    /**
+     * 儲存使用者資料回 Supabase
+     */
+    async saveUsers(users) {
+        if (!this.supabase) {
+            console.error('無法儲存：Supabase 未初始化');
+            return false;
+        }
+
+        try {
+            console.log('儲存使用者到 Supabase...');
+            
+            const { data, error } = await this.supabase
+                .from('user_data')
+                .upsert({
+                    user_id: USERS_STORAGE_UUID,
+                    module: 'users',
+                    data: users,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_id,module'
+                });
+
+            if (error) {
+                console.error('儲存失敗:', error);
+                return false;
+            }
+
+            console.log('使用者資料已儲存');
+            this.cachedUsers = users;
+            return true;
+            
+        } catch (error) {
+            console.error('儲存發生錯誤:', error);
+            return false;
+        }
+    }
+
+    /**
+     * 新增使用者
+     */
+    async addUser(userData) {
+        const users = await this.loadUsers();
+        
+        // 檢查使用者名稱是否已存在
+        if (users.find(u => u.username === userData.username)) {
+            return { 
+                success: false, 
+                message: '使用者名稱已存在' 
+            };
+        }
+        
+        // 建立完整的使用者資料
+        const newUser = this.ensureUserComplete({
+            ...userData,
+            uuid: this.generateUUID()
+        });
+        
+        users.push(newUser);
+        
+        // 儲存回 Supabase
+        const saved = await this.saveUsers(users);
         
         return {
-          uuid: data.uuid,
-          display_name: data.display_name,
-          role: data.role,
-          username: data.username,
-          title: data.title,
-          avatar: data.avatar
+            success: saved,
+            message: saved ? '使用者新增成功' : '儲存失敗',
+            user: newUser
         };
-      } else {
-        // 過期了，清除
-        localStorage.removeItem('gamelife_auth');
-      }
     }
-    
-    // 如果 localStorage 沒有，再檢查 sessionStorage
-    const uuid = sessionStorage.getItem('user_uuid');
-    if (!uuid) return null;
-    
-    return {
-      uuid: uuid,
-      display_name: sessionStorage.getItem('display_name'),
-      role: sessionStorage.getItem('role'),
-      username: sessionStorage.getItem('username'),
-      title: sessionStorage.getItem('title'),
-      avatar: sessionStorage.getItem('avatar')
-    };
-  } catch (error) {
-    return null;
-  }
-}
 
-function isLoggedIn() {
-  // 先檢查 localStorage
-  const authData = localStorage.getItem('gamelife_auth');
-  if (authData) {
-    try {
-      const data = JSON.parse(authData);
-      // 檢查是否過期
-      if (data.expireTime && Date.now() < data.expireTime) {
-        return true;
-      } else {
-        // 過期了，清除
-        localStorage.removeItem('gamelife_auth');
-      }
-    } catch (error) {
-      localStorage.removeItem('gamelife_auth');
+    /**
+     * 刪除使用者
+     */
+    async removeUser(username) {
+        const users = await this.loadUsers();
+        const filtered = users.filter(u => u.username !== username);
+        
+        if (filtered.length === users.length) {
+            return {
+                success: false,
+                message: '找不到該使用者'
+            };
+        }
+        
+        const saved = await this.saveUsers(filtered);
+        
+        return {
+            success: saved,
+            message: saved ? '使用者已刪除' : '刪除失敗'
+        };
     }
-  }
-  
-  // 再檢查 sessionStorage
-  return sessionStorage.getItem('user_uuid') !== null;
+
+    /**
+     * 更新使用者
+     */
+    async updateUser(username, updates) {
+        const users = await this.loadUsers();
+        const userIndex = users.findIndex(u => u.username === username);
+        
+        if (userIndex === -1) {
+            return {
+                success: false,
+                message: '找不到該使用者'
+            };
+        }
+        
+        users[userIndex] = {
+            ...users[userIndex],
+            ...updates
+        };
+        
+        const saved = await this.saveUsers(users);
+        
+        return {
+            success: saved,
+            message: saved ? '使用者已更新' : '更新失敗',
+            user: users[userIndex]
+        };
+    }
+
+    /**
+     * 取得目前登入的使用者
+     */
+    getCurrentUser() {
+        try {
+            // 先檢查 localStorage
+            const authData = localStorage.getItem('gamelife_auth');
+            if (authData) {
+                const data = JSON.parse(authData);
+                
+                // 檢查是否過期
+                if (data.expireTime && Date.now() < data.expireTime) {
+                    return data;
+                } else {
+                    localStorage.removeItem('gamelife_auth');
+                }
+            }
+            
+            // 檢查 sessionStorage
+            const uuid = sessionStorage.getItem('user_uuid');
+            if (uuid) {
+                return {
+                    uuid: uuid,
+                    display_name: sessionStorage.getItem('display_name'),
+                    role: sessionStorage.getItem('role'),
+                    username: sessionStorage.getItem('username'),
+                    title: sessionStorage.getItem('title')
+                };
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('取得目前使用者失敗:', error);
+            return null;
+        }
+    }
+
+    /**
+     * 檢查是否已登入
+     */
+    isLoggedIn() {
+        return this.getCurrentUser() !== null;
+    }
+
+    /**
+     * 登出
+     */
+    logout() {
+        localStorage.removeItem('gamelife_auth');
+        sessionStorage.clear();
+        window.location.href = './index.html';
+    }
+
+    /**
+     * 生成 UUID
+     */
+    generateUUID() {
+        if (crypto && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        // 備用方法
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
 }
 
-function logout() {
-  try {
-    // 清除 localStorage
-    localStorage.removeItem('gamelife_auth');
-    
-    // 清除 sessionStorage
-    sessionStorage.removeItem('user_uuid');
-    sessionStorage.removeItem('display_name');
-    sessionStorage.removeItem('role');
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('title');
-    sessionStorage.removeItem('avatar');
-    
-    window.location.href = './index.html';
-  } catch (error) {
-    console.error('登出失敗:', error);
-    window.location.href = './index.html';
-  }
-}
+// 建立全域實例
+const authManager = new AuthManagerV2();
 
-function getUserByUsername(username) {
-  return users.find(u => u.username.toLowerCase() === username.toLowerCase());
-}
-
+// 匯出功能（相容舊版）
 export {
-  users,
-  validateLogin,
-  getCurrentUser,
-  isLoggedIn,
-  logout,
-  getUserByUsername
+    authManager,
+    AuthManagerV2
 };
+
+// 相容舊版的函數
+export async function validateLogin(username, password) {
+    return await authManager.validateLogin(username, password);
+}
+
+export function getCurrentUser() {
+    return authManager.getCurrentUser();
+}
+
+export function isLoggedIn() {
+    return authManager.isLoggedIn();
+}
+
+export function logout() {
+    return authManager.logout();
+}
+
+// 新增的功能
+export async function loadUsers() {
+    return await authManager.loadUsers();
+}
+
+export async function addUser(userData) {
+    return await authManager.addUser(userData);
+}
+
+export async function removeUser(username) {
+    return await authManager.removeUser(username);
+}
+
+export async function updateUser(username, updates) {
+    return await authManager.updateUser(username, updates);
+}
