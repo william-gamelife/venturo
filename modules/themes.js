@@ -12,26 +12,41 @@ class ThemeManager {
                 cssFile: null, // 使用現有CSS
                 gradient: 'linear-gradient(135deg, #c9a961 0%, #7a8b74 100%)'
             },
+            'midnight-blue': {
+                name: '午夜藍調',
+                description: '莫蘭迪深色系，低對比護眼金屬質感',
+                cssFile: './themes/midnight-blue.css',
+                gradient: 'linear-gradient(135deg, #2C3339 0%, #B4A69A 100%)'
+            },
+            'moss-path': {
+                name: '青苔石徑',
+                description: '日式侘寂自然質感，和紙般的溫潤手感',
+                cssFile: './themes/moss-path.css',
+                gradient: 'linear-gradient(135deg, #DDE0D7 0%, #6B7261 100%)'
+            },
+            'fog-tea': {
+                name: '霧灰茶韻',
+                description: '極簡線條美學，毛玻璃效果暖灰配色',
+                cssFile: './themes/fog-tea.css',
+                gradient: 'linear-gradient(135deg, #E8E2DB 0%, #7A6F65 100%)'
+            },
             'ivory-charcoal': {
                 name: '象牙炭灰',
                 description: '溫潤與深沉的永恆優雅，象牙白配炭灰',
                 cssFile: './themes/ivory-charcoal.css',
                 gradient: 'linear-gradient(135deg, #f5deb3 0%, #696969 100%)'
             },
-            'dark': {
-                name: '深色模式',
-                description: '適合夜晚使用的深色主題',
-                cssFile: null // 待實現
+            'desert-oasis': {
+                name: '沙漠綠洲',
+                description: '沙漠金與綠洲藍的經典配色',
+                cssFile: './themes/desert-oasis.css',
+                gradient: 'linear-gradient(135deg, #D4B896 0%, #6B8E7F 100%)'
             },
-            'light': {
-                name: '明亮模式',
-                description: '清爽明亮的白色主題',
-                cssFile: null // 待實現
-            },
-            'jazz': {
-                name: '爵士咖啡',
-                description: '溫暖的咖啡色調主題',
-                cssFile: null // 待實現
+            'autumn-golden': {
+                name: '秋日金輝',
+                description: '溫暖的秋日金黃色調',
+                cssFile: './themes/autumn-golden.css',
+                gradient: 'linear-gradient(135deg, #D4A574 0%, #8B6F47 100%)'
             }
         };
         

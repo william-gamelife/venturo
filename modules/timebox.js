@@ -17,8 +17,11 @@ class TimeboxModule {
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         actions: [
             { id:'prevWeek', label:'←', kind:'secondary', onClick:'prevWeek' },
+            { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' },
             { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' },
-            { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' }
+            { id:'clearSelection', label:'清除選取', kind:'secondary', onClick:'clearSelection' },
+            { id:'deleteSelected', label:'刪除選取', kind:'danger', onClick:'deleteSelectedSlots' },
+            { id:'timer', label:'🍅 番茄鐘', kind:'primary', onClick:'toggleTimer' }
         ]
     };
 
@@ -206,6 +209,10 @@ class TimeboxModule {
                     flex-direction: column;
                     gap: 16px;
                     padding: 0;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    -ms-user-select: none;
                 }
 
                 /* 工具列 */
@@ -283,6 +290,10 @@ class TimeboxModule {
                     background: var(--border);
                     padding: 1px;
                     min-width: 700px;
+                    user-select: none;
+                    -webkit-user-select: none;
+                    -moz-user-select: none;
+                    -ms-user-select: none;
                 }
 
                 /* 時間標籤 */
@@ -1139,8 +1150,8 @@ class TimeboxModule {
             
             <div class="stat-card">
                 <div class="stat-title">完成率</div>
-                <div class="stat-value">${weekStats.completionRate}%</div>
-                <div class="stat-detail">${weekStats.completedSlots}/${weekStats.plannedSlots} 完成</div>
+                <div class="stat-value">${weekStats.dailyCompletionRate}% / ${weekStats.weeklyCompletionRate}%</div>
+                <div class="stat-detail">天 / 週</div>
             </div>
             
             <div class="stat-card">
@@ -1225,11 +1236,16 @@ class TimeboxModule {
             }
         }
         
+        // 計算今日和本週完成率
+        const dailyCompletionRate = todayPlannedTasks > 0 ? Math.round(todayCompletedTasks / todayPlannedTasks * 100) : 0;
+        const weeklyCompletionRate = plannedTasks > 0 ? Math.round(completedTasks / plannedTasks * 100) : 0;
+        
         return {
             plannedSlots: plannedTasks,  // 任務數
             completedSlots: completedTasks,  // 完成任務數
             plannedHours: parseFloat(totalHours.toFixed(1)),  // 總時數
-            completionRate: plannedTasks > 0 ? Math.round(completedTasks / plannedTasks * 100) : 0,
+            dailyCompletionRate,
+            weeklyCompletionRate,
             topActivity,
             todaySlots
         };
@@ -1348,9 +1364,17 @@ class TimeboxModule {
         document.addEventListener('keydown', this.handleKeyPress.bind(this));
         
         // 防止文字選取
+        const container = document.querySelector('.timebox-container');
         const grid = document.querySelector('.timebox-grid');
+        
+        if (container) {
+            container.addEventListener('selectstart', (e) => e.preventDefault());
+            container.addEventListener('dragstart', (e) => e.preventDefault());
+        }
+        
         if (grid) {
             grid.addEventListener('selectstart', (e) => e.preventDefault());
+            grid.addEventListener('dragstart', (e) => e.preventDefault());
             
             // 全域鼠標事件
             document.addEventListener('mouseup', () => {
@@ -1366,6 +1390,13 @@ class TimeboxModule {
                 }
             });
         }
+        
+        // 全域防選取
+        document.addEventListener('selectstart', (e) => {
+            if (this.isDragging) {
+                e.preventDefault();
+            }
+        });
     }
 
     handleKeyPress(e) {
@@ -2212,6 +2243,15 @@ class TimeboxModule {
     // SignageHost 按鈕方法：下一週
     nextWeek() {
         this.changeWeek(1);
+    }
+
+    // SignageHost 按鈕方法：切換番茄鐘
+    toggleTimer() {
+        if (this.timerState?.isRunning) {
+            this.pauseTimer();
+        } else {
+            this.startTimer();
+        }
     }
 
     // SignageHost 按鈕方法：打開活動類型面板

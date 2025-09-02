@@ -492,10 +492,12 @@ class TodosModule {
                     display: flex;
                     gap: 8px;
                     align-items: center;
-                    justify-content: flex-start;
+                    justify-content: center;
                     height: 40px; /* 與 form-input 相同高度 */
                     box-sizing: border-box;
                     padding: 8px 12px; /* 與 form-input 相同內距 */
+                    border: 1px solid transparent; /* 與 input 邊框對齊 */
+                    border-radius: 8px;
                     min-width: 120px;
                 }
 
@@ -507,6 +509,8 @@ class TodosModule {
                     cursor: pointer;
                     transition: all 0.2s;
                     position: relative;
+                    pointer-events: auto;
+                    z-index: 10;
                 }
 
                 .priority-dot:hover {
@@ -521,16 +525,18 @@ class TodosModule {
                 
                 .form-row-centered {
                     display: flex;
-                    gap: 32px;
+                    gap: 20px;
                     margin-bottom: 20px;
-                    align-items: center;
-                    justify-content: space-between;
-                    padding: 0 20px;
+                    align-items: stretch; /* 讓兩邊高度一致 */
+                    justify-content: center;
                 }
 
                 .form-group-center {
-                    text-align: center;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                     flex: 0 0 auto;
+                    min-width: 150px;
                 }
 
                 .priority-star {
@@ -999,13 +1005,13 @@ class TodosModule {
                             <div class="priority-selector" id="prioritySelector">
                                 <div class="priority-dot" data-priority="1" 
                                      onclick="event.stopPropagation(); window.activeModule.setPriority(1);"
-                                     style="cursor: pointer;"></div>
+                                     style="cursor: pointer; pointer-events: auto; z-index: 10; position: relative;"></div>
                                 <div class="priority-dot" data-priority="2"
                                      onclick="event.stopPropagation(); window.activeModule.setPriority(2);"
-                                     style="cursor: pointer;"></div>
+                                     style="cursor: pointer; pointer-events: auto; z-index: 10; position: relative;"></div>
                                 <div class="priority-dot" data-priority="3"
                                      onclick="event.stopPropagation(); window.activeModule.setPriority(3);"
-                                     style="cursor: pointer;"></div>
+                                     style="cursor: pointer; pointer-events: auto; z-index: 10; position: relative;"></div>
                             </div>
                         </div>
                         
