@@ -1655,7 +1655,7 @@ class ProjectsModule {
         
         // 智慧分類合併的任務到對應類別
         if (mergedTasks && mergedTasks.length > 0) {
-            mergedTasks.forEach(task => {
+            for (const task of mergedTasks) {
                 const categoryId = this.categorizeTask(task);
                 const targetCategory = project.categories.find(cat => cat.id === categoryId);
                 
@@ -1715,7 +1715,7 @@ class ProjectsModule {
                         );
                     }
                 }
-            });
+            }
         }
         
         // 儲存專案
