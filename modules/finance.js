@@ -20,7 +20,9 @@ class FinanceModule {
             { id: 'addTransaction', label: '新增交易', kind: 'primary', onClick: 'showAddDialog' },
             { id: 'overview', label: '總覽', kind: 'secondary', onClick: 'switchToOverview' },
             { id: 'company', label: '公司代墊款', kind: 'secondary', onClick: 'switchToCompany' },
-            { id: 'transactions', label: '交易記錄', kind: 'secondary', onClick: 'switchToTransactions' }
+            { id: 'transactions', label: '交易記錄', kind: 'secondary', onClick: 'switchToTransactions' },
+            { id: 'investments', label: '投資組合', kind: 'secondary', onClick: 'switchToInvestments' },
+            { id: 'assets', label: '資產管理', kind: 'secondary', onClick: 'switchToAssets' }
         ]
     };
 
@@ -116,39 +118,14 @@ class FinanceModule {
     getHTML() {
         return `
             <div class="finance-container">
-                <!-- 工具列 -->
-                <div class="finance-tools">
-                    <!-- 模式切換 -->
-                    <div class="mode-selector">
-                        <button class="mode-btn ${this.currentView === 'overview' ? 'active' : ''}" 
-                                onclick="window.activeModule.switchView('overview')">總覽</button>
-                        <button class="mode-btn ${this.currentView === 'company' ? 'active' : ''}" 
-                                onclick="window.activeModule.switchView('company')">公司代墊款</button>
-                        <button class="mode-btn ${this.currentView === 'transactions' ? 'active' : ''}" 
-                                onclick="window.activeModule.switchView('transactions')">交易記錄</button>
-                        <button class="mode-btn ${this.currentView === 'investments' ? 'active' : ''}" 
-                                onclick="window.activeModule.switchView('investments')">投資組合</button>
-                        <button class="mode-btn ${this.currentView === 'assets' ? 'active' : ''}" 
-                                onclick="window.activeModule.switchView('assets')">資產管理</button>
-                    </div>
-                    
-                    <!-- 新增按鈕 -->
-                    <button class="add-btn" onclick="window.activeModule.showAddDialog()">
-                        <svg width="20" height="20" viewBox="0 0 20 20">
-                            <path d="M10 3v14M3 10h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        <span>新增交易</span>
-                    </button>
-                </div>
-
-                <!-- 頂部統計卡片 -->
-                <div class="finance-stats">
-                    ${this.getStatsCards()}
-                </div>
-
-                <!-- 主要內容區 -->
+                <!-- 主要內容區 - 移到上方 -->
                 <div class="finance-content">
                     ${this.getContentByView()}
+                </div>
+
+                <!-- 統計卡片 - 移到底部 -->
+                <div class="finance-stats">
+                    ${this.getStatsCards()}
                 </div>
             </div>
 
@@ -587,6 +564,87 @@ class FinanceModule {
         }).join('');
     }
 
+    // 完整交易列表
+    getTransactionsList() {
+        const currentMonth = this.currentMonth || new Date();
+        const filtered = this.transactions.filter(t => {
+            const tDate = new Date(t.date);
+            return tDate.getFullYear() === currentMonth.getFullYear() &&
+                   tDate.getMonth() === currentMonth.getMonth();
+        }).sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        if (filtered.length === 0) {
+            return '<p class="no-data">本月尚無交易記錄</p>';
+        }
+        
+        return filtered.map(t => {
+            const category = this.categories[t.type].find(c => c.id === t.category);
+            return `
+                <div class="transaction-item ${t.type}">
+                    <div class="transaction-icon" style="background: ${category?.color};">
+                        ${category?.icon || '💰'}
+                    </div>
+                    <div class="transaction-info">
+                        <div class="transaction-desc">${t.description || category?.name}</div>
+                        <div class="transaction-date">${this.formatDate(t.date)}</div>
+                    </div>
+                    <div class="transaction-amount ${t.type}">
+                        ${t.type === 'income' ? '+' : '-'} NT$ ${t.amount.toLocaleString()}
+                    </div>
+                    <button class="transaction-edit" onclick="window.activeModule.editTransaction('${t.id}')">
+                        <svg width="16" height="16" viewBox="0 0 16 16">
+                            <path d="M10 2l2 2-7 7-3 1 1-3z" fill="none" stroke="currentColor"/>
+                        </svg>
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // 投資列表
+    getInvestmentsList() {
+        if (!this.investments || this.investments.length === 0) {
+            return '<p class="no-data">尚無投資記錄</p>';
+        }
+        
+        return this.investments.map(inv => `
+            <div class="investment-item">
+                <div class="investment-info">
+                    <div class="investment-name">${inv.name}</div>
+                    <div class="investment-type">${inv.type}</div>
+                </div>
+                <div class="investment-amount">
+                    NT$ ${inv.amount.toLocaleString()}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 公司代墊款列表
+    getCompanyAdvancesList() {
+        if (!this.companyAdvances || this.companyAdvances.length === 0) {
+            return '<p class="no-data">尚無代墊款記錄</p>';
+        }
+        
+        return this.companyAdvances.map(advance => `
+            <div class="advance-item ${advance.status}">
+                <div class="advance-info">
+                    <div class="advance-desc">${advance.description}</div>
+                    <div class="advance-date">${this.formatDate(advance.date)}</div>
+                </div>
+                <div class="advance-amount">
+                    NT$ ${advance.amount.toLocaleString()}
+                </div>
+                <div class="advance-status">
+                    ${this.getAdvanceStatusText(advance.status)}
+                </div>
+                <button class="advance-action" onclick="window.activeModule.updateAdvanceStatus('${advance.id}')">
+                    ${advance.status === 'pending' ? '標記請款' : advance.status === 'claimed' ? '標記入帳' : '已完成'}
+                </button>
+            </div>
+        `).join('');
+    }
+
     // 工具函數
     formatMonth(date) {
         const months = ['一月', '二月', '三月', '四月', '五月', '六月', 
@@ -640,6 +698,64 @@ class FinanceModule {
 
     destroy() {
         this.closeDialog();
+    }
+
+    // SignageHost 方法
+    switchToOverview() {
+        this.switchView('overview');
+    }
+
+    switchToCompany() {
+        this.switchView('company');
+    }
+
+    switchToTransactions() {
+        this.switchView('transactions');
+    }
+
+    switchToInvestments() {
+        this.switchView('investments');
+    }
+
+    switchToAssets() {
+        this.switchView('assets');
+    }
+
+    // 獲取代墊款狀態文字
+    getAdvanceStatusText(status) {
+        const statusMap = {
+            'pending': '待處理',
+            'claimed': '已請款',
+            'paid': '已入帳'
+        };
+        return statusMap[status] || status;
+    }
+
+    // 更新代墊款狀態
+    async updateAdvanceStatus(advanceId) {
+        const advance = this.companyAdvances.find(a => a.id === advanceId);
+        if (!advance) return;
+
+        if (advance.status === 'pending') {
+            advance.status = 'claimed';
+            advance.claimedDate = new Date().toISOString();
+        } else if (advance.status === 'claimed') {
+            advance.status = 'paid';
+            advance.paidDate = new Date().toISOString();
+        }
+
+        await this.saveData();
+        this.refresh();
+        this.showToast('狀態更新成功', 'success');
+    }
+
+    // 編輯交易
+    editTransaction(transactionId) {
+        const transaction = this.transactions.find(t => t.id === transactionId);
+        if (transaction) {
+            // TODO: 實作編輯功能
+            console.log('編輯交易:', transaction);
+        }
     }
 
     getStyles() {

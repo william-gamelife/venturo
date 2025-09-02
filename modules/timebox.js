@@ -49,6 +49,7 @@ class TimeboxModule {
         this.timeUnit = 30; // 預設30分鐘為單位
         this.touchStartTime = null;
         this.longPressTimer = null;
+        this.dragTimer = null;
     }
 
     async render(uuid) {
@@ -92,7 +93,13 @@ class TimeboxModule {
             const data = await this.syncManager.load(this.currentUser.uuid, 'timebox');
             if (data) {
                 this.timeboxData = data.timeboxes || {};
-                this.activityTypes = data.activityTypes || this.getDefaultActivityTypes();
+                // 檢查是否有重訓類型，沒有則新增
+                let activityTypes = data.activityTypes || this.getDefaultActivityTypes();
+                const hasWorkout = activityTypes.find(a => a.id === 'workout');
+                if (!hasWorkout) {
+                    activityTypes.push({ id: 'workout', name: '重訓', color: '#9a8c7a', countType: 'workout' });
+                }
+                this.activityTypes = activityTypes;
                 this.timerState = data.timerState || null;
             } else {
                 this.timeboxData = {};
@@ -320,64 +327,79 @@ class TimeboxModule {
                     font-weight: 400;
                 }
 
-                /* 時間格子 - 美化版 */
+                /* 時間格子 - 簡約版 */
                 .time-slot {
-                    background: linear-gradient(135deg, white 0%, var(--bg) 100%);
+                    background: white;
                     cursor: pointer;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    transition: all 0.2s ease;
                     position: relative;
                     user-select: none;
-                    border: 1px solid transparent;
-                    border-radius: 8px;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                    border: 1px solid var(--border);
                     overflow: hidden;
                 }
 
                 .time-slot:hover {
-                    background: linear-gradient(135deg, var(--primary-light) 0%, white 100%);
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                    z-index: 1;
+                    background: var(--primary-light);
+                    border-color: var(--primary);
                 }
 
                 .time-slot.selected {
-                    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+                    background: var(--primary);
                     border: 2px solid var(--primary);
                     color: white;
-                    box-shadow: 0 4px 12px rgba(201,169,97,0.4);
                 }
 
                 .time-slot.occupied {
                     cursor: pointer;
                     position: relative;
                     overflow: hidden;
-                    border: none;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    border: 1px solid rgba(0,0,0,0.1);
                 }
                 
-                /* 合併邊框樣式 */
+                /* 改善的合併邊框樣式 */
                 .time-slot.merge-top {
                     border-top: none;
-                    margin-top: -1px;
+                    border-top-left-radius: 0;
+                    border-top-right-radius: 0;
                 }
                 
                 .time-slot.merge-bottom {
                     border-bottom: none;
+                    border-bottom-left-radius: 0;
+                    border-bottom-right-radius: 0;
                 }
                 
                 .time-slot.merge-left {
                     border-left: none;
-                    margin-left: -1px;
+                    border-top-left-radius: 0;
+                    border-bottom-left-radius: 0;
                 }
                 
                 .time-slot.merge-right {
                     border-right: none;
+                    border-top-right-radius: 0;
+                    border-bottom-right-radius: 0;
+                }
+
+                /* 連續任務的特殊樣式 */
+                .time-slot.task-start {
+                    border-radius: 6px 6px 0 0;
+                }
+                
+                .time-slot.task-middle {
+                    border-radius: 0;
+                    border-top: none;
+                    border-bottom: none;
+                }
+                
+                .time-slot.task-end {
+                    border-radius: 0 0 6px 6px;
                 }
 
                 .time-slot.completed {
-                    background: linear-gradient(135deg, var(--accent) 0%, #5a7c70 100%) !important;
-                    opacity: 0.9;
-                    border: 2px solid var(--accent);
+                    background: var(--accent) !important;
+                    opacity: 0.8;
+                    border: 1px solid var(--accent);
                 }
                 
                 .time-slot.completed::after {
@@ -920,45 +942,31 @@ class TimeboxModule {
                             slotClass += ' completed';
                         }
                         
-                        // 檢查是否需要合併邊框
+                        // 改善的跨時間合併邏輯
                         if (slotData.taskId) {
-                            // 檢查上下（同一天的不同時間）
+                            // 檢查上下相鄰的時間格
                             const prevTimeStr = this.getTimeString(hour, minutes - this.timeUnit);
                             const nextTimeStr = this.getTimeString(hour, minutes + this.timeUnit);
                             const prevSlot = prevTimeStr ? this.timeboxData[`${dateStr}_${prevTimeStr}`] : null;
                             const nextSlot = nextTimeStr ? this.timeboxData[`${dateStr}_${nextTimeStr}`] : null;
                             
-                            // 檢查左右（不同天的同一時間）
-                            if (d > 0) {
-                                const leftDate = new Date(date);
-                                leftDate.setDate(leftDate.getDate() - 1);
-                                const leftSlot = this.timeboxData[`${this.formatDate(leftDate)}_${timeStr}`];
-                                if (leftSlot && leftSlot.taskId === slotData.taskId) {
-                                    slotClass += ' merge-left';
-                                }
-                            }
+                            const hasPrevTask = prevSlot && prevSlot.taskId === slotData.taskId;
+                            const hasNextTask = nextSlot && nextSlot.taskId === slotData.taskId;
                             
-                            if (d < 6) {
-                                const rightDate = new Date(date);
-                                rightDate.setDate(rightDate.getDate() + 1);
-                                const rightSlot = this.timeboxData[`${this.formatDate(rightDate)}_${timeStr}`];
-                                if (rightSlot && rightSlot.taskId === slotData.taskId) {
-                                    slotClass += ' merge-right';
-                                }
+                            // 根據連續性決定樣式
+                            if (hasPrevTask && hasNextTask) {
+                                slotClass += ' task-middle';
+                            } else if (hasPrevTask && !hasNextTask) {
+                                slotClass += ' task-end';
+                            } else if (!hasPrevTask && hasNextTask) {
+                                slotClass += ' task-start';
                             }
-                            
-                            // 添加合併類別
-                            if (prevSlot && prevSlot.taskId === slotData.taskId) {
-                                slotClass += ' merge-top';
-                            }
-                            if (nextSlot && nextSlot.taskId === slotData.taskId) {
-                                slotClass += ' merge-bottom';
-                            }
+                            // 如果既沒有上一個也沒有下一個，就保持預設外觀
                         }
                         
                         const activity = this.activityTypes.find(a => a.id === slotData.activityId);
                         if (activity) {
-                            slotStyle = `background-color: ${activity.color};`;
+                            slotStyle = `background: ${activity.color}; border-color: ${activity.color};`;
                             // 只在主格子顯示內容
                             if (slotData.isMainSlot) {
                                 const displayText = slotData.content || activity.name;
@@ -1276,11 +1284,16 @@ class TimeboxModule {
     // 滑鼠拖曳選取
     onSlotMouseDown(e, slotKey) {
         e.preventDefault();
-        this.isDragging = true;
+        this.isDragging = false;
         this.dragStartSlot = slotKey;
-        this.clearSelection();
-        this.selectedTimeSlots.add(slotKey);
-        this.updateSlotSelection();
+        
+        // 檢查是否為拖曳開始
+        this.dragTimer = setTimeout(() => {
+            this.isDragging = true;
+            this.clearSelection();
+            this.selectedTimeSlots.add(slotKey);
+            this.updateSlotSelection();
+        }, 150); // 150ms 延遲判斷是否為拖曳
     }
 
     onSlotMouseEnter(e, slotKey) {
@@ -1291,11 +1304,22 @@ class TimeboxModule {
     }
 
     onSlotMouseUp(e, slotKey) {
+        if (this.dragTimer) {
+            clearTimeout(this.dragTimer);
+            this.dragTimer = null;
+        }
+        
         if (this.isDragging) {
             this.isDragging = false;
             if (this.selectedTimeSlots.size > 0) {
                 this.showSlotEditDialog();
             }
+        } else {
+            // 單擊事件 - 直接顯示編輯對話框
+            this.selectedTimeSlots.clear();
+            this.selectedTimeSlots.add(slotKey);
+            this.updateSlotSelection();
+            this.showSlotEditDialog();
         }
     }
 
@@ -1569,6 +1593,7 @@ class TimeboxModule {
                                         <select class="activity-select" onchange="window.activeModule.updateActivityCountType(${i}, this.value)">
                                             <option value="time" ${a.countType === 'time' ? 'selected' : ''}>○ 計時型</option>
                                             <option value="count" ${a.countType === 'count' ? 'selected' : ''}>□ 計次型</option>
+                                            <option value="workout" ${a.countType === 'workout' ? 'selected' : ''}>● 重訓型</option>
                                         </select>
                                     </div>
                                 </div>
@@ -1587,32 +1612,19 @@ class TimeboxModule {
                         </div>
                         
                         <div class="form-group">
-                            <label class="form-label">計算方式</label>
-                            <div class="count-type-selector">
-                                <label class="count-type-option">
-                                    <input type="radio" name="countType" value="time" checked>
-                                    <div class="count-type-card">
-                                        <div class="count-type-icon">○</div>
-                                        <div class="count-type-title">計時型</div>
-                                        <div class="count-type-desc">記錄花費時間</div>
-                                    </div>
-                                </label>
-                                <label class="count-type-option">
-                                    <input type="radio" name="countType" value="count">
-                                    <div class="count-type-card">
-                                        <div class="count-type-icon">□</div>
-                                        <div class="count-type-title">計次型</div>
-                                        <div class="count-type-desc">記錄完成次數</div>
-                                    </div>
-                                </label>
-                            </div>
+                            <label class="form-label">類型</label>
+                            <select class="form-select" name="countType" id="countTypeSelect">
+                                <option value="time" selected>○ 計時型</option>
+                                <option value="count">□ 計次型</option>
+                                <option value="workout">● 重訓型</option>
+                            </select>
                         </div>
                         
                         <div class="form-group">
                             <label class="form-label">選擇顏色</label>
                             <div class="color-picker-grid">
-                                ${['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9', '#F8C471', '#82E0AA'].map(color => `
-                                    <div class="color-option" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 15)} 100%);" 
+                                ${['#8b9690', '#7a8471', '#9a8c7a', '#6b7b8a', '#8a7a7a', '#8b7e71', '#7a8491', '#8a8a73', '#8a9299', '#967a7a', '#9b8b7a', '#7b8a89'].map(color => `
+                                    <div class="color-option" style="background: ${color};" 
                                          onclick="window.activeModule.selectColor('${color}', this)" title="${color}"></div>
                                 `).join('')}
                             </div>
@@ -1723,53 +1735,6 @@ class TimeboxModule {
                     font-size: 1.1rem;
                 }
                 
-                .count-type-selector {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    gap: 12px;
-                }
-                
-                .count-type-option {
-                    cursor: pointer;
-                }
-                
-                .count-type-option input {
-                    display: none;
-                }
-                
-                .count-type-card {
-                    padding: 16px;
-                    border: 2px solid var(--border);
-                    border-radius: 12px;
-                    text-align: center;
-                    transition: all 0.2s ease;
-                }
-                
-                .count-type-option input:checked + .count-type-card {
-                    border-color: var(--primary);
-                    background: var(--primary-light);
-                }
-                
-                .count-type-card:hover {
-                    border-color: var(--primary);
-                    transform: translateY(-1px);
-                }
-                
-                .count-type-icon {
-                    font-size: 24px;
-                    margin-bottom: 8px;
-                }
-                
-                .count-type-title {
-                    font-weight: 600;
-                    margin-bottom: 4px;
-                    color: var(--text);
-                }
-                
-                .count-type-desc {
-                    font-size: 0.85rem;
-                    color: var(--text-secondary);
-                }
                 
                 .color-picker-grid {
                     display: grid;
@@ -1780,11 +1745,11 @@ class TimeboxModule {
                 .color-option {
                     width: 36px;
                     height: 36px;
-                    border-radius: 10px;
+                    border-radius: 8px;
                     cursor: pointer;
-                    border: 3px solid transparent;
+                    border: 2px solid transparent;
                     transition: all 0.2s ease;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 }
                 
                 .color-option:hover {
@@ -1832,7 +1797,7 @@ class TimeboxModule {
         `;
         
         document.body.appendChild(dialog);
-        this.selectedColor = '#FF6B6B';
+        this.selectedColor = '#8b9690';
         
         // 預設選擇第一個顏色
         const firstColorOption = dialog.querySelector('.color-option');
@@ -1855,8 +1820,8 @@ class TimeboxModule {
         }
         
         // 取得選中的計算方式
-        const countTypeRadio = document.querySelector('input[name="countType"]:checked');
-        const countType = countTypeRadio ? countTypeRadio.value : 'time';
+        const countTypeSelect = document.getElementById('countTypeSelect');
+        const countType = countTypeSelect ? countTypeSelect.value : 'time';
         
         const newActivity = {
             id: Date.now().toString(),
@@ -2093,6 +2058,11 @@ class TimeboxModule {
         // 清理長按計時器
         if (this.longPressTimer) {
             clearTimeout(this.longPressTimer);
+        }
+        
+        // 清理拖曳計時器
+        if (this.dragTimer) {
+            clearTimeout(this.dragTimer);
         }
         
         // 移除事件監聽

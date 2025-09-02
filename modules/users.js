@@ -101,6 +101,13 @@ class UsersModule {
                                    style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
                         </div>
 
+                        <div style="margin-bottom: 16px;">
+                            <label style="display: block; margin-bottom: 4px; font-weight: 500; color: var(--text);">密碼</label>
+                            <input type="password" id="userPassword" placeholder="輸入登入密碼" value="pass1234"
+                                   style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;">
+                            <small style="color: var(--text-light); font-size: 12px;">預設: pass1234</small>
+                        </div>
+
                         <div style="margin-bottom: 20px;">
                             <label style="display: block; margin-bottom: 4px; font-weight: 500; color: var(--text);">角色</label>
                             <select id="userRole" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
@@ -466,10 +473,16 @@ class UsersModule {
         const username = document.getElementById('userUsername').value.trim();
         const displayName = document.getElementById('userDisplayName').value.trim();
         const title = document.getElementById('userTitle').value.trim();
+        const password = document.getElementById('userPassword').value.trim();
         const role = document.getElementById('userRole').value;
 
         if (!username || !displayName) {
             this.showToast('請填寫使用者名稱和顯示名稱', 'error');
+            return;
+        }
+        
+        if (!password) {
+            this.showToast('請輸入密碼', 'error');
             return;
         }
 
@@ -482,6 +495,7 @@ class UsersModule {
             uuid: this.generateUUID(),
             username: username,
             display_name: displayName,
+            password: password,  // 加入密碼
             title: title,
             role: role,
             created_at: new Date().toISOString(),
@@ -724,12 +738,19 @@ class UsersModule {
                        style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
             </div>
             
-            <div style="margin-bottom: 20px;">
+            <div style="margin-bottom: 16px;">
                 <label style="display: block; margin-bottom: 4px; font-weight: 500; color: var(--text);">角色</label>
                 <select id="editRole" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>一般使用者</option>
                     <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理員</option>
                 </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 4px; font-weight: 500; color: var(--text);">密碼</label>
+                <input type="password" id="editPassword" placeholder="輸入新密碼（留空則不修改）" 
+                       style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
+                <small style="color: var(--text-light); font-size: 12px;">目前密碼: ${user.password ? '已設定' : '未設定'}</small>
             </div>
             
             <div style="display: flex; justify-content: flex-end; gap: 12px;">
@@ -767,6 +788,7 @@ class UsersModule {
                 const newDisplayName = document.getElementById('editDisplayName').value.trim();
                 const newTitle = document.getElementById('editTitle').value.trim();
                 const newRole = document.getElementById('editRole').value;
+                const newPassword = document.getElementById('editPassword').value.trim();
                 
                 console.log('新的資料:', { newDisplayName, newTitle, newRole });
                 
@@ -781,6 +803,13 @@ class UsersModule {
                     this.users[userIndex].display_name = newDisplayName;
                     this.users[userIndex].title = newTitle;
                     this.users[userIndex].role = newRole;
+                    
+                    // 如果有輸入新密碼，則更新密碼
+                    if (newPassword) {
+                        this.users[userIndex].password = newPassword;
+                        console.log('密碼已更新');
+                    }
+                    
                     this.users[userIndex].updated_at = new Date().toISOString();
                     
                     console.log('更新後的使用者資料:', this.users[userIndex]);

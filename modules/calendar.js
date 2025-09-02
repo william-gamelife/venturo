@@ -260,6 +260,196 @@ class CalendarModule {
                     margin-right: 4px;
                 }
                 
+                /* 對話框樣式 */
+                .calendar-dialog-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.5);
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .calendar-dialog {
+                    background: white;
+                    border-radius: 16px;
+                    padding: 24px;
+                    max-width: 500px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: var(--shadow-lg);
+                }
+                
+                .dialog-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 20px;
+                }
+                
+                .dialog-header h3 {
+                    margin: 0;
+                    color: var(--text);
+                    font-size: 1.2rem;
+                }
+                
+                .dialog-close {
+                    background: none;
+                    border: none;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    color: var(--text-light);
+                    padding: 4px;
+                    border-radius: 4px;
+                }
+                
+                .dialog-close:hover {
+                    background: var(--bg);
+                }
+                
+                .form-group {
+                    margin-bottom: 16px;
+                }
+                
+                .form-group label {
+                    display: block;
+                    margin-bottom: 6px;
+                    font-size: 0.9rem;
+                    color: var(--text-light);
+                    font-weight: 500;
+                }
+                
+                .form-group input,
+                .form-group textarea,
+                .form-group select {
+                    width: 100%;
+                    padding: 10px 12px;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    font-size: 0.95rem;
+                    transition: all 0.2s;
+                }
+                
+                .form-group input:focus,
+                .form-group textarea:focus,
+                .form-group select:focus {
+                    outline: none;
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+                }
+                
+                .event-type-selector {
+                    display: flex;
+                    gap: 8px;
+                    flex-wrap: wrap;
+                }
+                
+                .type-btn {
+                    padding: 8px 16px;
+                    border: 1px solid var(--border);
+                    background: white;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-size: 0.85rem;
+                }
+                
+                .type-btn:hover {
+                    background: var(--bg);
+                }
+                
+                .type-btn.active {
+                    background: var(--primary);
+                    color: white;
+                    border-color: var(--primary);
+                }
+                
+                .form-row {
+                    display: flex;
+                    gap: 16px;
+                    margin-bottom: 16px;
+                }
+                
+                .event-settings {
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 16px;
+                    background: var(--bg);
+                }
+                
+                .dialog-actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: flex-end;
+                    margin-top: 24px;
+                }
+                
+                .btn {
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    border: none;
+                    cursor: pointer;
+                    font-weight: 500;
+                    transition: all 0.2s;
+                }
+                
+                .btn-secondary {
+                    background: var(--bg);
+                    color: var(--text);
+                    border: 1px solid var(--border);
+                }
+                
+                .btn-secondary:hover {
+                    background: var(--border);
+                }
+                
+                .btn-primary {
+                    background: var(--primary);
+                    color: white;
+                }
+                
+                .btn-primary:hover {
+                    background: var(--primary-dark);
+                }
+                
+                .toast {
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    padding: 12px 20px;
+                    background: var(--text);
+                    color: white;
+                    border-radius: 8px;
+                    box-shadow: var(--shadow);
+                    z-index: 2000;
+                    animation: slideUp 0.3s ease;
+                }
+                
+                .toast.error {
+                    background: #e74c3c;
+                }
+                
+                .toast.success {
+                    background: #27ae60;
+                }
+                
+                @keyframes slideUp {
+                    from {
+                        opacity: 0;
+                        transform: translateY(20px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                
                 /* 響應式 */
                 @media (max-width: 768px) {
                     .module-welcome-card {
@@ -363,17 +553,198 @@ class CalendarModule {
 
     selectDate(dateStr) {
         this.selectedDate = new Date(dateStr);
-        this.showDateDetails();
+        this.showAddEventDialog(dateStr);
     }
 
-    showAddEventDialog() {
-        console.log('新增事件對話框');
-        // TODO: 實作新增事件對話框
+    showAddEventDialog(dateStr = null) {
+        const selectedDate = dateStr ? new Date(dateStr) : this.selectedDate || new Date();
+        const dateString = selectedDate.toISOString().split('T')[0];
+        
+        const dialog = document.createElement('div');
+        dialog.className = 'calendar-dialog-overlay';
+        dialog.innerHTML = `
+            <div class="calendar-dialog">
+                <div class="dialog-header">
+                    <h3>新增事件</h3>
+                    <button class="dialog-close" onclick="window.activeModule.closeDialog()">×</button>
+                </div>
+                
+                <div class="dialog-content">
+                    <div class="form-group">
+                        <label>事件標題</label>
+                        <input type="text" id="eventTitle" placeholder="輸入事件標題" maxlength="50">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>事件類型</label>
+                        <div class="event-type-selector">
+                            <button class="type-btn active" data-type="timed" onclick="window.activeModule.selectEventType('timed')">定時事件</button>
+                            <button class="type-btn" data-type="allday" onclick="window.activeModule.selectEventType('allday')">全日事件</button>
+                            <button class="type-btn" data-type="multiday" onclick="window.activeModule.selectEventType('multiday')">跨日事件</button>
+                        </div>
+                    </div>
+                    
+                    <!-- 定時事件設定 -->
+                    <div id="timedEventSettings" class="event-settings">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>開始日期</label>
+                                <input type="date" id="startDate" value="${dateString}">
+                            </div>
+                            <div class="form-group">
+                                <label>開始時間</label>
+                                <input type="time" id="startTime" value="09:00">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>結束日期</label>
+                                <input type="date" id="endDate" value="${dateString}">
+                            </div>
+                            <div class="form-group">
+                                <label>結束時間</label>
+                                <input type="time" id="endTime" value="10:00">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 全日事件設定 -->
+                    <div id="alldayEventSettings" class="event-settings" style="display: none;">
+                        <div class="form-group">
+                            <label>日期</label>
+                            <input type="date" id="alldayDate" value="${dateString}">
+                        </div>
+                    </div>
+                    
+                    <!-- 跨日事件設定 -->
+                    <div id="multidayEventSettings" class="event-settings" style="display: none;">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>開始日期</label>
+                                <input type="date" id="multidayStartDate" value="${dateString}">
+                            </div>
+                            <div class="form-group">
+                                <label>結束日期</label>
+                                <input type="date" id="multidayEndDate" value="${dateString}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>備註</label>
+                        <textarea id="eventDescription" placeholder="事件詳細說明（選填）" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>優先級</label>
+                        <select id="eventPriority">
+                            <option value="low">低</option>
+                            <option value="medium" selected>中</option>
+                            <option value="high">高</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="dialog-actions">
+                    <button class="btn btn-secondary" onclick="window.activeModule.closeDialog()">取消</button>
+                    <button class="btn btn-primary" onclick="window.activeModule.saveEvent()">儲存事件</button>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(dialog);
+        this.currentDialog = dialog;
+        this.selectedEventType = 'timed';
+        
+        // 聚焦標題輸入框
+        setTimeout(() => {
+            document.getElementById('eventTitle').focus();
+        }, 100);
     }
 
-    showDateDetails() {
-        console.log('顯示日期詳情:', this.selectedDate);
-        // TODO: 實作日期詳情顯示
+    selectEventType(type) {
+        this.selectedEventType = type;
+        
+        // 更新按鈕狀態
+        document.querySelectorAll('.type-btn').forEach(btn => btn.classList.remove('active'));
+        document.querySelector(`[data-type="${type}"]`).classList.add('active');
+        
+        // 顯示/隱藏對應設定
+        document.querySelectorAll('.event-settings').forEach(el => el.style.display = 'none');
+        document.getElementById(`${type}EventSettings`).style.display = 'block';
+    }
+    
+    async saveEvent() {
+        const title = document.getElementById('eventTitle').value.trim();
+        if (!title) {
+            this.showToast('請輸入事件標題', 'error');
+            return;
+        }
+        
+        const eventType = this.selectedEventType;
+        const priority = document.getElementById('eventPriority').value;
+        const description = document.getElementById('eventDescription').value.trim();
+        
+        let eventData = {
+            id: Date.now().toString(),
+            title,
+            description,
+            priority,
+            type: eventType,
+            createdAt: new Date().toISOString()
+        };
+        
+        // 根據事件類型處理時間
+        if (eventType === 'timed') {
+            const startDate = document.getElementById('startDate').value;
+            const startTime = document.getElementById('startTime').value;
+            const endDate = document.getElementById('endDate').value;
+            const endTime = document.getElementById('endTime').value;
+            
+            eventData.startDateTime = `${startDate}T${startTime}:00`;
+            eventData.endDateTime = `${endDate}T${endTime}:00`;
+        } else if (eventType === 'allday') {
+            const date = document.getElementById('alldayDate').value;
+            eventData.date = date;
+            eventData.allDay = true;
+        } else if (eventType === 'multiday') {
+            const startDate = document.getElementById('multidayStartDate').value;
+            const endDate = document.getElementById('multidayEndDate').value;
+            
+            eventData.startDate = startDate;
+            eventData.endDate = endDate;
+            eventData.multiDay = true;
+        }
+        
+        this.events.push(eventData);
+        await this.saveData();
+        
+        this.closeDialog();
+        this.refreshView();
+        this.showToast('事件建立成功', 'success');
+    }
+    
+    closeDialog() {
+        if (this.currentDialog) {
+            this.currentDialog.remove();
+            this.currentDialog = null;
+        }
+    }
+    
+    refreshView() {
+        const moduleContainer = document.getElementById('moduleContainer');
+        if (moduleContainer) {
+            moduleContainer.innerHTML = this.getHTML();
+        }
+    }
+    
+    showToast(message, type = 'info') {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => toast.remove(), 3000);
     }
 
     async loadData() {

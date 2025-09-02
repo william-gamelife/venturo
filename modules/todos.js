@@ -261,6 +261,15 @@ class TodosModule {
                     box-shadow: var(--shadow);
                 }
 
+                .task-card.completed {
+                    background: rgba(40, 167, 69, 0.1);
+                    border-color: #28a745;
+                }
+
+                .task-card.completed .task-title {
+                    color: #28a745;
+                }
+
                 .task-card.selected {
                     border-color: var(--primary);
                     background: var(--primary-light);
@@ -271,17 +280,8 @@ class TodosModule {
                     transform: rotate(2deg);
                 }
 
-                .task-checkbox {
-                    position: absolute;
-                    top: 12px;
-                    left: 12px;
-                    width: 18px;
-                    height: 18px;
-                    cursor: pointer;
-                }
-
                 .task-content {
-                    margin-left: 30px;
+                    margin-left: 12px;
                 }
 
                 .task-title {
@@ -367,6 +367,18 @@ class TodosModule {
 
                 .task-btn:hover {
                     background: var(--bg);
+                }
+
+                .task-btn-complete:hover {
+                    background: rgba(40, 167, 69, 0.1);
+                    border-color: #28a745;
+                    color: #28a745;
+                }
+
+                .task-btn-reopen:hover {
+                    background: rgba(255, 193, 7, 0.1);
+                    border-color: #ffc107;
+                    color: #ffc107;
                 }
 
                 /* 對話框 */
@@ -485,6 +497,37 @@ class TodosModule {
                     border-color: var(--primary);
                 }
                 
+                .form-row-centered {
+                    display: flex;
+                    gap: 16px;
+                    margin-bottom: 20px;
+                    align-items: flex-end;
+                    justify-content: center;
+                }
+
+                .form-group-center {
+                    text-align: center;
+                    flex: 0 0 auto;
+                }
+
+                .priority-star {
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    fill: var(--border);
+                    stroke: var(--border);
+                }
+
+                .priority-star:hover {
+                    fill: var(--primary);
+                    stroke: var(--primary);
+                    transform: scale(1.1);
+                }
+
+                .priority-star.active {
+                    fill: var(--primary);
+                    stroke: var(--primary);
+                }
+
                 /* 對話框關閉按鈕 */
                 .dialog-close {
                     position: absolute;
@@ -730,10 +773,7 @@ class TodosModule {
             
             case 'today':
                 return filtered.filter(task => {
-                    if (task.status !== 'pending') return false;
-                    if (!task.dueDate) return false;
-                    const due = new Date(task.dueDate);
-                    return due.toDateString() === today.toDateString();
+                    return task.status === 'pending';
                 });
             
             case 'week':
@@ -768,18 +808,12 @@ class TodosModule {
         const commentsCount = task.comments ? task.comments.length : 0;
         
         return `
-            <div class="task-card ${isSelected ? 'selected' : ''} ${isOverdue ? 'overdue' : ''}" 
+            <div class="task-card ${isSelected ? 'selected' : ''} ${task.status === 'completed' ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" 
                  data-task-id="${task.id}"
                  draggable="true"
                  ondragstart="window.activeModule.handleDragStart(event, '${task.id}')"
                  ondragend="window.activeModule.handleDragEnd(event)"
                  onclick="window.activeModule.handleTaskCardClick(event, '${task.id}')">
-                
-                <input type="checkbox" 
-                       class="task-checkbox"
-                       ${isSelected ? 'checked' : ''}
-                       onchange="window.activeModule.toggleTaskSelection('${task.id}')"
-                       onclick="event.stopPropagation()">
                 
                 <div class="task-content">
                     <div class="task-title">
@@ -918,18 +952,42 @@ class TodosModule {
                         </div>
                     </div>
                     
-                    
                     <div class="form-row">
-                        <div class="form-group">
+                        <div class="form-group form-group-full">
+                            <label class="form-label">快速分類標籤</label>
+                            <div class="tag-selector">
+                                ${this.quickTags.map(tag => `
+                                    <div class="tag-option ${prefillData?.tags?.includes(tag.id) ? 'selected' : ''}" 
+                                         data-tag="${tag.id}" 
+                                         onclick="window.activeModule.toggleTag('${tag.id}')"
+                                         style="--tag-color: ${tag.color}">
+                                        <span class="tag-name">${tag.name}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row form-row-centered">
+                        <div class="form-group form-group-center">
                             <label class="form-label">優先級</label>
                             <div class="priority-selector" id="prioritySelector">
-                                <div class="priority-dot" data-priority="1" onclick="window.activeModule.setPriority(1)"></div>
-                                <div class="priority-dot" data-priority="2" onclick="window.activeModule.setPriority(2)"></div>
-                                <div class="priority-dot" data-priority="3" onclick="window.activeModule.setPriority(3)"></div>
+                                <svg class="priority-star" data-priority="1" onclick="window.activeModule.setPriority(1)" viewBox="0 0 24 24" width="24" height="24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
+                                          stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                                <svg class="priority-star" data-priority="2" onclick="window.activeModule.setPriority(2)" viewBox="0 0 24 24" width="24" height="24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
+                                          stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
+                                <svg class="priority-star" data-priority="3" onclick="window.activeModule.setPriority(3)" viewBox="0 0 24 24" width="24" height="24">
+                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
+                                          stroke="currentColor" stroke-width="2" fill="none"/>
+                                </svg>
                             </div>
                         </div>
                         
-                        <div class="form-group">
+                        <div class="form-group form-group-center">
                             <label class="form-label">到期日</label>
                             <input type="date" class="form-input" id="dueDate" 
                                    value="${prefillData?.dueDate || ''}">
@@ -1024,13 +1082,13 @@ class TodosModule {
     // 增強版設定優先級
     setPriority(level) {
         this.selectedPriority = level;
-        const dots = document.querySelectorAll('.priority-dot');
-        dots.forEach(dot => {
-            const dotLevel = parseInt(dot.dataset.priority);
-            if (dotLevel <= level) {
-                dot.classList.add('active');
+        const stars = document.querySelectorAll('.priority-star');
+        stars.forEach(star => {
+            const starLevel = parseInt(star.dataset.priority);
+            if (starLevel <= level) {
+                star.classList.add('active');
             } else {
-                dot.classList.remove('active');
+                star.classList.remove('active');
             }
         });
     }

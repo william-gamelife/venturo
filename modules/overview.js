@@ -35,11 +35,18 @@ class OverviewModule {
         
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = this.getHTML();
+        
+        // 啟動時鐘更新
+        this.startClock();
     }
 
     getHTML() {
         return `
             <div class="overview-container">
+                <!-- 快速小工具 -->
+                <div class="quick-tools">
+                    ${this.getQuickTools()}
+                </div>
 
                 <!-- 功能卡片網格 -->
                 <div class="modules-grid">
@@ -197,6 +204,79 @@ class OverviewModule {
                     line-height: 1.4;
                 }
 
+                /* 快速小工具 */
+                .quick-tools {
+                    margin-bottom: 30px;
+                }
+
+                .tools-section h3 {
+                    margin: 0 0 16px 0;
+                    color: var(--text);
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                }
+
+                .tools-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 16px;
+                    margin-bottom: 20px;
+                }
+
+                .tool-card {
+                    background: var(--card);
+                    border: 1px solid var(--border);
+                    border-radius: 12px;
+                    padding: 16px;
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    transition: all 0.2s;
+                }
+
+                .tool-card.clickable {
+                    cursor: pointer;
+                }
+
+                .tool-card.clickable:hover {
+                    transform: translateY(-2px);
+                    box-shadow: var(--shadow);
+                    border-color: var(--primary);
+                }
+
+                .tool-icon {
+                    width: 40px;
+                    height: 40px;
+                    background: linear-gradient(135deg, var(--primary), var(--accent));
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    flex-shrink: 0;
+                }
+
+                .tool-icon svg {
+                    width: 20px;
+                    height: 20px;
+                }
+
+                .tool-content {
+                    flex: 1;
+                }
+
+                .tool-title {
+                    font-size: 0.85rem;
+                    color: var(--text-light);
+                    margin-bottom: 2px;
+                }
+
+                .tool-value {
+                    font-size: 1rem;
+                    font-weight: 600;
+                    color: var(--text);
+                }
+
                 /* 功能卡片 */
                 .modules-grid {
                     display: grid;
@@ -242,8 +322,135 @@ class OverviewModule {
         `;
     }
 
+    getQuickTools() {
+        return `
+            <div class="tools-section">
+                <h3>快速小工具</h3>
+                <div class="tools-grid">
+                    <!-- 時鐘 -->
+                    <div class="tool-card">
+                        <div class="tool-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12,6 12,12 16,14"/>
+                            </svg>
+                        </div>
+                        <div class="tool-content">
+                            <div class="tool-title">當前時間</div>
+                            <div class="tool-value" id="currentTime">${this.getCurrentTime()}</div>
+                        </div>
+                    </div>
+
+                    <!-- 天氣 -->
+                    <div class="tool-card">
+                        <div class="tool-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"/>
+                                <line x1="12" y1="1" x2="12" y2="3"/>
+                                <line x1="12" y1="21" x2="12" y2="23"/>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                                <line x1="1" y1="12" x2="3" y2="12"/>
+                                <line x1="21" y1="12" x2="23" y2="12"/>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                            </svg>
+                        </div>
+                        <div class="tool-content">
+                            <div class="tool-title">天氣</div>
+                            <div class="tool-value">晴朝 25°C</div>
+                        </div>
+                    </div>
+
+                    <!-- 快速記事 -->
+                    <div class="tool-card clickable" onclick="window.activeModule.openQuickNote()">
+                        <div class="tool-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                                <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                        </div>
+                        <div class="tool-content">
+                            <div class="tool-title">快速記事</div>
+                            <div class="tool-value">點擊新增</div>
+                        </div>
+                    </div>
+
+                    <!-- 番茄鐘 -->
+                    <div class="tool-card clickable" onclick="window.activeModule.startPomodoro()">
+                        <div class="tool-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12,6 12,12 16,14"/>
+                            </svg>
+                        </div>
+                        <div class="tool-content">
+                            <div class="tool-title">番茄鐘</div>
+                            <div class="tool-value">開始專注</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    getCurrentTime() {
+        const now = new Date();
+        return now.toLocaleTimeString('zh-TW', { 
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    openQuickNote() {
+        // 快速開啟待辦事項模組並新增任務
+        if (window.loadModule) {
+            window.loadModule('todos');
+            setTimeout(() => {
+                if (window.activeModule && window.activeModule.showAddDialog) {
+                    window.activeModule.showAddDialog();
+                }
+            }, 500);
+        }
+    }
+
+    startPomodoro() {
+        // 快速開啟箱型時間模組並啟動番茄鐘
+        if (window.loadModule) {
+            window.loadModule('timebox');
+            setTimeout(() => {
+                if (window.activeModule && window.activeModule.startTimer) {
+                    window.activeModule.togglePomodoroPanel();
+                    setTimeout(() => {
+                        window.activeModule.startTimer();
+                    }, 300);
+                }
+            }, 500);
+        }
+    }
+
+    startClock() {
+        // 更新時鐘顯示
+        const updateTime = () => {
+            const timeElement = document.getElementById('currentTime');
+            if (timeElement) {
+                timeElement.textContent = this.getCurrentTime();
+            }
+        };
+        
+        // 立即更新一次
+        updateTime();
+        
+        // 每分鐘更新
+        this.timeInterval = setInterval(updateTime, 60000);
+    }
+
     destroy() {
-        // 清理
+        // 清理時鐘
+        if (this.timeInterval) {
+            clearInterval(this.timeInterval);
+        }
     }
 }
 

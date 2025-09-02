@@ -182,10 +182,14 @@ class ProjectsModule {
             const syncModule = await import('./sync.js');
             this.syncManager = new syncModule.SyncManager();
             
-            // 初始化任務橋接器
-            const { getTaskBridge } = await import('./task-bridge.js');
-            this.taskBridge = await getTaskBridge();
-            await this.taskBridge.initialize(this.currentUser.uuid, this.syncManager);
+            // 初始化簡化的任務橋接器
+            this.taskBridge = {
+                initialize: async () => {},
+                getProjects: () => this.projects,
+                createProject: (data) => this.createProjectInternal(data),
+                updateProject: (id, data) => this.updateProjectInternal(id, data),
+                deleteProject: (id) => this.deleteProjectInternal(id)
+            };
         } catch (error) {
             console.error('同步管理器載入失敗:', error);
             this.showToast('系統初始化失敗', 'error');
