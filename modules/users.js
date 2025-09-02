@@ -10,7 +10,8 @@ class UsersModule {
         subtitle: '戶政事務所｜成員名冊與權限',
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" stroke="currentColor" stroke-width="2"/></svg>',
         actions: [
-            { id:'hrChange', label:'人事異動', kind:'primary', onClick:'openHRChangeDialog' }
+            { id: 'addUser', label: '新增人員', kind: 'primary', onClick: 'showAddDialog' },
+            { id: 'hrChange', label: '人事異動', kind: 'secondary', onClick: 'openHRChangeDialog' }
         ]
     };
 
@@ -72,12 +73,6 @@ class UsersModule {
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = `
             <div class="users-container" style="height: 100%; min-height: 500px;">
-                <!-- 功能按鈕區域 -->
-                <div style="margin-bottom: 20px; display: flex; gap: 12px; align-items: center;">
-                    <button id="btnAddUser" class="module-btn primary" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 500; transition: all 0.2s;">新增人員</button>
-                    <button class="module-btn secondary" disabled style="background: #f5f5f5; color: #999; border: 1px solid #ddd; padding: 12px 24px; border-radius: 8px; cursor: not-allowed; font-size: 0.9rem;">人事異動（功能開發中）</button>
-                </div>
-                
                 <!-- 使用者列表 -->
                 <div class="users-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
                     <!-- 使用者卡片將動態生成 -->
@@ -555,14 +550,6 @@ class UsersModule {
     }
 
     attachEventListeners() {
-        // 新增人員按鈕
-        const btnAddUser = document.getElementById('btnAddUser');
-        if (btnAddUser) {
-            btnAddUser.addEventListener('click', () => {
-                this.showAddDialog();
-            });
-        }
-
         const modal = document.getElementById('addUserModal');
         if (modal) {
             modal.addEventListener('click', (e) => {

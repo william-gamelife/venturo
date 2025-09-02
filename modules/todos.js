@@ -22,7 +22,7 @@ class TodosModule {
         subtitle: '郵務總局｜任務與流程',
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 11l3 3L20 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         actions: [
-            { id:'mergeToProject', label:'合併專案', kind:'primary', onClick:'mergeSelectedToProject' }
+            { id: 'mergeProject', label: '轉為專案', kind: 'primary', onClick: 'convertToProject' }
         ]
     };
 
@@ -46,18 +46,8 @@ class TodosModule {
         this.currentUser = null;
         this.todos = [];
         this.selectedTodos = new Set();
-        this.currentFilter = 'all';
         this.draggedItem = null;
         this.taskBridge = null;
-        this.quickTags = [
-            { id: 'quote', name: '報價', color: '#c9a961' },
-            { id: 'schedule', name: '行程', color: '#7a8b74' },
-            { id: 'presentation', name: '簡報', color: '#6b8e9f' },
-            { id: 'contract', name: '合約', color: '#d4a574' },
-            { id: 'flight', name: '機票', color: '#b87d8b' },
-            { id: 'hotel', name: '訂房', color: '#8b9dc3' },
-            { id: 'transport', name: '訂車', color: '#a0c4a0' }
-        ];
         
         // 新增狀態管理
         this.isSelecting = false;
@@ -170,20 +160,6 @@ class TodosModule {
                     </div>
                 </div>
 
-                <!-- 簡化篩選標籤列 -->
-                <div class="filter-tags">
-                    <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
-                            onclick="window.activeModule.setFilter('all')">
-                        全部
-                    </button>
-                    ${this.quickTags.map(tag => `
-                        <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
-                                onclick="window.activeModule.setFilter('${tag.id}')">
-                            ${tag.name}
-                        </button>
-                    `).join('')}
-                </div>
-
                 <!-- 五欄看板 -->
                 <div class="kanban-board">
                     ${this.getKanbanColumns()}
@@ -289,37 +265,6 @@ class TodosModule {
                 }
 
                 /* 篩選標籤 */
-                .filter-tags {
-                    display: flex;
-                    gap: 8px;
-                    padding: 12px 16px;
-                    background: var(--card);
-                    border-radius: 12px;
-                    border: 1px solid var(--border);
-                    overflow-x: auto;
-                }
-
-                .filter-tag {
-                    padding: 6px 14px;
-                    background: white;
-                    border: 1px solid var(--border);
-                    border-radius: 20px;
-                    color: var(--text-light);
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    white-space: nowrap;
-                    font-size: 0.9rem;
-                }
-
-                .filter-tag:hover {
-                    background: var(--bg);
-                }
-
-                .filter-tag.active {
-                    background: var(--primary);
-                    color: white;
-                    border-color: var(--primary);
-                }
 
                 /* 看板欄位 */
                 .kanban-board {
@@ -777,10 +722,6 @@ class TodosModule {
                         min-width: auto;
                     }
 
-                    .filter-tags {
-                        overflow-x: scroll;
-                        -webkit-overflow-scrolling: touch;
-                    }
                 }
             </style>
         `;
@@ -827,10 +768,6 @@ class TodosModule {
 
         let filtered = this.todos;
 
-        // 先套用標籤篩選
-        if (this.currentFilter !== 'all') {
-            filtered = filtered.filter(task => task.tags && task.tags.includes(this.currentFilter));
-        }
 
         // 再根據欄位篩選
         switch (columnId) {
@@ -1529,11 +1466,6 @@ class TodosModule {
     }
 
     // 篩選功能
-    setFilter(filter) {
-        this.currentFilter = filter;
-        this.render(this.currentUser.uuid);
-    }
-
     // 關閉對話框
     closeDialog() {
         const dialog = document.querySelector('.dialog-overlay');
@@ -1876,19 +1808,19 @@ class TodosModule {
         this.currentDialog = null;
     }
 
-    // SignageHost 按鈕方法：合併選取的任務為專案
-    mergeSelectedToProject() {
-        // TODO: 實現把選取的任務加上 projectId，或跳合併對話框
-        console.log('合併專案功能待實現');
+    // SignageHost 按鈕方法：轉為專案
+    convertToProject() {
+        // TODO: 實現把選取的任務轉換為專案
+        console.log('轉為專案功能待實現');
         
         // 可以在這裡實現：
         // 1. 檢查是否有選取的任務
-        // 2. 顯示合併到專案的對話框
+        // 2. 顯示轉換為專案的對話框
         // 3. 讓使用者選擇現有專案或創建新專案
         // 4. 將選取的任務標記為屬於該專案
         
         // 暫時顯示提示
-        alert('合併專案功能開發中...');
+        alert('轉為專案功能開發中...');
     }
 }
 

@@ -18,7 +18,8 @@ class ProjectsModule {
         subtitle: '市政廳｜容器、報表與總覽',
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/></svg>',
         actions: [
-            { id:'suggest', label:'建議專案', kind:'primary', onClick:'openProjectSuggestions' }
+            { id: 'createProject', label: '建立專案', kind: 'primary', onClick: 'showCreateProjectDialog' },
+            { id: 'export', label: '匯出報告', kind: 'secondary', onClick: 'showExportDialog' }
         ]
     };
 
@@ -220,21 +221,6 @@ class ProjectsModule {
                         <span class="projects-count" style="font-size: 1rem; line-height: 1.3; color: var(--text-light);">${this.projects.length} 個專案</span>
                     </div>
                     
-                    <div class="projects-actions">
-                        <button class="btn-primary" onclick="activeModule.showCreateProjectDialog()">
-                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                                <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-                            </svg>
-                            建立專案
-                        </button>
-                        
-                        <button class="btn-secondary" onclick="activeModule.showExportDialog()">
-                            <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
-                                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
-                            </svg>
-                            匯出報告
-                        </button>
-                    </div>
                 </div>
 
                 <!-- 專案統計 -->
@@ -1790,19 +1776,34 @@ class ProjectsModule {
         toasts.forEach(toast => toast.remove());
     }
 
-    // SignageHost 按鈕方法：建議專案
-    openProjectSuggestions() {
-        // TODO: 依待辦/人員/近期事件產生模板建議
-        console.log('建議專案功能待實現');
+    // SignageHost 按鈕方法：建立專案
+    showCreateProjectDialog() {
+        // TODO: 顯示建立專案對話框
+        console.log('建立專案功能待實現');
         
         // 可以在這裡實現：
-        // 1. 分析當前待辦事項，找出可合併的任務群組
-        // 2. 根據人員工作量建議新專案分配
-        // 3. 分析近期事件趨勢，推薦相關專案模板
-        // 4. 顯示專案建議對話框供使用者選擇
+        // 1. 顯示建立專案表單對話框
+        // 2. 讓使用者填寫專案基本資訊
+        // 3. 設定專案成員和權限
+        // 4. 保存專案資料
         
         // 暫時顯示提示
-        alert('專案建議功能開發中...');
+        alert('建立專案功能開發中...');
+    }
+
+    // SignageHost 按鈕方法：匯出報告
+    showExportDialog() {
+        // TODO: 顯示匯出報告對話框
+        console.log('匯出報告功能待實現');
+        
+        // 可以在這裡實現：
+        // 1. 顯示匯出選項對話框
+        // 2. 讓使用者選擇匯出格式（PDF、Excel等）
+        // 3. 選擇匯出內容範圍
+        // 4. 生成並下載報告
+        
+        // 暫時顯示提示
+        alert('匯出報告功能開發中...');
     }
 }
 
