@@ -339,6 +339,12 @@ class TimeboxModule {
                     overflow: hidden;
                 }
 
+                /* 真正合併的格子樣式 */
+                .merged-slot {
+                    border-radius: 6px;
+                    border: 2px solid;
+                }
+
                 .time-slot:hover {
                     background: var(--primary-light);
                     border-color: var(--primary);
