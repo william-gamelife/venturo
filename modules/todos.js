@@ -47,7 +47,6 @@ class TodosModule {
         this.todos = [];
         this.selectedTodos = new Set();
         this.draggedItem = null;
-        this.taskBridge = null;
         
         // 新增狀態管理
         this.isSelecting = false;
@@ -97,10 +96,6 @@ class TodosModule {
         const syncModule = await import('./sync.js');
         this.syncManager = new syncModule.SyncManager();
         
-        // 初始化任務橋接器
-        const { getTaskBridge } = await import('./task-bridge.js');
-        this.taskBridge = await getTaskBridge();
-        await this.taskBridge.initialize(this.currentUser.uuid, this.syncManager);
         
         // 載入資料
         await this.loadData();
@@ -142,24 +137,6 @@ class TodosModule {
     getHTML() {
         return `
             <div class="todos-container">
-                <!-- 頂部工具列 -->
-                <div class="todos-header">
-                    
-                    <div class="todos-actions">
-                        <button class="btn-merge ${this.selectedTodos.size >= 2 ? '' : 'disabled'}" 
-                                onclick="window.activeModule.showMergeDialog()"
-                                ${this.selectedTodos.size >= 2 ? '' : 'disabled'}>
-                            合併成專案
-                        </button>
-                        
-                        <button class="btn-clear ${this.selectedTodos.size > 0 ? '' : 'disabled'}" 
-                                onclick="window.activeModule.clearSelection()"
-                                ${this.selectedTodos.size > 0 ? '' : 'disabled'}>
-                            清除選取
-                        </button>
-                    </div>
-                </div>
-
                 <!-- 五欄看板 -->
                 <div class="kanban-board">
                     ${this.getKanbanColumns()}
@@ -171,100 +148,10 @@ class TodosModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    padding: 20px;
-                    gap: 20px;
-                }
-
-                /* 頂部工具列 */
-                .todos-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    background: var(--card);
-                    padding: 16px 20px;
-                    border-radius: 16px;
-                    border: 1px solid var(--border);
+                    padding: 0;
+                    gap: 0;
                 }
                 
-                .todos-title {
-                    display: flex;
-                    align-items: center;
-                    gap: 12px;
-                }
-                
-                .todos-title h2 {
-                    margin: 0;
-                    color: var(--text);
-                    font-size: 1.4rem;
-                }
-                
-                /* 新增按鈕樣式 */
-                .btn-add-task {
-                    width: 36px;
-                    height: 36px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-                    border: none;
-                    color: white;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    transition: all 0.3s;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }
-                
-                .btn-add-task:hover {
-                    transform: rotate(90deg) scale(1.1);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-                }
-                
-                .btn-add-task svg {
-                    pointer-events: none;
-                }
-
-
-
-                .todos-count {
-                    font-size: 0.9rem;
-                    color: var(--text-light);
-                    margin-left: 12px;
-                }
-
-                .todos-actions {
-                    display: flex;
-                    gap: 12px;
-                }
-
-                .btn-add, .btn-merge {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 10px 16px;
-                    background: var(--primary);
-                    color: white;
-                    border: none;
-                    border-radius: 8px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-weight: 500;
-                }
-
-                .btn-add:hover, .btn-merge:hover:not(.disabled) {
-                    background: var(--primary-dark);
-                    transform: translateY(-1px);
-                }
-
-                .btn-merge {
-                    background: var(--accent);
-                }
-
-                .btn-merge.disabled {
-                    opacity: 0.5;
-                    cursor: not-allowed;
-                }
-
-                /* 篩選標籤 */
 
                 /* 看板欄位 */
                 .kanban-board {
@@ -948,7 +835,7 @@ class TodosModule {
     }
 
     // 增強版新增任務對話框
-    showAddDialog(prefillData = null) {
+    showAddDialog(columnId = null, prefillData = null) {
         const dialog = document.createElement('div');
         dialog.className = 'dialog-overlay';
         dialog.innerHTML = `
@@ -1091,6 +978,7 @@ class TodosModule {
         this.selectedPriority = prefillData?.priority || 0;
         this.selectedTag = prefillData?.tags?.[0] || null;
         this.editingTask = prefillData;
+        this.addDialogColumnId = columnId; // 儲存欄位 ID 用於新增任務
         
         // 事件綁定
         this.attachDialogEvents(dialog);
@@ -1163,6 +1051,17 @@ class TodosModule {
     }
 
     // 儲存任務
+    getStatusFromColumnId(columnId) {
+        const statusMap = {
+            'pending': 'pending',
+            'today': 'pending',
+            'week': 'pending',
+            'completed': 'completed',
+            'project': 'pending'
+        };
+        return statusMap[columnId] || 'pending';
+    }
+
     async saveTask() {
         const title = document.getElementById('taskTitle').value.trim();
         if (!title) {
@@ -1178,7 +1077,7 @@ class TodosModule {
             tags: this.selectedTag ? [this.selectedTag] : [],
             projectTag: document.getElementById('projectTag').value.replace('#', '').trim(),
             dueDate: document.getElementById('dueDate').value,
-            status: 'pending',
+            status: this.getStatusFromColumnId(this.addDialogColumnId) || 'pending',
             createdAt: new Date().toISOString(),
             comments: []
         };
@@ -1214,12 +1113,7 @@ class TodosModule {
             task.completedAt = new Date().toISOString();
             task.updatedAt = new Date().toISOString();
             
-            // 如果任務有映射到專案，同步狀態
-            if (this.taskBridge) {
-                await this.taskBridge.syncTaskStatus('todos', taskId, 'completed', {
-                    completedAt: task.completedAt
-                });
-            }
+            // 任務完成後可以在這裡添加其他同步邏輯
             
             await this.saveData();
             this.render(this.currentUser.uuid);

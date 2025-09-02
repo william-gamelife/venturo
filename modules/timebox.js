@@ -13,10 +13,12 @@ class TimeboxModule {
     // SignageHost 招牌資料
     static signage = {
         title: '箱型時間',
-        subtitle: '番茄鐘與一週時段',
+        subtitle: '2025年1月6日-1月12日', // 動態更新
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         actions: [
-            { id:'weekSwitch', label:'每週切換', kind:'secondary', onClick:'switchWeek' },
+            { id:'prevWeek', label:'←', kind:'secondary', onClick:'prevWeek' },
+            { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' },
+            { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' },
             { id:'slot15',  label:'15分',  kind:'secondary', onClick:'setSlot15'  },
             { id:'slot30',  label:'30分',  kind:'secondary', onClick:'setSlot30'  },
             { id:'slot60',  label:'60分',  kind:'secondary', onClick:'setSlot60'  },
@@ -139,56 +141,7 @@ class TimeboxModule {
         return `
             <div class="timebox-container">
                 <!-- 頂部工具列 -->
-                <div class="timebox-header">
-                    <div class="week-navigator">
-                        <button class="week-btn prev" onclick="window.activeModule.changeWeek(-1)">
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M12 15l-5-5 5-5" stroke="currentColor" fill="none" stroke-width="2"/>
-                            </svg>
-                        </button>
-                        <div class="week-title">
-                            <span class="week-text">${this.getWeekTitle()}</span>
-                            <button class="today-btn" onclick="window.activeModule.goToToday()">今天</button>
-                        </div>
-                        <button class="week-btn next" onclick="window.activeModule.changeWeek(1)">
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <path d="M8 15l5-5-5-5" stroke="currentColor" fill="none" stroke-width="2"/>
-                            </svg>
-                        </button>
-                    </div>
-                    
-                    <div class="timebox-tools">
-                        <!-- 時間單位切換 -->
-                        <div class="time-unit-selector">
-                            <button class="unit-btn ${this.timeUnit === 15 ? 'active' : ''}" 
-                                    onclick="window.activeModule.setTimeUnit(15)">15分</button>
-                            <button class="unit-btn ${this.timeUnit === 30 ? 'active' : ''}" 
-                                    onclick="window.activeModule.setTimeUnit(30)">30分</button>
-                            <button class="unit-btn ${this.timeUnit === 60 ? 'active' : ''}" 
-                                    onclick="window.activeModule.setTimeUnit(60)">60分</button>
-                        </div>
-                        
-                        <!-- 番茄鐘按鈕 -->
-                        <button class="pomodoro-btn" onclick="window.activeModule.togglePomodoroPanel()">
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
-                                <path d="M10 6v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                            </svg>
-                            <span>番茄鐘</span>
-                        </button>
-                        
-                        <!-- 活動類型管理 -->
-                        <button class="activity-btn" onclick="window.activeModule.showActivityManager()">
-                            <svg width="20" height="20" viewBox="0 0 20 20">
-                                <rect x="3" y="3" width="6" height="6" fill="currentColor" opacity="0.3"/>
-                                <rect x="11" y="3" width="6" height="6" fill="currentColor" opacity="0.5"/>
-                                <rect x="3" y="11" width="6" height="6" fill="currentColor" opacity="0.7"/>
-                                <rect x="11" y="11" width="6" height="6" fill="currentColor"/>
-                            </svg>
-                            <span>活動類型</span>
-                        </button>
-                    </div>
-                </div>
+                <!-- 週導航區（只保留日期導航）-->
 
                 <!-- 番茄鐘面板（初始隱藏）-->
                 <div class="pomodoro-panel" id="pomodoroPanel" style="display: none;">
@@ -213,27 +166,20 @@ class TimeboxModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    gap: 20px;
-                    padding: 20px;
-                }
-
-                /* 頂部工具列 */
-                .timebox-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    flex-wrap: wrap;
                     gap: 16px;
-                    background: var(--card);
-                    padding: 16px 20px;
-                    border-radius: 16px;
-                    border: 1px solid var(--border);
+                    padding: 0;
                 }
 
-                .week-navigator {
+                /* 週導航區（簡化版）*/
+                .week-navigator-only {
                     display: flex;
+                    justify-content: center;
                     align-items: center;
                     gap: 12px;
+                    background: var(--card);
+                    padding: 12px 20px;
+                    border-radius: 12px;
+                    border: 1px solid var(--border);
                 }
 
                 .week-btn {
@@ -284,57 +230,6 @@ class TimeboxModule {
                     transform: translateY(-1px);
                 }
 
-                .timebox-tools {
-                    display: flex;
-                    gap: 12px;
-                    align-items: center;
-                }
-
-                /* 時間單位選擇器 */
-                .time-unit-selector {
-                    display: flex;
-                    background: var(--bg);
-                    border-radius: 8px;
-                    padding: 2px;
-                    border: 1px solid var(--border);
-                }
-
-                .unit-btn {
-                    padding: 6px 12px;
-                    background: transparent;
-                    border: none;
-                    color: var(--text-light);
-                    cursor: pointer;
-                    border-radius: 6px;
-                    font-size: 0.85rem;
-                    transition: all 0.2s;
-                }
-
-                .unit-btn.active {
-                    background: white;
-                    color: var(--primary);
-                    font-weight: 600;
-                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-                }
-
-                .pomodoro-btn, .activity-btn {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 8px 14px;
-                    background: white;
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
-                    color: var(--text);
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-size: 0.9rem;
-                }
-
-                .pomodoro-btn:hover, .activity-btn:hover {
-                    background: var(--primary-light);
-                    transform: translateY(-1px);
-                }
 
                 /* 時間格子網格 */
                 .timebox-grid-wrapper {
@@ -350,9 +245,9 @@ class TimeboxModule {
                     display: grid;
                     grid-template-columns: 60px repeat(7, 1fr);
                     grid-template-rows: 40px repeat(${17 * (60/this.timeUnit)}, 30px);
-                    gap: 1px;
-                    background: var(--border);
-                    padding: 1px;
+                    gap: 3px;
+                    background: transparent;
+                    padding: 8px;
                     min-width: 700px;
                 }
 
@@ -400,32 +295,39 @@ class TimeboxModule {
                     font-weight: 400;
                 }
 
-                /* 時間格子 */
+                /* 時間格子 - 美化版 */
                 .time-slot {
-                    background: white;
+                    background: linear-gradient(135deg, white 0%, var(--bg) 100%);
                     cursor: pointer;
-                    transition: all 0.2s;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     position: relative;
                     user-select: none;
-                    border: 1px solid var(--border);
+                    border: 1px solid transparent;
+                    border-radius: 8px;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                    overflow: hidden;
                 }
 
                 .time-slot:hover {
-                    background: var(--bg);
-                    transform: scale(1.02);
+                    background: linear-gradient(135deg, var(--primary-light) 0%, white 100%);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
                     z-index: 1;
                 }
 
                 .time-slot.selected {
-                    background: var(--primary-light);
+                    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
                     border: 2px solid var(--primary);
+                    color: white;
+                    box-shadow: 0 4px 12px rgba(201,169,97,0.4);
                 }
 
                 .time-slot.occupied {
-                    cursor: default;
+                    cursor: pointer;
                     position: relative;
                     overflow: hidden;
                     border: none;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
                 }
                 
                 /* 合併邊框樣式 */
@@ -448,21 +350,26 @@ class TimeboxModule {
                 }
 
                 .time-slot.completed {
+                    background: linear-gradient(135deg, var(--accent) 0%, #5a7c70 100%) !important;
                     opacity: 0.9;
+                    border: 2px solid var(--accent);
                 }
-
+                
                 .time-slot.completed::after {
                     content: '✓';
                     position: absolute;
-                    top: 2px;
-                    right: 2px;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
                     color: white;
-                    font-size: 10px;
                     font-weight: bold;
-                    background: rgba(0,0,0,0.3);
-                    width: 14px;
-                    height: 14px;
+                    font-size: 16px;
+                    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                    z-index: 2;
+                    background: rgba(255,255,255,0.2);
                     border-radius: 50%;
+                    width: 20px;
+                    height: 20px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -1555,8 +1462,18 @@ class TimeboxModule {
         const slots = Array.from(this.selectedTimeSlots);
         if (slots.length === 0) return;
         
-        // 建立一個主任務ID
-        const taskId = 'task_' + Date.now();
+        // 檢查是否為編輯現有任務
+        const firstSlot = slots[0];
+        const existingData = this.timeboxData[firstSlot];
+        let taskId;
+        
+        if (existingData && existingData.taskId) {
+            // 編輯現有任務，使用原有的 taskId
+            taskId = existingData.taskId;
+        } else {
+            // 新建任務，建立新的 taskId
+            taskId = 'task_' + Date.now();
+        }
         
         // 將所有選取的格子指向同一個任務
         for (const slotKey of slots) {
@@ -1570,6 +1487,13 @@ class TimeboxModule {
                 totalSlots: slots.length,          // 總格子數
                 updatedAt: new Date().toISOString()
             };
+        }
+        
+        // 更新同一個taskId的所有slot的完成狀態
+        for (const key in this.timeboxData) {
+            if (this.timeboxData[key].taskId === taskId) {
+                this.timeboxData[key].completed = completed;
+            }
         }
         
         await this.saveData();
@@ -1948,10 +1872,14 @@ class TimeboxModule {
     }
 
     // SignageHost 按鈕方法：每週切換
-    switchWeek() {
-        console.log('每週切換功能');
-        // TODO: 實現週次切換功能
-        alert('每週切換功能開發中...');
+    // SignageHost 按鈕方法：上一週
+    prevWeek() {
+        this.changeWeek(-1);
+    }
+    
+    // SignageHost 按鈕方法：下一週
+    nextWeek() {
+        this.changeWeek(1);
     }
 
     // SignageHost 按鈕方法：打開活動類型面板
