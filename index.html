@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title id="pageTitle">遊戲人生 V2.0</title>
     
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
     <!-- Auth Module -->
     <script type="module" src="./modules/auth.js"></script>
     
@@ -388,7 +391,14 @@
 
     <!-- 主要 JavaScript -->
     <script>
-        // 預設使用者資料
+        // Supabase 設定
+        const SUPABASE_URL = 'https://your-project.supabase.co';  // 請替換為您的 Supabase URL
+        const SUPABASE_ANON_KEY = 'your-anon-key';  // 請替換為您的 anon key
+        const sb = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+        const ORG_ID = 'org_default';
+        const USERS_MODULE_KEY = 'users';
+
+        // 預設使用者資料（備用）
         const defaultUsers = [
             {
                 id: 'william',
@@ -419,12 +429,85 @@
         // 當前選中的使用者
         let selectedUser = null;
 
-        // 載入使用者
-        function loadUsers() {
-            const container = document.getElementById('usersContainer');
-            container.innerHTML = '';
+        // UUID 工具函數
+        function isUUIDv4(x) {
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(x || '');
+        }
+
+        function genUUID() {
+            return (crypto?.randomUUID?.() || 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            }));
+        }
+
+        // 從雲端載入使用者
+        async function fetchUsersFromCloud() {
+            if (!sb) return defaultUsers; // 如果沒有 Supabase，使用預設資料
             
-            const users = defaultUsers;
+            try {
+                const { data, error } = await sb
+                    .from('user_data')
+                    .select('data')
+                    .eq('user_id', ORG_ID)
+                    .eq('module', USERS_MODULE_KEY)
+                    .single();
+
+                if (error || !data || !Array.isArray(data.data)) {
+                    console.log('使用預設用戶資料');
+                    return defaultUsers;
+                }
+                
+                return data.data.map(user => ({
+                    ...user,
+                    icon: user.role === 'admin' ? 'icon-admin' : 'icon-manager'
+                }));
+            } catch (error) {
+                console.error('載入用戶失敗:', error);
+                return defaultUsers;
+            }
+        }
+
+        // 確保用戶有 UUID
+        async function ensureUserHasUUID(user, allUsers) {
+            if (isUUIDv4(user.uuid)) return user.uuid;
+            
+            if (!sb) {
+                // 沒有 Supabase，本機生成 UUID
+                user.uuid = genUUID();
+                return user.uuid;
+            }
+            
+            try {
+                // 生成新 UUID 並回存到整包 users
+                const newUUID = genUUID();
+                const updated = allUsers.map(u => 
+                    u.username === user.username ? { ...u, uuid: newUUID } : u
+                );
+                
+                await sb.from('user_data').upsert({
+                    user_id: ORG_ID, 
+                    module: USERS_MODULE_KEY,
+                    data: updated, 
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_id,module' });
+                
+                user.uuid = newUUID;
+                return user.uuid;
+            } catch (error) {
+                console.error('更新 UUID 失敗:', error);
+                user.uuid = genUUID();
+                return user.uuid;
+            }
+        }
+
+        // 載入使用者
+        async function loadUsers() {
+            const container = document.getElementById('usersContainer');
+            container.innerHTML = '載入中…';
+            
+            const users = await fetchUsersFromCloud();
+            container.innerHTML = '';
             
             users.forEach(user => {
                 const userCard = createUserCard(user);
@@ -451,29 +534,46 @@
         }
 
         // 選擇使用者
-        function selectUser(user) {
-            selectedUser = user;
-            
-            // 更新卡片狀態
-            document.querySelectorAll('.user-card').forEach(card => {
-                card.classList.remove('selected');
-            });
-            event.currentTarget.classList.add('selected');
-            
-            // 更新頁面標題和品牌名稱
-            updatePageTitle(user);
-            
-            // 顯示密碼輸入區域
-            const greeting = document.getElementById('passwordGreeting');
-            greeting.textContent = `歡迎回來 ${user.display_name}！請輸入密碼`;
-            
-            const passwordSection = document.getElementById('passwordSection');
-            passwordSection.classList.add('show');
-            
-            // 聚焦到密碼輸入框
-            setTimeout(() => {
-                document.getElementById('passwordInput').focus();
-            }, 300);
+        async function selectUser(user) {
+            try {
+                // 需要整包 users 來確保 UUID
+                const allUsers = await fetchUsersFromCloud();
+                const uuid = await ensureUserHasUUID(user, allUsers);
+                
+                // 建立完整的用戶資料
+                selectedUser = {
+                    ...user,
+                    uuid,
+                    username: user.username,
+                    display_name: user.display_name || user.username,
+                    title: user.title || '',
+                    role: user.role || 'user'
+                };
+                
+                // 更新卡片狀態
+                document.querySelectorAll('.user-card').forEach(card => {
+                    card.classList.remove('selected');
+                });
+                event.currentTarget.classList.add('selected');
+                
+                // 更新頁面標題和品牌名稱
+                updatePageTitle(selectedUser);
+                
+                // 顯示密碼輸入區域
+                const greeting = document.getElementById('passwordGreeting');
+                greeting.textContent = `歡迎回來 ${selectedUser.display_name}！請輸入密碼`;
+                
+                const passwordSection = document.getElementById('passwordSection');
+                passwordSection.classList.add('show');
+                
+                // 聚焦到密碼輸入框
+                setTimeout(() => {
+                    document.getElementById('passwordInput').focus();
+                }, 300);
+            } catch (error) {
+                console.error('選擇用戶失敗:', error);
+                alert('選擇用戶時發生錯誤，請重試');
+            }
         }
         
         // 更新頁面標題和品牌名稱
@@ -540,7 +640,21 @@
                 const result = validateLogin(selectedUser.username, password);
                 
                 if (result.success) {
-                    // 登入成功，跳轉到儀表板
+                    // 儲存完整的用戶資料到 sessionStorage
+                    const profile = {
+                        uuid: selectedUser.uuid,
+                        username: selectedUser.username,
+                        display_name: selectedUser.display_name,
+                        title: selectedUser.title,
+                        role: selectedUser.role
+                    };
+                    
+                    sessionStorage.setItem('currentUser', JSON.stringify(profile));
+                    
+                    // 也更新 localStorage 讓其他分頁能偵測
+                    localStorage.setItem('users_updated_at', Date.now().toString());
+                    
+                    // 跳轉到儀表板
                     window.location.href = './dashboard.html';
                 } else {
                     showError(result.message);
@@ -578,16 +692,24 @@
         });
 
         // 初始化
-        function init() {
+        async function init() {
             // 載入使用者
-            loadUsers();
+            await loadUsers();
             
             // 檢查是否已登入
-            const userUuid = sessionStorage.getItem('user_uuid');
-            if (userUuid) {
-                // 已登入，跳轉到儀表板
-                window.location.href = './dashboard.html';
-                return;
+            const currentUser = sessionStorage.getItem('currentUser');
+            if (currentUser) {
+                try {
+                    const user = JSON.parse(currentUser);
+                    if (user.uuid) {
+                        // 已登入，跳轉到儀表板
+                        window.location.href = './dashboard.html';
+                        return;
+                    }
+                } catch (error) {
+                    console.error('解析用戶資料失敗:', error);
+                    sessionStorage.removeItem('currentUser');
+                }
             }
         }
 

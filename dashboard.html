@@ -1005,8 +1005,11 @@
         async function loadModule(moduleName, navElement) {
             try {
                 // 檢查登入狀態
-                if (!checkAuth()) return;
-                
+                const user = getCurrentUser();
+                if (!user || !user.uuid) {
+                    window.location.href = './index.html';
+                    return;
+                }
                 
                 // 記住當前模組位置
                 window.location.hash = moduleName;
@@ -1024,77 +1027,40 @@
                     currentModule.destroy();
                 }
                 
-                // 取得當前使用者 UUID
-                const user = getCurrentUser();
-                if (!user) {
-                    window.location.href = './index.html';
-                    return;
-                }
-                
-                // 載入模組
+                // 載入狀態
                 const moduleContainer = document.getElementById('moduleContainer');
                 moduleContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-light);">載入中...</div>';
                 
-                let moduleClass;
-                switch (moduleName) {
-                    case 'overview':
-                    case 'dashboard':
-                        const overviewModule = await import('./modules/overview.js');
-                        moduleClass = overviewModule.OverviewModule;
-                        break;
-                    case 'todos':
-                        const todosModule = await import('./modules/todos.js');
-                        moduleClass = todosModule.TodosModule;
-                        break;
-                    case 'users':
-                        const usersModule = await import('./modules/users.js');
-                        moduleClass = usersModule.UsersModule;
-                        break;
-                    case 'calendar':
-                        const calendarModule = await import('./modules/calendar.js');
-                        moduleClass = calendarModule.CalendarModule;
-                        break;
-                    case 'timebox':
-                        const timeboxModule = await import('./modules/timebox.js');
-                        moduleClass = timeboxModule.TimeboxModule;
-                        break;
-                    case 'finance':
-                        const financeModule = await import('./modules/finance.js');
-                        moduleClass = financeModule.FinanceModule;
-                        break;
-                    case 'projects':
-                        const projectsModule = await import('./modules/projects.js');
-                        moduleClass = projectsModule.ProjectsModule;
-                        break;
-                    case 'witch':
-                        const witchModule = await import('./modules/witch.js');
-                        moduleClass = witchModule.WitchModule;
-                        break;
-                    case 'travel-pdf':
-                        const travelPdfModule = await import('./modules/travel-pdf.js');
-                        moduleClass = travelPdfModule.TravelPdfModule;
-                        break;
-                    case 'supabase-test':
-                        const supabaseTestModule = await import('./modules/supabase-test.js');
-                        moduleClass = supabaseTestModule.SupabaseTestModule;
-                        break;
-                    case 'settings':
-                        const settingsModule = await import('./modules/settings.js');
-                        moduleClass = settingsModule.SettingsModule;
-                        break;
-                    default:
-                        // 預設載入總覽模組
-                        const defaultModule = await import('./modules/overview.js');
-                        moduleClass = defaultModule.OverviewModule;
-                        break;
+                // 模組映射表（更簡潔）
+                const moduleMap = {
+                    'overview': './modules/overview.js',
+                    'dashboard': './modules/overview.js',
+                    'todos': './modules/todos.js',
+                    'users': './modules/users.js',
+                    'calendar': './modules/calendar.js',
+                    'timebox': './modules/timebox.js',
+                    'projects': './modules/projects.js',
+                    'finance': './modules/finance.js',
+                    'witch': './modules/witch.js',
+                    'travel-pdf': './modules/travel-pdf.js',
+                    'supabase-test': './modules/supabase-test.js',
+                    'settings': './modules/settings.js'
+                };
+                
+                const moduleUrl = moduleMap[moduleName] || moduleMap.dashboard;
+                const module = await import(moduleUrl);
+                const ModuleClass = Object.values(module).find(x => typeof x === 'function');
+                
+                if (!ModuleClass) {
+                    throw new Error(`無法找到模組類別: ${moduleName}`);
                 }
                 
                 // 實例化並渲染模組
-                currentModule = new moduleClass();
+                currentModule = new ModuleClass();
                 window.activeModule = currentModule; // 重要：設定全域引用供按鈕使用
                 
                 // 先掛招牌（不等資料，避免空白）
-                renderSignage(moduleClass, currentModule);
+                renderSignage(ModuleClass, currentModule);
                 
                 // 再渲染內容
                 await currentModule.render(user.uuid);

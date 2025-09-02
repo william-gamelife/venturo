@@ -74,7 +74,16 @@ function validateLogin(username, password) {
 
 function getCurrentUser() {
   try {
-    // 先檢查 localStorage
+    // 先檢查新格式的 currentUser (from index.html)
+    const currentUserData = sessionStorage.getItem('currentUser');
+    if (currentUserData) {
+      const data = JSON.parse(currentUserData);
+      if (data.uuid) {
+        return data;
+      }
+    }
+    
+    // 再檢查 localStorage
     const authData = localStorage.getItem('gamelife_auth');
     if (authData) {
       const data = JSON.parse(authData);
@@ -103,7 +112,7 @@ function getCurrentUser() {
       }
     }
     
-    // 如果 localStorage 沒有，再檢查 sessionStorage
+    // 最後檢查舊格式的 sessionStorage
     const uuid = sessionStorage.getItem('user_uuid');
     if (!uuid) return null;
     
@@ -121,7 +130,20 @@ function getCurrentUser() {
 }
 
 function isLoggedIn() {
-  // 先檢查 localStorage
+  // 先檢查新格式的 currentUser
+  const currentUserData = sessionStorage.getItem('currentUser');
+  if (currentUserData) {
+    try {
+      const data = JSON.parse(currentUserData);
+      if (data.uuid) {
+        return true;
+      }
+    } catch (error) {
+      sessionStorage.removeItem('currentUser');
+    }
+  }
+  
+  // 再檢查 localStorage
   const authData = localStorage.getItem('gamelife_auth');
   if (authData) {
     try {
@@ -138,16 +160,19 @@ function isLoggedIn() {
     }
   }
   
-  // 再檢查 sessionStorage
+  // 最後檢查舊格式的 sessionStorage
   return sessionStorage.getItem('user_uuid') !== null;
 }
 
 function logout() {
   try {
+    // 清除新格式
+    sessionStorage.removeItem('currentUser');
+    
     // 清除 localStorage
     localStorage.removeItem('gamelife_auth');
     
-    // 清除 sessionStorage
+    // 清除舊格式的 sessionStorage
     sessionStorage.removeItem('user_uuid');
     sessionStorage.removeItem('display_name');
     sessionStorage.removeItem('role');
