@@ -39,13 +39,13 @@ class TodosModule {
         this.currentFilter = 'all';
         this.draggedItem = null;
         this.quickTags = [
-            { id: 'quote', name: '報價', icon: '📊', color: '#c9a961' },
-            { id: 'schedule', name: '行程', icon: '📅', color: '#7a8b74' },
-            { id: 'presentation', name: '簡報', icon: '📈', color: '#6b8e9f' },
-            { id: 'contract', name: '合約', icon: '📋', color: '#d4a574' },
-            { id: 'flight', name: '團務機票', icon: '✈️', color: '#b87d8b' },
-            { id: 'hotel', name: '團務訂房', icon: '🏨', color: '#8b9dc3' },
-            { id: 'transport', name: '團務訂車', icon: '🚗', color: '#a0c4a0' }
+            { id: 'quote', name: '報價', icon: 'M3 3v4.5l11-7v4.5h7V3H3zm18 18v-4.5l-11 7v-4.5H3v2h18z', color: '#c9a961' },
+            { id: 'schedule', name: '行程', icon: 'M7 11h2v2H7zm0 4h2v2H7zm4-4h2v2h-2zm0 4h2v2h-2zm4-4h2v2h-2zm0 4h2v2h-2z M5 22h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2z', color: '#7a8b74' },
+            { id: 'presentation', name: '簡報', icon: 'M3 3v18h18V3H3zm16 16H5V5h14v14zM11 7h2v2h-2V7zm0 4h2v6h-2v-6z', color: '#6b8e9f' },
+            { id: 'contract', name: '合約', icon: 'M9 12h6m-6 4h6M9 8h6m-7-4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z', color: '#d4a574' },
+            { id: 'flight', name: '團務機票', icon: 'M12 2L13.09 8.26L22 9L14 14.74L16.18 22L12 18.82L7.82 22L10 14.74L2 9L10.91 8.26L12 2Z', color: '#b87d8b' },
+            { id: 'hotel', name: '團務訂房', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16M12 3v18M5 9h14M5 13h14', color: '#8b9dc3' },
+            { id: 'transport', name: '團務訂車', icon: 'M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0M5 17H3v-6l2-5h9l4 5v6h-2', color: '#a0c4a0' }
         ];
         
         // 新增狀態管理
@@ -59,24 +59,24 @@ class TodosModule {
                 id: 'travel-basic',
                 name: '旅行社基礎模板',
                 categories: [
-                    { id: 'contract', name: '合約類', icon: '📋' },
-                    { id: 'flight', name: '機票類', icon: '✈️' },
-                    { id: 'hotel', name: '住宿類', icon: '🏨' },
-                    { id: 'transport', name: '交通類', icon: '🚗' }
+                    { id: 'contract', name: '合約類', icon: 'M9 12h6m-6 4h6M9 8h6m-7-4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z' },
+                    { id: 'flight', name: '機票類', icon: 'M12 2L13.09 8.26L22 9L14 14.74L16.18 22L12 18.82L7.82 22L10 14.74L2 9L10.91 8.26L12 2Z' },
+                    { id: 'hotel', name: '住宿類', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16M12 3v18M5 9h14M5 13h14' },
+                    { id: 'transport', name: '交通類', icon: 'M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0M5 17H3v-6l2-5h9l4 5v6h-2' }
                 ]
             },
             {
                 id: 'travel-full',
                 name: '旅行社完整模板',
                 categories: [
-                    { id: 'contract', name: '合約類', icon: '📋' },
-                    { id: 'flight', name: '機票類', icon: '✈️' },
-                    { id: 'hotel', name: '住宿類', icon: '🏨' },
-                    { id: 'transport', name: '交通類', icon: '🚗' },
-                    { id: 'activity', name: '活動類', icon: '🎯' },
-                    { id: 'meal', name: '餐飲類', icon: '🍽️' },
-                    { id: 'insurance', name: '保險類', icon: '🛡️' },
-                    { id: 'document', name: '文件類', icon: '📄' }
+                    { id: 'contract', name: '合約類', icon: 'M9 12h6m-6 4h6M9 8h6m-7-4h8a2 2 0 012 2v12a2 2 0 01-2 2H8a2 2 0 01-2-2V6a2 2 0 012-2z' },
+                    { id: 'flight', name: '機票類', icon: 'M12 2L13.09 8.26L22 9L14 14.74L16.18 22L12 18.82L7.82 22L10 14.74L2 9L10.91 8.26L12 2Z' },
+                    { id: 'hotel', name: '住宿類', icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16M12 3v18M5 9h14M5 13h14' },
+                    { id: 'transport', name: '交通類', icon: 'M7 17m-2 0a2 2 0 104 0 2 2 0 10-4 0M17 17m-2 0a2 2 0 104 0 2 2 0 10-4 0M5 17H3v-6l2-5h9l4 5v6h-2' },
+                    { id: 'activity', name: '活動類', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z' },
+                    { id: 'meal', name: '餐飲類', icon: 'M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z' },
+                    { id: 'insurance', name: '保險類', icon: 'M12,1L3,5V11C3,16.55 6.84,21.74 12,23C17.16,21.74 21,16.55 21,11V5L12,1Z' },
+                    { id: 'document', name: '文件類', icon: 'M6,2C4.89,2 4,2.89 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2H6Z' }
                 ]
             },
             {
@@ -189,14 +189,14 @@ class TodosModule {
                         <span class="filter-section-title">快速篩選：</span>
                         <button class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" 
                                 onclick="window.activeModule.setFilter('all')">
-                            <span class="tag-icon">📊</span>
+                            <svg class="tag-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="M3 3v4.5l11-7v4.5h7V3H3zm18 18v-4.5l-11 7v-4.5H3v2h18z"/></svg>
                             全部
                         </button>
                         ${this.quickTags.map(tag => `
                             <button class="filter-tag ${this.currentFilter === tag.id ? 'active' : ''}" 
                                     onclick="window.activeModule.setFilter('${tag.id}')"
                                     style="--tag-color: ${tag.color}">
-                                <span class="tag-icon">${tag.icon}</span>
+                                <svg class="tag-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="${tag.icon}"/></svg>
                                 ${tag.name}
                             </button>
                         `).join('')}
@@ -749,11 +749,11 @@ class TodosModule {
 
     getKanbanColumns() {
         const columns = [
-            { id: 'pending', title: '📋 待處理', icon: 'clipboard' },
-            { id: 'today', title: '🔥 今日執行', icon: 'fire' },
-            { id: 'week', title: '📅 本週規劃', icon: 'calendar' },
-            { id: 'completed', title: '✅ 最近完成', icon: 'check' },
-            { id: 'project', title: '📁 轉為專案', icon: 'folder' }
+            { id: 'pending', title: '待處理', icon: 'clipboard' },
+            { id: 'today', title: '今日執行', icon: 'fire' },
+            { id: 'week', title: '本週規劃', icon: 'calendar' },
+            { id: 'completed', title: '最近完成', icon: 'check' },
+            { id: 'project', title: '轉為專案', icon: 'folder' }
         ];
 
         return columns.map(column => {
@@ -868,7 +868,7 @@ class TodosModule {
                         
                         ${tagInfo ? `
                             <div class="task-tag" style="background: ${tagInfo.color}; color: white;">
-                                <span class="tag-icon">${tagInfo.icon}</span>
+                                <svg class="tag-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="${tagInfo.icon}"/></svg>
                                 ${tagInfo.name}
                             </div>
                         ` : ''}
@@ -1038,7 +1038,7 @@ class TodosModule {
                                          data-tag="${tag.id}" 
                                          onclick="window.activeModule.toggleTag('${tag.id}')"
                                          style="--tag-color: ${tag.color}">
-                                        <span class="tag-icon">${tag.icon}</span>
+                                        <svg class="tag-icon" viewBox="0 0 24 24" fill="currentColor" width="16" height="16"><path d="${tag.icon}"/></svg>
                                         <span class="tag-name">${tag.name}</span>
                                     </div>
                                 `).join('')}
