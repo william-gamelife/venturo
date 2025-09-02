@@ -88,6 +88,50 @@
 export { ModuleName };
 ```
 
+### 店家招牌詳細說明 (moduleInfo)
+
+#### 必填欄位
+| 欄位 | 類型 | 說明 | 範例 |
+|------|------|------|------|
+| name | string | 模組中文名稱 | '待辦事項' |
+| subtitle | string | 簡短功能說明 | '智慧任務管理與專案追蹤' |
+| icon | string | SVG 圖示程式碼 | '<svg>...</svg>' |
+
+#### 選用欄位
+| 欄位 | 類型 | 說明 | 範例 |
+|------|------|------|------|
+| description | string | 詳細功能說明，會在副標題下方顯示 | '支援四欄位看板管理、專案分組...' |
+| version | string | 版本號 | '1.0.0' |
+| author | string | 開發者 | 'william' |
+| themeSupport | boolean | 是否支援主題切換 | true |
+| mobileSupport | boolean | 是否支援手機版 | true |
+
+#### description 使用指南
+- **何時使用**：當模組功能複雜，需要更詳細說明時
+- **建議長度**：50-150 字
+- **內容建議**：
+  - 列出主要功能特色
+  - 說明適用場景
+  - 強調獨特優勢
+- **顯示效果**：
+  - 字體較小 (0.85rem)
+  - 淺色顯示 (--text-muted)
+  - 出現在副標題下方
+
+#### 完整範例
+```javascript
+static moduleInfo = {
+  name: '待辦事項',
+  subtitle: '智慧任務管理與專案追蹤',
+  description: '支援四欄位看板管理、專案分組、批量操作及智慧篩選功能。專為旅行社業務流程設計，整合報價、行程、簡報等工作標籤。',
+  icon: '<svg>...</svg>',
+  version: '2.0.0',
+  author: 'william',
+  themeSupport: true,
+  mobileSupport: true
+};
+```
+
 ### 程式碼架構規範
 ```javascript
 class 店家名稱Module {
@@ -95,6 +139,7 @@ class 店家名稱Module {
   static moduleInfo = {
     name: '中文名稱',        // 顯示名稱
     subtitle: '功能說明',    // 副標題
+    description: '詳細功能說明', // 選用 - 詳細說明，會在副標題下方顯示
     icon: '<svg>...</svg>',  // SVG 圖示（禁用 Emoji）
     version: '1.0.0',        // 版本號
     author: 'william',       // 開發者
@@ -144,6 +189,9 @@ class 店家名稱Module {
 ```
 開店必備：
 - 招牌（moduleInfo）- 讓人知道你是誰
+  - name: 店名
+  - subtitle: 簡短介紹
+  - description: 詳細說明（選用，可讓客人更了解服務）
 - 開門（render）- 客人能進來
 - 收銀（showAddDialog）- 基本服務
 - 打烊（destroy）- 關店程序

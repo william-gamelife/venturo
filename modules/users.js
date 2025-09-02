@@ -372,11 +372,15 @@ class UsersModule {
         div.innerHTML = `
             <div class="user-actions">
                 <button class="action-btn" style="background: #3b82f6; color: white;" onclick="window.activeModule.editUser('${user.uuid}')" title="編輯">
-                    ✎
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M8.5 1L11 3.5 4 10.5H1.5V8L8.5 1z" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                    </svg>
                 </button>
                 ${user.uuid !== this.userId ? `
                 <button class="action-btn" style="background: #ef4444; color: white;" onclick="window.activeModule.deleteUser('${user.uuid}')" title="刪除">
-                    ✕
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                        <path d="M9 3L3 9M3 3l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
                 </button>
                 ` : ''}
             </div>

@@ -39,6 +39,7 @@ class TodosModule {
         this.selectedTodos = new Set();
         this.currentFilter = 'all';
         this.draggedItem = null;
+        this.availableUsers = []; // 可用的用戶列表
         this.quickTags = [
             { id: 'quote', name: '報價', icon: 'M3 3v4.5l11-7v4.5h7V3H3zm18 18v-4.5l-11 7v-4.5H3v2h18z', color: '#c9a961' },
             { id: 'schedule', name: '行程', icon: 'M7 11h2v2H7zm0 4h2v2H7zm4-4h2v2h-2zm0 4h2v2h-2zm4-4h2v2h-2zm0 4h2v2h-2z M5 22h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2z', color: '#7a8b74' },
@@ -100,6 +101,9 @@ class TodosModule {
         // 載入資料
         await this.loadData();
         
+        // 載入用戶列表
+        await this.loadAvailableUsers();
+        
         // 渲染介面
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = this.getHTML();
@@ -118,6 +122,21 @@ class TodosModule {
             stats: [
                 { label: `${this.todos.length} 個任務`, highlight: false },
                 ...(this.selectedTodos.size > 0 ? [{ label: `已選取 ${this.selectedTodos.size} 個`, highlight: true }] : [])
+            ],
+            categories: [
+                { id: 'quote', label: '📋 報價', active: this.currentFilter === 'quote', onClick: 'window.activeModule.setFilter' },
+                { id: 'schedule', label: '📅 行程', active: this.currentFilter === 'schedule', onClick: 'window.activeModule.setFilter' },
+                { id: 'presentation', label: '📊 簡報', active: this.currentFilter === 'presentation', onClick: 'window.activeModule.setFilter' },
+                { id: 'contract', label: '📄 合約', active: this.currentFilter === 'contract', onClick: 'window.activeModule.setFilter' },
+                { id: 'flight', label: '✈️ 團務機票', active: this.currentFilter === 'flight', onClick: 'window.activeModule.setFilter' },
+                { id: 'hotel', label: '🏨 團務訂房', active: this.currentFilter === 'hotel', onClick: 'window.activeModule.setFilter' },
+                { id: 'transport', label: '🚌 團務訂車', active: this.currentFilter === 'transport', onClick: 'window.activeModule.setFilter' }
+            ],
+            filters: [
+                { id: 'all', label: '全部', active: this.currentFilter === 'all', onClick: 'window.activeModule.setFilter' },
+                { id: 'today', label: '今日', active: this.currentFilter === 'today', onClick: 'window.activeModule.setFilter' },
+                { id: 'week', label: '本週', active: this.currentFilter === 'week', onClick: 'window.activeModule.setFilter' },
+                { id: 'project', label: '專案', active: this.currentFilter === 'project', onClick: 'window.activeModule.setFilter' }
             ],
             actions: [
                 { 
@@ -141,20 +160,7 @@ class TodosModule {
                     onClick: 'window.activeModule.clearSelection', 
                     disabled: this.selectedTodos.size === 0 
                 }
-            ],
-            filters: [
-                { id: 'all', label: '全部', active: this.currentFilter === 'all', onClick: 'window.activeModule.setFilter' },
-                ...this.quickTags.map(tag => ({
-                    id: tag.id,
-                    label: tag.name,
-                    active: this.currentFilter === tag.id,
-                    onClick: 'window.activeModule.setFilter'
-                }))
-            ],
-            searchButton: {
-                label: '搜尋',
-                onClick: 'window.activeModule.showSearchDialog'
-            }
+            ]
         };
 
         // 更新儀表板招牌
@@ -174,6 +180,55 @@ class TodosModule {
         } catch (error) {
             console.error('載入待辦事項失敗:', error);
             this.todos = [];
+        }
+    }
+
+    async loadAvailableUsers() {
+        try {
+            // 直接從 Supabase 查詢用戶資料
+            if (!this.syncManager.supabase) {
+                console.warn('🚨 Supabase 未初始化，使用預設用戶');
+                this.availableUsers = [
+                    { uuid: 'self', display_name: '自己', role: 'user' },
+                    { uuid: 'william', display_name: 'William', role: 'admin' },
+                    { uuid: 'team', display_name: '團隊', role: 'user' }
+                ];
+                return;
+            }
+
+            // 查詢用戶資料表
+            const { data, error } = await this.syncManager.supabase
+                .from('user_data')
+                .select('data')
+                .eq('module', 'users');
+
+            if (error) {
+                console.error('載入用戶資料失敗:', error);
+                this.availableUsers = [
+                    { uuid: 'self', display_name: '自己', role: 'user' }
+                ];
+                return;
+            }
+
+            if (data && data.length > 0 && data[0].data) {
+                // 提取用戶列表，只取顯示名稱和UUID
+                this.availableUsers = data[0].data.map(user => ({
+                    uuid: user.uuid,
+                    display_name: user.display_name || user.username,
+                    role: user.role || 'user'
+                }));
+                console.log('✅ 載入用戶列表:', this.availableUsers.length, '位');
+            } else {
+                console.warn('⚠️ 未找到用戶資料，使用預設選項');
+                this.availableUsers = [
+                    { uuid: 'self', display_name: '自己', role: 'user' }
+                ];
+            }
+        } catch (error) {
+            console.error('載入用戶資料異常:', error);
+            this.availableUsers = [
+                { uuid: 'self', display_name: '自己', role: 'user' }
+            ];
         }
     }
 
@@ -434,13 +489,23 @@ class TodosModule {
                 }
 
                 .star {
-                    width: 12px;
-                    height: 12px;
-                    fill: var(--border);
+                    width: 14px;
+                    height: 14px;
+                    display: inline-block;
+                    transition: all 0.2s ease;
                 }
 
                 .star.filled {
-                    fill: var(--primary);
+                    color: #f39c12;
+                    filter: drop-shadow(0 1px 2px rgba(243, 156, 18, 0.3));
+                }
+
+                .star.hollow {
+                    color: var(--border);
+                }
+
+                .star.hollow:hover {
+                    color: #f39c12;
                 }
 
                 .task-due {
@@ -548,28 +613,52 @@ class TodosModule {
 
                 .priority-selector {
                     display: flex;
-                    gap: 8px;
+                    gap: 12px;
+                    flex-wrap: wrap;
                 }
 
                 .priority-star {
-                    width: 32px;
-                    height: 32px;
-                    border: 1px solid var(--border);
-                    border-radius: 4px;
+                    min-width: 80px;
+                    padding: 12px;
+                    border: 2px solid var(--border);
+                    border-radius: 8px;
                     cursor: pointer;
                     display: flex;
+                    flex-direction: column;
                     align-items: center;
                     justify-content: center;
+                    gap: 6px;
                     transition: all 0.2s;
+                    background: var(--card);
                 }
 
                 .priority-star:hover {
-                    background: var(--bg);
+                    background: var(--bg-dark);
+                    border-color: var(--primary);
+                    transform: translateY(-1px);
                 }
 
                 .priority-star.selected {
                     background: var(--primary-light);
                     border-color: var(--primary);
+                    box-shadow: 0 2px 8px rgba(201, 169, 97, 0.2);
+                }
+
+                .star-display {
+                    display: flex;
+                    gap: 2px;
+                }
+
+                .priority-none {
+                    font-size: 0.9rem;
+                    color: var(--text-light);
+                    font-weight: 500;
+                }
+
+                .priority-label {
+                    font-size: 0.8rem;
+                    color: var(--text-light);
+                    font-weight: 500;
                 }
 
                 .tag-selector {
@@ -691,6 +780,10 @@ class TodosModule {
 
                 .toast.success {
                     background: #27ae60;
+                }
+
+                .toast.info {
+                    background: #3498db;
                 }
 
                 /* 手機版響應式 */
@@ -930,8 +1023,12 @@ class TodosModule {
     getPriorityStars(priority) {
         let stars = '';
         for (let i = 1; i <= 3; i++) {
-            stars += `<svg class="star ${i <= priority ? 'filled' : ''}" viewBox="0 0 12 12">
-                        <path d="M6 0l2 4 4 0.5-3 3L10 12 6 10 2 12l1-4.5-3-3L4 4z"/>
+            const isFilled = i <= priority;
+            stars += `<svg class="star ${isFilled ? 'filled' : 'hollow'}" viewBox="0 0 24 24" width="14" height="14">
+                        ${isFilled ? 
+                            `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>` :
+                            `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="currentColor" stroke-width="1.5"/>`
+                        }
                       </svg>`;
         }
         return stars;
@@ -1020,12 +1117,29 @@ class TodosModule {
                         <div class="form-group">
                             <label class="form-label">優先級設定</label>
                             <div class="priority-selector">
-                                ${[0,1,2,3].map(i => `
-                                    <div class="priority-star ${(prefillData?.priority || 0) >= i && i > 0 ? 'selected' : ''}" 
+                                <div class="priority-star ${(prefillData?.priority || 0) === 0 ? 'selected' : ''}" 
+                                     data-priority="0" 
+                                     onclick="window.activeModule.setPriority(0)">
+                                    <span class="priority-none">無</span>
+                                </div>
+                                ${[1,2,3].map(i => `
+                                    <div class="priority-star ${(prefillData?.priority || 0) >= i ? 'selected' : ''}" 
                                          data-priority="${i}" 
-                                         onclick="window.activeModule.setPriority(${i})">
-                                        ${i === 0 ? '無' : '★'.repeat(i)}
-                                        ${i === 0 ? '' : `<span class="priority-label">${['', '低', '中', '高'][i]}</span>`}
+                                         onclick="window.activeModule.setPriority(${i})"
+                                         title="${['', '低優先級', '中優先級', '高優先級'][i]}">
+                                        <div class="star-display">
+                                            ${Array.from({length: 3}, (_, index) => {
+                                                const starIndex = index + 1;
+                                                const isFilled = starIndex <= i;
+                                                return `<svg class="star ${isFilled ? 'filled' : 'hollow'}" viewBox="0 0 24 24" width="16" height="16">
+                                                    ${isFilled ? 
+                                                        `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>` :
+                                                        `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z" fill="none" stroke="currentColor" stroke-width="1.5"/>`
+                                                    }
+                                                </svg>`;
+                                            }).join('')}
+                                        </div>
+                                        <span class="priority-label">${['', '低', '中', '高'][i]}</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -1069,12 +1183,14 @@ class TodosModule {
                         <div class="form-group">
                             <label class="form-label">指派對象</label>
                             <select class="form-select" id="assignedTo">
-                                <option value="">指派給...</option>
-                                <option value="自己" ${prefillData?.assignedTo === '自己' ? 'selected' : ''}>🗣️ 自己</option>
-                                <option value="小美" ${prefillData?.assignedTo === '小美' ? 'selected' : ''}>👩 小美</option>
-                                <option value="小明" ${prefillData?.assignedTo === '小明' ? 'selected' : ''}>👨 小明</option>
-                                <option value="經理" ${prefillData?.assignedTo === '經理' ? 'selected' : ''}>💼 經理</option>
+                                <option value="">請選擇指派對象...</option>
+                                ${this.availableUsers.map(user => `
+                                    <option value="${user.display_name}" ${prefillData?.assignedTo === user.display_name ? 'selected' : ''}>
+                                        ${user.role === 'admin' ? '👑' : '👤'} ${user.display_name}
+                                    </option>
+                                `).join('')}
                             </select>
+                            <div class="form-hint">可指派給團隊中的任何成員</div>
                         </div>
                     </div>
                     
@@ -1142,9 +1258,10 @@ class TodosModule {
     // 增強版設定優先級
     setPriority(level) {
         this.selectedPriority = level;
-        document.querySelectorAll('.priority-star').forEach((star, index) => {
+        document.querySelectorAll('.priority-star').forEach(star => {
+            const priority = parseInt(star.dataset.priority);
             star.classList.remove('selected');
-            if (index > 0 && index <= level) {
+            if (priority === level) {
                 star.classList.add('selected');
             }
         });
@@ -1163,6 +1280,31 @@ class TodosModule {
         }
     }
 
+    // 自動分類功能
+    autoClassifyTask(title, description) {
+        const text = (title + ' ' + (description || '')).toLowerCase();
+        
+        // 分類關鍵詞映射
+        const classificationRules = {
+            'quote': ['報價', '詢價', '價格', '費用', '成本', '預算', '估價', '價單'],
+            'schedule': ['行程', '排程', '時間', '日期', '安排', '預約', '會議', '約定'],
+            'presentation': ['簡報', '提案', '展示', 'ppt', 'powerpoint', '說明會', '發表'],
+            'contract': ['合約', '契約', '簽約', '協議', '條約', '合同', '法律', '簽署'],
+            'flight': ['機票', '航班', '飛機', '登機', '起飛', '降落', '航空', '機位'],
+            'hotel': ['訂房', '飯店', '酒店', '住宿', '房間', 'hotel', '旅館', '民宿'],
+            'transport': ['訂車', '交通', '巴士', '遊覽車', '司機', '接送', '租車', '車輛']
+        };
+        
+        // 檢查每個分類
+        for (const [category, keywords] of Object.entries(classificationRules)) {
+            if (keywords.some(keyword => text.includes(keyword))) {
+                return category;
+            }
+        }
+        
+        return null; // 無法自動分類
+    }
+
     // 儲存任務
     async saveTask() {
         const title = document.getElementById('taskTitle').value.trim();
@@ -1171,18 +1313,30 @@ class TodosModule {
             return;
         }
         
+        const description = document.getElementById('taskDesc').value.trim();
+        
         const newTask = {
             id: Date.now().toString(),
             title,
-            description: document.getElementById('taskDesc').value.trim(),
+            description,
             priority: this.selectedPriority || 0,
             tags: this.selectedTag ? [this.selectedTag] : [],
             projectTag: document.getElementById('projectTag').value.replace('#', '').trim(),
+            assignedTo: document.getElementById('assignedTo').value.trim(),
             dueDate: document.getElementById('dueDate').value,
             status: 'pending',
             createdAt: new Date().toISOString(),
             comments: []
         };
+        
+        // 如果沒有手動選擇標籤，自動分類
+        if (!this.selectedTag) {
+            const autoCategory = this.autoClassifyTask(title, description);
+            if (autoCategory) {
+                newTask.tags = [autoCategory];
+                this.showToast(`已自動分類為：${this.quickTags.find(t => t.id === autoCategory)?.name}`, 'info');
+            }
+        }
         
         this.todos.push(newTask);
         await this.saveData();
