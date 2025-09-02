@@ -492,10 +492,11 @@ class TodosModule {
                     display: flex;
                     gap: 8px;
                     align-items: center;
-                    justify-content: center;
+                    justify-content: flex-start;
                     height: 40px; /* 與 form-input 相同高度 */
                     box-sizing: border-box;
                     padding: 8px 12px; /* 與 form-input 相同內距 */
+                    min-width: 120px;
                 }
 
                 .priority-dot {
@@ -520,10 +521,11 @@ class TodosModule {
                 
                 .form-row-centered {
                     display: flex;
-                    gap: 16px;
+                    gap: 32px;
                     margin-bottom: 20px;
                     align-items: center;
-                    justify-content: center;
+                    justify-content: space-between;
+                    padding: 0 20px;
                 }
 
                 .form-group-center {
@@ -536,6 +538,8 @@ class TodosModule {
                     transition: all 0.2s;
                     fill: var(--border);
                     stroke: var(--border);
+                    pointer-events: auto;
+                    z-index: 10;
                 }
 
                 .priority-star:hover {
@@ -834,7 +838,8 @@ class TodosModule {
                  draggable="true"
                  ondragstart="window.activeModule.handleDragStart(event, '${task.id}')"
                  ondragend="window.activeModule.handleDragEnd(event)"
-                 onclick="window.activeModule.handleTaskCardClick(event, '${task.id}')">
+                 onclick="window.activeModule.handleTaskCardClick(event, '${task.id}')"
+                 ondblclick="window.activeModule.editTask('${task.id}')">
                 
                 <div class="task-content">
                     <div class="task-title">
@@ -992,27 +997,21 @@ class TodosModule {
                     <div class="form-row form-row-centered">
                         <div class="form-group form-group-center">
                             <div class="priority-selector" id="prioritySelector">
-                                <svg class="priority-star" data-priority="1" viewBox="0 0 24 24" width="24" height="24" 
-                                     onclick="window.activeModule.setPriority(1)">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
-                                <svg class="priority-star" data-priority="2" viewBox="0 0 24 24" width="24" height="24"
-                                     onclick="window.activeModule.setPriority(2)">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
-                                <svg class="priority-star" data-priority="3" viewBox="0 0 24 24" width="24" height="24"
-                                     onclick="window.activeModule.setPriority(3)">
-                                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" 
-                                          stroke="currentColor" stroke-width="2" fill="none"/>
-                                </svg>
+                                <div class="priority-dot" data-priority="1" 
+                                     onclick="event.stopPropagation(); window.activeModule.setPriority(1);"
+                                     style="cursor: pointer;"></div>
+                                <div class="priority-dot" data-priority="2"
+                                     onclick="event.stopPropagation(); window.activeModule.setPriority(2);"
+                                     style="cursor: pointer;"></div>
+                                <div class="priority-dot" data-priority="3"
+                                     onclick="event.stopPropagation(); window.activeModule.setPriority(3);"
+                                     style="cursor: pointer;"></div>
                             </div>
                         </div>
                         
-                        <div class="form-group form-group-center">
+                        <div class="form-group form-group-center" style="min-width: 160px;">
                             <input type="date" class="form-input" id="dueDate" 
-                                   value="${prefillData?.dueDate || ''}">
+                                   value="${prefillData?.dueDate || ''}" style="text-align: center;">
                         </div>
                     </div>
                     
@@ -1105,13 +1104,25 @@ class TodosModule {
 
     // 增強版設定優先級
     setPriority(level) {
-        // 如果點擊已選中的星星，則取消選擇
+        // 如果點擊已選中的優先級，則取消選擇
         if (this.selectedPriority === level) {
             this.selectedPriority = 0;
         } else {
             this.selectedPriority = level;
         }
         
+        // 更新原點樣式
+        const dots = document.querySelectorAll('.priority-dot');
+        dots.forEach(dot => {
+            const dotLevel = parseInt(dot.dataset.priority);
+            if (dotLevel <= this.selectedPriority) {
+                dot.classList.add('active');
+            } else {
+                dot.classList.remove('active');
+            }
+        });
+        
+        // 兼容星星樣式（如果存在）
         const stars = document.querySelectorAll('.priority-star');
         stars.forEach(star => {
             const starLevel = parseInt(star.dataset.priority);
@@ -1183,25 +1194,47 @@ class TodosModule {
             return;
         }
         
-        const newTask = {
-            id: Date.now().toString(),
-            title,
-            description: document.getElementById('taskDesc').value.trim(),
-            priority: this.selectedPriority || 0,
-            tags: this.selectedTag ? [this.selectedTag] : [],
-            projectTag: document.getElementById('projectTag').value.replace('#', '').trim(),
-            dueDate: document.getElementById('dueDate').value,
-            status: this.getStatusFromColumnId(this.addDialogColumnId) || 'pending',
-            createdAt: new Date().toISOString(),
-            comments: []
-        };
-        
-        this.todos.push(newTask);
-        await this.saveData();
-        
-        this.closeDialog();
-        this.render(this.currentUser.uuid);
-        this.showToast('任務新增成功', 'success');
+        if (this.editingTask) {
+            // 編輯模式：更新現有任務
+            const taskIndex = this.todos.findIndex(t => t.id === this.editingTask.id);
+            if (taskIndex !== -1) {
+                this.todos[taskIndex] = {
+                    ...this.todos[taskIndex],
+                    title,
+                    description: document.getElementById('taskDesc').value.trim(),
+                    priority: this.selectedPriority || 0,
+                    tags: this.selectedTag ? [this.selectedTag] : [],
+                    projectTag: document.getElementById('projectTag').value.replace('#', '').trim(),
+                    dueDate: document.getElementById('dueDate').value,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                await this.saveData();
+                this.closeDialog();
+                this.render(this.currentUser.uuid);
+                this.showToast('任務更新成功', 'success');
+            }
+        } else {
+            // 新增模式：創建新任務
+            const newTask = {
+                id: Date.now().toString(),
+                title,
+                description: document.getElementById('taskDesc').value.trim(),
+                priority: this.selectedPriority || 0,
+                tags: this.selectedTag ? [this.selectedTag] : [],
+                projectTag: document.getElementById('projectTag').value.replace('#', '').trim(),
+                dueDate: document.getElementById('dueDate').value,
+                status: this.getStatusFromColumnId(this.addDialogColumnId) || 'pending',
+                createdAt: new Date().toISOString(),
+                comments: []
+            };
+            
+            this.todos.push(newTask);
+            await this.saveData();
+            this.closeDialog();
+            this.render(this.currentUser.uuid);
+            this.showToast('任務新增成功', 'success');
+        }
     }
 
     // 編輯任務
@@ -1690,7 +1723,7 @@ class TodosModule {
         
         // 顯示編輯對話框
         setTimeout(() => {
-            this.showAddDialog(task);
+            this.showAddDialog(null, task);
         }, 100);
     }
     

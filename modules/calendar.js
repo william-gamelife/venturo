@@ -69,6 +69,8 @@ class CalendarModule {
                         </div>
                         <div class="calendar-days" id="calendarDays"></div>
                     </div>
+                    <!-- 跨日事件長條容器 -->
+                    <div class="calendar-event-bars" id="calendarEventBars"></div>
                 </div>
             </div>
             
@@ -218,6 +220,32 @@ class CalendarModule {
                     grid-template-columns: repeat(7, 1fr);
                     gap: 1px;
                     background: var(--border);
+                }
+
+                .calendar-event-bars {
+                    position: relative;
+                    display: grid;
+                    grid-template-columns: repeat(7, 1fr);
+                    gap: 1px;
+                    margin-top: 10px;
+                    min-height: 20px;
+                }
+
+                .event-bar {
+                    background: var(--primary);
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    cursor: pointer;
+                    margin: 1px 0;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    height: 18px;
+                    display: flex;
+                    align-items: center;
                 }
                 
                 .calendar-day {
@@ -474,6 +502,7 @@ class CalendarModule {
 
     updateCalendarView() {
         const container = document.getElementById('calendarDays');
+        const eventBarsContainer = document.getElementById('calendarEventBars');
         if (!container) return;
         
         const year = this.viewDate.getFullYear();
@@ -485,6 +514,11 @@ class CalendarModule {
         
         // 渲染日期格子
         container.innerHTML = this.renderCalendarDays(startDate, month);
+        
+        // 渲染跨日事件長條
+        if (eventBarsContainer) {
+            eventBarsContainer.innerHTML = this.renderEventBars(startDate);
+        }
     }
 
     renderCalendarDays(startDate, currentMonth) {
@@ -524,65 +558,74 @@ class CalendarModule {
     }
 
     renderEventBars(startDate) {
-        const multiDayEvents = this.events.filter(event => event.multiDay || event.startDate);
+        const multiDayEvents = this.events.filter(event => event.multiDay && event.startDate && event.endDate);
         let html = '';
         
+        if (multiDayEvents.length === 0) return html;
+        
+        // 創建6週的網格結構
+        const weeks = [];
+        for (let w = 0; w < 6; w++) {
+            weeks[w] = [];
+            for (let d = 0; d < 7; d++) {
+                weeks[w][d] = [];
+            }
+        }
+        
         multiDayEvents.forEach((event, index) => {
-            const startDateStr = event.startDate;
-            const endDateStr = event.endDate;
+            const eventStart = new Date(event.startDate);
+            const eventEnd = new Date(event.endDate);
             
-            if (!startDateStr || !endDateStr) return;
+            // 計算事件在日曆中的位置
+            const startDiff = Math.floor((eventStart - startDate) / (24 * 60 * 60 * 1000));
+            const endDiff = Math.floor((eventEnd - startDate) / (24 * 60 * 60 * 1000));
             
-            const eventStart = new Date(startDateStr);
-            const eventEnd = new Date(endDateStr);
-            const calendarEnd = new Date(startDate);
-            calendarEnd.setDate(calendarEnd.getDate() + 41);
+            if (startDiff > 41 || endDiff < 0) return; // 不在顯示範圍內
             
-            // 計算事件在日曆網格中的位置
-            const startDiff = Math.max(0, Math.floor((eventStart - startDate) / (24 * 60 * 60 * 1000)));
-            const endDiff = Math.min(41, Math.floor((eventEnd - startDate) / (24 * 60 * 60 * 1000)));
-            
-            if (startDiff > 41 || endDiff < 0) return; // 事件不在當前月曆範圍內
-            
-            const startWeek = Math.floor(startDiff / 7);
-            const endWeek = Math.floor(endDiff / 7);
+            const adjustedStart = Math.max(0, startDiff);
+            const adjustedEnd = Math.min(41, endDiff);
             
             // 為每一週創建事件條
-            for (let week = startWeek; week <= endWeek; week++) {
-                const weekStart = week * 7;
-                const weekEnd = weekStart + 6;
+            let currentDay = adjustedStart;
+            while (currentDay <= adjustedEnd) {
+                const week = Math.floor(currentDay / 7);
+                const dayInWeek = currentDay % 7;
+                const weekEnd = Math.min(week * 7 + 6, adjustedEnd);
+                const span = weekEnd - currentDay + 1;
                 
-                const barStart = Math.max(startDiff, weekStart);
-                const barEnd = Math.min(endDiff, weekEnd);
+                if (week < 6) {
+                    weeks[week][dayInWeek].push({
+                        event,
+                        span,
+                        isStart: currentDay === adjustedStart,
+                        isEnd: weekEnd === adjustedEnd
+                    });
+                }
                 
-                if (barStart > barEnd) continue;
-                
-                const barStartCol = barStart % 7;
-                const barWidth = barEnd - barStart + 1;
-                
-                html += `
-                    <div class="event-bar" 
-                         style="
-                            grid-row: ${week + 2}; 
-                            grid-column: ${barStartCol + 1} / span ${barWidth};
-                            background: ${this.getPriorityColor(event.priority)};
-                            color: white;
-                            padding: 2px 6px;
-                            border-radius: 4px;
-                            font-size: 11px;
-                            font-weight: 500;
-                            cursor: pointer;
-                            margin-top: 2px;
-                            white-space: nowrap;
-                            overflow: hidden;
-                            text-overflow: ellipsis;
-                         "
-                         onclick="window.activeModule.editEvent('${event.id}')"
-                         title="${event.title}">
-                        ${event.title}
-                    </div>
-                `;
+                currentDay = weekEnd + 1;
             }
+        });
+        
+        // 渲染事件條
+        weeks.forEach((week, weekIndex) => {
+            week.forEach((dayEvents, dayIndex) => {
+                dayEvents.forEach((eventBar, barIndex) => {
+                    const { event, span, isStart, isEnd } = eventBar;
+                    html += `
+                        <div class="event-bar" 
+                             style="
+                                grid-row: ${weekIndex + 1}; 
+                                grid-column: ${dayIndex + 1} / span ${span};
+                                background: ${this.getPriorityColor(event.priority)};
+                                margin-bottom: ${barIndex * 20 + 2}px;
+                             "
+                             onclick="window.activeModule.editEvent('${event.id}')"
+                             title="${event.title}">
+                            ${isStart ? event.title : ''}
+                        </div>
+                    `;
+                });
+            });
         });
         
         return html;

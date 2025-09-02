@@ -50,6 +50,8 @@ class TimeboxModule {
         this.touchStartTime = null;
         this.longPressTimer = null;
         this.dragTimer = null;
+        this.isDragging = false;
+        this.dragStartSlot = null;
     }
 
     async render(uuid) {
@@ -1036,7 +1038,11 @@ class TimeboxModule {
                                  data-key="${slotKey}"
                                  data-task-id="${taskBlock.taskId}"
                                  style="grid-row: span ${rowSpan}; background: ${activity?.color}; border-color: ${activity?.color};"
-                                 onclick="window.activeModule.onSlotClick('${slotKey}')">
+                                 onmousedown="window.activeModule.onSlotMouseDown(event, '${slotKey}')"
+                                 onmouseenter="window.activeModule.onSlotMouseEnter(event, '${slotKey}')"
+                                 onmouseup="window.activeModule.onSlotMouseUp(event, '${slotKey}')"
+                                 ontouchstart="window.activeModule.onSlotTouchStart(event, '${slotKey}')"
+                                 ontouchend="window.activeModule.onSlotTouchEnd(event, '${slotKey}')">
                                 <div class="time-slot-content">
                                     <div>${taskBlock.content || activity?.name}</div>
                                     <div style="font-size: 0.7em; opacity: 0.8;">${timeText}</div>
@@ -1064,7 +1070,11 @@ class TimeboxModule {
                                  data-time="${timeStr}"
                                  data-key="${slotKey}"
                                  style="${slotStyle}"
-                                 onclick="window.activeModule.onSlotClick('${slotKey}')">
+                                 onmousedown="window.activeModule.onSlotMouseDown(event, '${slotKey}')"
+                                 onmouseenter="window.activeModule.onSlotMouseEnter(event, '${slotKey}')"
+                                 onmouseup="window.activeModule.onSlotMouseUp(event, '${slotKey}')"
+                                 ontouchstart="window.activeModule.onSlotTouchStart(event, '${slotKey}')"
+                                 ontouchend="window.activeModule.onSlotTouchEnd(event, '${slotKey}')">
                             </div>
                         `;
                         
@@ -1341,6 +1351,20 @@ class TimeboxModule {
         const grid = document.querySelector('.timebox-grid');
         if (grid) {
             grid.addEventListener('selectstart', (e) => e.preventDefault());
+            
+            // 全域鼠標事件
+            document.addEventListener('mouseup', () => {
+                if (this.isDragging) {
+                    this.isDragging = false;
+                    if (this.selectedTimeSlots.size > 0) {
+                        this.showSlotEditDialog();
+                    }
+                }
+                if (this.dragTimer) {
+                    clearTimeout(this.dragTimer);
+                    this.dragTimer = null;
+                }
+            });
         }
     }
 
@@ -1441,15 +1465,6 @@ class TimeboxModule {
     clearSelection() {
         this.selectedTimeSlots.clear();
         this.updateSlotSelection();
-    }
-
-    // 點擊時段處理
-    onSlotClick(slotKey) {
-        // 清除之前的選擇
-        this.selectedTimeSlots.clear();
-        this.selectedTimeSlots.add(slotKey);
-        this.updateSlotSelection();
-        this.showSlotEditDialog();
     }
 
     // 顯示時段編輯對話框
