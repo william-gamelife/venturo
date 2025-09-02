@@ -809,6 +809,7 @@ class TimeboxModule {
                     let slotStyle = '';
                     
                     if (slotData) {
+                        // 檢查是否為主格子，非主格子不顯示內容（但保留背景色）
                         slotClass += ' occupied';
                         if (slotData.completed) {
                             slotClass += ' completed';
@@ -817,7 +818,20 @@ class TimeboxModule {
                         const activity = this.activityTypes.find(a => a.id === slotData.activityId);
                         if (activity) {
                             slotStyle = `background-color: ${activity.color};`;
-                            slotContent = `<div class="time-slot-content">${slotData.content || activity.name}</div>`;
+                            // 只在主格子顯示內容
+                            if (slotData.isMainSlot) {
+                                const displayText = slotData.content || activity.name;
+                                const totalTime = (slotData.totalSlots || 1) * this.timeUnit;
+                                const hours = Math.floor(totalTime / 60);
+                                const mins = totalTime % 60;
+                                const timeText = hours > 0 ? `${hours}h${mins > 0 ? mins + 'm' : ''}` : `${mins}m`;
+                                slotContent = `
+                                    <div class="time-slot-content">
+                                        <div>${displayText}</div>
+                                        <div style="font-size: 0.7em; opacity: 0.8;">${timeText}</div>
+                                    </div>
+                                `;
+                            }
                         }
                     }
                     
@@ -913,26 +927,30 @@ class TimeboxModule {
     }
 
     calculateWeekStats() {
-        let plannedSlots = 0;
-        let completedSlots = 0;
+        const tasks = new Map();  // 以taskId為鍵的任務集合
         let todaySlots = 0;
         const activityHours = {};
         const today = this.formatDate(new Date());
         
+        // 收集所有任務
         for (const key in this.timeboxData) {
             const slot = this.timeboxData[key];
             if (this.isInCurrentWeek(key)) {
-                plannedSlots++;
-                if (slot.completed) {
-                    completedSlots++;
-                }
-                
-                // 統計活動時間
-                if (slot.activityId) {
-                    if (!activityHours[slot.activityId]) {
-                        activityHours[slot.activityId] = 0;
-                    }
-                    activityHours[slot.activityId] += this.timeUnit / 60;
+                // 如果有taskId，且是主格子，才計算為一個任務
+                if (slot.taskId && slot.isMainSlot) {
+                    tasks.set(slot.taskId, {
+                        completed: slot.completed,
+                        activityId: slot.activityId,
+                        totalSlots: slot.totalSlots || 1
+                    });
+                } else if (!slot.taskId) {
+                    // 舊格式相容
+                    const tempId = 'single_' + key;
+                    tasks.set(tempId, {
+                        completed: slot.completed,
+                        activityId: slot.activityId,
+                        totalSlots: 1
+                    });
                 }
                 
                 // 今日待辦
@@ -942,6 +960,28 @@ class TimeboxModule {
             }
         }
         
+        // 計算統計
+        let plannedTasks = tasks.size;
+        let completedTasks = 0;
+        let totalHours = 0;
+        
+        tasks.forEach(task => {
+            if (task.completed) {
+                completedTasks++;
+            }
+            
+            const hours = (task.totalSlots * this.timeUnit) / 60;
+            totalHours += hours;
+            
+            // 統計活動時間
+            if (task.activityId) {
+                if (!activityHours[task.activityId]) {
+                    activityHours[task.activityId] = 0;
+                }
+                activityHours[task.activityId] += hours;
+            }
+        });
+        
         // 找出最多的活動
         let topActivity = { name: '', hours: 0 };
         for (const activityId in activityHours) {
@@ -949,16 +989,16 @@ class TimeboxModule {
             if (activity && activityHours[activityId] > topActivity.hours) {
                 topActivity = {
                     name: activity.name,
-                    hours: activityHours[activityId].toFixed(1)
+                    hours: parseFloat(activityHours[activityId].toFixed(1))
                 };
             }
         }
         
         return {
-            plannedSlots,
-            completedSlots,
-            plannedHours: (plannedSlots * this.timeUnit / 60).toFixed(1),
-            completionRate: plannedSlots > 0 ? Math.round(completedSlots / plannedSlots * 100) : 0,
+            plannedSlots: plannedTasks,  // 任務數
+            completedSlots: completedTasks,  // 完成任務數
+            plannedHours: parseFloat(totalHours.toFixed(1)),  // 總時數
+            completionRate: plannedTasks > 0 ? Math.round(completedTasks / plannedTasks * 100) : 0,
             topActivity,
             todaySlots
         };
@@ -1145,11 +1185,22 @@ class TimeboxModule {
         const content = document.getElementById('contentInput').value;
         const completed = document.getElementById('completedCheck').checked;
         
-        for (const slotKey of this.selectedTimeSlots) {
+        // 將選取的格子合併成一個任務
+        const slots = Array.from(this.selectedTimeSlots);
+        if (slots.length === 0) return;
+        
+        // 建立一個主任務ID
+        const taskId = 'task_' + Date.now();
+        
+        // 將所有選取的格子指向同一個任務
+        for (const slotKey of slots) {
             this.timeboxData[slotKey] = {
+                taskId,        // 同一個任務ID
                 activityId,
                 content,
                 completed,
+                isMainSlot: slotKey === slots[0],  // 第一個格子為主格子
+                totalSlots: slots.length,          // 總格子數
                 updatedAt: new Date().toISOString()
             };
         }
@@ -1167,8 +1218,19 @@ class TimeboxModule {
     }
 
     async deleteSelectedSlots() {
+        // 收集所有選取格子的任務ID
+        const taskIds = new Set();
         for (const slotKey of this.selectedTimeSlots) {
-            delete this.timeboxData[slotKey];
+            if (this.timeboxData[slotKey] && this.timeboxData[slotKey].taskId) {
+                taskIds.add(this.timeboxData[slotKey].taskId);
+            }
+        }
+        
+        // 刪除所有相關的格子（同一個任務ID）
+        for (const slotKey in this.timeboxData) {
+            if (taskIds.has(this.timeboxData[slotKey].taskId) || this.selectedTimeSlots.has(slotKey)) {
+                delete this.timeboxData[slotKey];
+            }
         }
         
         await this.saveData();
