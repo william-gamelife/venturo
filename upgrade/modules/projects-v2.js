@@ -696,7 +696,7 @@ class ProjectsModuleV2 {
             version: '2.0.0'
         };
         
-        await this.syncManager.save(this.currentUser.id, 'projects-v2', dataToSave);
+        await this.syncManager.save(this.currentUser.uuid, 'projects-v2', dataToSave);
     }
 
     async loadData(uuid) {
