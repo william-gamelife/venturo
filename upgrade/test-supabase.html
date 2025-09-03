@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase 連接測試</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; text-align: center; }
+        .test-section { margin: 20px 0; padding: 20px; background: #f9f9f9; border-left: 4px solid #007acc; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { background: #007acc; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #005fa3; }
+        pre { background: #f8f9fa; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .sql-box { background: #2d3748; color: #e2e8f0; padding: 20px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Supabase 資料表檢測工具</h1>
+        
+        <div class="test-section">
+            <h2>1. 基本連接測試</h2>
+            <button onclick="testConnection()">測試 Supabase 連接</button>
+            <div id="connectionResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. user_data 表檢查</h2>
+            <button onclick="checkTable()">檢查 user_data 表結構</button>
+            <div id="tableResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 資料讀寫測試</h2>
+            <button onclick="testDataFlow()">測試資料存取</button>
+            <div id="dataResult"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 建立資料表 SQL</h2>
+            <p>如果表不存在，請在 Supabase SQL Editor 中執行以下 SQL：</p>
+            <div class="sql-box">
+<pre>-- 建立 user_data 表
+CREATE TABLE IF NOT EXISTS user_data (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    module TEXT NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT user_data_unique UNIQUE (user_id, module)
+);
+
+-- 開啟 RLS (Row Level Security)
+ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
+
+-- 建立政策允許所有人讀寫資料 (開發環境用)
+CREATE POLICY "Allow all access for development" ON user_data
+    FOR ALL 
+    USING (true)
+    WITH CHECK (true);
+
+-- 建立索引提升性能
+CREATE INDEX IF NOT EXISTS idx_user_data_user_id ON user_data(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_data_module ON user_data(module);</pre>
+            </div>
+            <button onclick="copySQL()">複製 SQL 到剪貼板</button>
+        </div>
+    </div>
+
+    <script>
+        // Supabase 配置 (與 sync.js 相同)
+        const SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function showResult(elementId, content, type = 'info') {
+            document.getElementById(elementId).innerHTML = 
+                `<div class="test-result ${type}">${content}</div>`;
+        }
+
+        async function testConnection() {
+            try {
+                showResult('connectionResult', '⏳ 測試連接中...', 'info');
+                
+                // 測試基本連接
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    showResult('connectionResult', 
+                        `❌ 連接失敗: ${error.message}<br><br>可能原因:<br>
+                        • user_data 表不存在<br>
+                        • RLS 政策設定問題<br>
+                        • API Key 權限不足`, 'error');
+                } else {
+                    showResult('connectionResult', 
+                        `✅ 連接成功！<br>Supabase URL: ${SUPABASE_URL}<br>能夠訪問 user_data 表`, 'success');
+                }
+            } catch (error) {
+                showResult('connectionResult', 
+                    `❌ 連接異常: ${error.message}`, 'error');
+            }
+        }
+
+        async function checkTable() {
+            try {
+                showResult('tableResult', '⏳ 檢查表結構中...', 'info');
+
+                // 嘗試獲取表的結構信息
+                const { data, error } = await supabase
+                    .from('user_data')
+                    .select('*')
+                    .limit(0);
+
+                if (error) {
+                    if (error.code === '42P01') { // Table doesn't exist
+                        showResult('tableResult', 
+                            `❌ user_data 表不存在<br><br>
+                            請執行下方的 SQL 來建立表格`, 'error');
+                    } else {
+                        showResult('tableResult', 
+                            `❌ 表檢查失敗: ${error.message}<br>
+                            錯誤代碼: ${error.code}`, 'error');
+                    }
+                } else {
+                    showResult('tableResult', 
+                        `✅ user_data 表存在且可以訪問<br>
+                        建議的表結構:<br>
+                        • user_id (UUID) - 使用者ID<br>
+                        • module (TEXT) - 模組名稱<br> 
+                        • data (JSONB) - 資料內容<br>
+                        • created_at, updated_at (TIMESTAMPTZ) - 時間戳`, 'success');
+                }
+            } catch (error) {
+                showResult('tableResult', 
+                    `❌ 檢查異常: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDataFlow() {
+            try {
+                showResult('dataResult', '⏳ 測試資料存取中...', 'info');
+
+                const testUserId = '550e8400-e29b-41d4-a716-446655440001'; // William's UUID
+                const testModule = 'test-connection';
+                const testData = { 
+                    timestamp: new Date().toISOString(),
+                    message: '測試連接',
+                    version: '1.0'
+                };
+
+                // 1. 測試寫入
+                const { data: saveData, error: saveError } = await supabase
+                    .from('user_data')
+                    .upsert({
+                        user_id: testUserId,
+                        module: testModule,
+                        data: testData,
+                        updated_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'user_id,module'
+                    });
+
+                if (saveError) {
+                    showResult('dataResult', 
+                        `❌ 資料寫入失敗: ${saveError.message}<br>
+                        錯誤代碼: ${saveError.code}`, 'error');
+                    return;
+                }
+
+                // 2. 測試讀取
+                const { data: loadData, error: loadError } = await supabase
+                    .from('user_data')
+                    .select('data, updated_at')
+                    .eq('user_id', testUserId)
+                    .eq('module', testModule)
+                    .single();
+
+                if (loadError) {
+                    showResult('dataResult', 
+                        `❌ 資料讀取失敗: ${loadError.message}`, 'error');
+                    return;
+                }
+
+                // 3. 清理測試資料
+                await supabase
+                    .from('user_data')
+                    .delete()
+                    .eq('user_id', testUserId)
+                    .eq('module', testModule);
+
+                showResult('dataResult', 
+                    `✅ 資料存取測試成功！<br><br>
+                    寫入資料: <pre>${JSON.stringify(testData, null, 2)}</pre>
+                    讀取資料: <pre>${JSON.stringify(loadData.data, null, 2)}</pre>
+                    更新時間: ${loadData.updated_at}`, 'success');
+
+            } catch (error) {
+                showResult('dataResult', 
+                    `❌ 測試異常: ${error.message}`, 'error');
+            }
+        }
+
+        function copySQL() {
+            const sqlText = `-- 建立 user_data 表
+CREATE TABLE IF NOT EXISTS user_data (
+    id BIGSERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+    module TEXT NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    CONSTRAINT user_data_unique UNIQUE (user_id, module)
+);
+
+-- 開啟 RLS (Row Level Security)
+ALTER TABLE user_data ENABLE ROW LEVEL SECURITY;
+
+-- 建立政策允許所有人讀寫資料 (開發環境用)
+CREATE POLICY "Allow all access for development" ON user_data
+    FOR ALL 
+    USING (true)
+    WITH CHECK (true);
+
+-- 建立索引提升性能
+CREATE INDEX IF NOT EXISTS idx_user_data_user_id ON user_data(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_data_module ON user_data(module);`;
+
+            navigator.clipboard.writeText(sqlText).then(() => {
+                alert('✅ SQL 已複製到剪貼板！\n請前往 Supabase Dashboard → SQL Editor 貼上執行');
+            }).catch(() => {
+                // 備用方案：顯示文字框讓用戶手動複製
+                const textarea = document.createElement('textarea');
+                textarea.value = sqlText;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ SQL 已複製到剪貼板！');
+            });
+        }
+
+        // 頁面載入時自動測試連接
+        window.addEventListener('DOMContentLoaded', () => {
+            setTimeout(testConnection, 1000);
+        });
+    </script>
+</body>
+</html>
