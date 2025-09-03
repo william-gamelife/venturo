@@ -2507,8 +2507,6 @@ class TodosModule {
         
         this.draggedTasks = null;
     }
-    }
-
 
     // 合併成專案
     showMergeDialog() {
