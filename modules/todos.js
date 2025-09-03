@@ -166,7 +166,7 @@ class TodosModule {
                     grid-template-columns: repeat(5, 1fr);
                     gap: 24px;
                     overflow-x: auto;
-                    padding: 32px;
+                    padding: 0 32px 32px 32px;
                     min-height: 500px;
                 }
 
@@ -378,10 +378,6 @@ class TodosModule {
                     letter-spacing: -0.3px;
                 }
 
-                .column-icon {
-                    font-size: 20px;
-                    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-                }
 
                 .add-task-btn {
                     width: 32px;
@@ -1073,11 +1069,11 @@ class TodosModule {
 
     getKanbanColumns() {
         const columns = [
-            { id: 'unorganized', title: '尚未整理', icon: '📋' },
-            { id: 'in-progress', title: '進行中', icon: '🔄' },
-            { id: 'waiting', title: '等待確認', icon: '⏳' },
-            { id: 'project', title: '專案打包', icon: '📦' },
-            { id: 'completed', title: '完成', icon: '✅' }
+            { id: 'unorganized', title: '尚未整理', icon: '' },
+            { id: 'in-progress', title: '進行中', icon: '' },
+            { id: 'waiting', title: '等待確認', icon: '' },
+            { id: 'project', title: '專案打包', icon: '' },
+            { id: 'completed', title: '完成', icon: '' }
         ];
 
         return columns.map(column => {
@@ -1087,7 +1083,6 @@ class TodosModule {
                 <div class="kanban-column" data-column="${column.id}">
                     <div class="column-header">
                         <div class="column-title">
-                            <span class="column-icon">${column.icon}</span>
                             ${column.title}
                             <button class="add-task-btn" onclick="window.activeModule.showAddDialog('${column.id}')" title="新增任務">+</button>
                         </div>
@@ -1131,7 +1126,7 @@ class TodosModule {
                     ${todo.category ? `<div class="task-tags">
                         <span class="task-tag" style="background: ${tagColors[todo.category] || '#6b7280'}">${todo.category}</span>
                     </div>` : ''}
-                    ${todo.dueDate ? `<div class="task-due-date">📅 ${new Date(todo.dueDate).toLocaleDateString('zh-TW')}</div>` : ''}
+                    ${todo.dueDate ? `<div class="task-due-date">${new Date(todo.dueDate).toLocaleDateString('zh-TW')}</div>` : ''}
                 </div>
 
                 <div class="task-actions">
