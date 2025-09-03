@@ -1000,8 +1000,8 @@ class TodosModuleV2 {
         }
         
         // 最後儲存
-        if (this.saveData) {
-            this.saveData();
+        if (this.saveTodos) {
+            this.saveTodos();
         }
         
         // 移除全域事件監聽
