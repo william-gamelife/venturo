@@ -121,6 +121,9 @@ class TodosModule {
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = this.getHTML();
         
+        // 設定全域模組參考
+        window.activeModule = this;
+        
         // 綁定事件
         this.attachEventListeners();
     }

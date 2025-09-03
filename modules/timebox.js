@@ -78,6 +78,9 @@ class TimeboxModule {
         // 綁定事件
         this.attachEventListeners();
         
+        // 設定全域模組參考
+        window.activeModule = this;
+        
         // 檢查計時器狀態
         this.checkTimerState();
     }
