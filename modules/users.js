@@ -34,11 +34,8 @@ class UsersModule {
         this.userId = null;
         this.users = [];
         
-        // 只有管理員 UUIDs 可以使用人員管理
-        this.adminUUIDs = [
-            '550e8400-e29b-41d4-a716-446655440001', // William
-            '550e8400-e29b-41d4-a716-446655440002'  // Carson
-        ];
+        // 動態載入 auth 權限檢查
+        this.authManager = null;
     }
 
     async render(userId) {
@@ -47,8 +44,12 @@ class UsersModule {
         
         this.userId = userId;
         
-        // 檢查權限
-        if (!this.adminUUIDs.includes(userId)) {
+        // 動態載入權限檢查
+        const authModule = await import('./auth.js');
+        this.authManager = authModule;
+        
+        // 檢查權限 - 使用新的權限系統
+        if (!this.authManager.checkPermission('user_management')) {
             const moduleContainer = document.getElementById('moduleContainer');
             moduleContainer.innerHTML = `
                 <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">
@@ -58,6 +59,7 @@ class UsersModule {
                     </svg>
                     <h2 style="margin: 0 0 8px 0; color: var(--text); font-size: 1.5rem;">權限不足</h2>
                     <p style="margin: 0; color: var(--text-light);">您沒有權限查看人員管理功能</p>
+                    <p style="margin: 8px 0 0 0; color: var(--text-light); font-size: 0.9rem;">需要管理員權限</p>
                 </div>
             `;
             return;
@@ -112,7 +114,9 @@ class UsersModule {
                             <label style="display: block; margin-bottom: 4px; font-weight: 500; color: var(--text);">角色</label>
                             <select id="userRole" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
                                 <option value="user">一般使用者</option>
+                                <option value="project_manager">專案經理</option>
                                 <option value="admin">管理員</option>
+                                <option value="super_admin">超級管理員</option>
                             </select>
                         </div>
 
@@ -168,7 +172,9 @@ class UsersModule {
                 letter-spacing: 0.5px;
             }
 
+            .role-super_admin { background: rgba(168,85,247,0.15); color: #a855f7; }
             .role-admin { background: rgba(239,68,68,0.1); color: #ef4444; }
+            .role-project_manager { background: rgba(34,197,94,0.1); color: #22c55e; }
             .role-user { background: rgba(59,130,246,0.1); color: #3b82f6; }
 
             .user-actions {
@@ -258,11 +264,12 @@ class UsersModule {
 
             console.log('☁️ 正在從雲端載入人員資料...');
             
-            // 直接查詢 Supabase，不使用 sync.js 的 load 方法（避免本地快取）
+            // 使用系統管理員UUID來存取使用者資料（統一管理）
+            const SYSTEM_ADMIN_UUID = '550e8400-e29b-41d4-a716-446655440000';
             const { data, error } = await this.syncManager.supabase
                 .from('user_data')
                 .select('data')
-                .eq('user_id', this.userId)
+                .eq('user_id', SYSTEM_ADMIN_UUID)
                 .eq('module', 'users')
                 .single();
 
@@ -301,7 +308,7 @@ class UsersModule {
                 username: 'william',
                 display_name: 'William',
                 title: 'IT主管',
-                role: 'admin',
+                role: 'super_admin',
                 created_at: '2024-01-01T00:00:00Z',
                 last_login_at: new Date().toISOString()
             },
@@ -336,8 +343,9 @@ class UsersModule {
 
             console.log('☁️ 正在儲存人員資料到雲端...');
             
+            const SYSTEM_ADMIN_UUID = '550e8400-e29b-41d4-a716-446655440000';
             const saveData = {
-                user_id: this.userId,
+                user_id: SYSTEM_ADMIN_UUID,
                 module: 'users',
                 data: this.users,
                 updated_at: new Date().toISOString()
@@ -596,7 +604,9 @@ class UsersModule {
 
     getRoleDisplayName(role) {
         const roleMap = {
+            'super_admin': '超級管理員',
             'admin': '管理員',
+            'project_manager': '專案經理',
             'user': '使用者'
         };
         return roleMap[role] || '使用者';
@@ -604,7 +614,9 @@ class UsersModule {
 
     getPermissionLevel(role) {
         const levels = {
+            'super_admin': '超級',
             'admin': '最高',
+            'project_manager': '進階',
             'user': '標準'
         };
         return levels[role] || '未知';
@@ -742,7 +754,9 @@ class UsersModule {
                 <label style="display: block; margin-bottom: 4px; font-weight: 500; color: var(--text);">角色</label>
                 <select id="editRole" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;">
                     <option value="user" ${user.role === 'user' ? 'selected' : ''}>一般使用者</option>
+                    <option value="project_manager" ${user.role === 'project_manager' ? 'selected' : ''}>專案經理</option>
                     <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>管理員</option>
+                    <option value="super_admin" ${user.role === 'super_admin' ? 'selected' : ''}>超級管理員</option>
                 </select>
             </div>
             

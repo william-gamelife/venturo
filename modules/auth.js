@@ -7,8 +7,9 @@
 const SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
 
-// 使用固定的 UUID 來存取使用者列表（因為你現在是這樣存的）
-const USERS_STORAGE_UUID = '550e8400-e29b-41d4-a716-446655440001';
+// 統一使用系統管理員UUID來存儲所有使用者資料
+const SYSTEM_ADMIN_UUID = '550e8400-e29b-41d4-a716-446655440000'; // 系統專用UUID
+const USERS_STORAGE_UUID = SYSTEM_ADMIN_UUID;
 
 class AuthManagerV2 {
     constructor() {
@@ -121,7 +122,8 @@ class AuthManagerV2 {
 
         // 確保有職稱
         if (!user.title) {
-            user.title = user.role === 'admin' ? '管理員' : '使用者';
+            user.title = user.role === 'super_admin' ? '超級管理員' : 
+                        user.role === 'admin' ? '管理員' : '使用者';
         }
 
         return user;
@@ -138,7 +140,7 @@ class AuthManagerV2 {
                 username: 'william',
                 display_name: 'William',
                 password: 'pass1234',
-                role: 'admin',
+                role: 'super_admin', // William 是 Super Admin
                 title: 'IT主管'
             },
             {
@@ -399,6 +401,38 @@ class AuthManagerV2 {
     }
 
     /**
+     * 檢查使用者權限
+     */
+    checkPermission(user, permission) {
+        if (!user || !user.role) return false;
+        
+        const permissions = {
+            'super_admin': ['user_management', 'system_settings', 'all_projects', 'admin_functions'],
+            'admin': ['user_management', 'system_settings', 'all_projects'],
+            'project_manager': ['project_management', 'team_collaboration'],
+            'user': ['basic_access']
+        };
+        
+        return permissions[user.role]?.includes(permission) || false;
+    }
+
+    /**
+     * 檢查是否為管理員
+     */
+    isAdmin(user = null) {
+        const currentUser = user || this.getCurrentUser();
+        return currentUser && ['super_admin', 'admin'].includes(currentUser.role);
+    }
+
+    /**
+     * 檢查是否為超級管理員
+     */
+    isSuperAdmin(user = null) {
+        const currentUser = user || this.getCurrentUser();
+        return currentUser && currentUser.role === 'super_admin';
+    }
+
+    /**
      * 生成 UUID
      */
     generateUUID() {
@@ -455,4 +489,17 @@ export async function removeUser(username) {
 
 export async function updateUser(username, updates) {
     return await authManager.updateUser(username, updates);
+}
+
+// 權限檢查函數
+export function checkPermission(permission) {
+    return authManager.checkPermission(authManager.getCurrentUser(), permission);
+}
+
+export function isAdmin() {
+    return authManager.isAdmin();
+}
+
+export function isSuperAdmin() {
+    return authManager.isSuperAdmin();
 }
