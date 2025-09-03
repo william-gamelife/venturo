@@ -1326,6 +1326,139 @@ class TodosModule {
                 .save-btn:hover {
                     opacity: 0.9;
                 }
+
+                /* 專案建立對話框 */
+                .project-name-dialog {
+                    background: white;
+                    border-radius: 16px;
+                    padding: 24px;
+                    max-width: 500px;
+                    width: 90%;
+                    max-height: 80vh;
+                    overflow-y: auto;
+                    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+                }
+
+                .project-name-dialog .dialog-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 20px;
+                    padding-bottom: 16px;
+                    border-bottom: 1px solid var(--border);
+                }
+
+                .project-name-dialog .dialog-header h3 {
+                    margin: 0;
+                    font-size: 18px;
+                    font-weight: 600;
+                    color: var(--text);
+                }
+
+                .project-name-dialog .dialog-close {
+                    width: 32px;
+                    height: 32px;
+                    border: none;
+                    background: var(--bg);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    color: var(--text);
+                }
+
+                .project-name-dialog .form-group {
+                    margin-bottom: 20px;
+                }
+
+                .project-name-dialog .form-group label {
+                    display: block;
+                    margin-bottom: 8px;
+                    font-weight: 500;
+                    color: var(--text);
+                }
+
+                .project-name-dialog input {
+                    width: 100%;
+                    padding: 12px;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    font-size: 14px;
+                    box-sizing: border-box;
+                }
+
+                .project-name-dialog .preview-section {
+                    background: var(--bg);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 20px;
+                }
+
+                .project-name-dialog .preview-section h4 {
+                    margin: 0 0 12px 0;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: var(--text);
+                }
+
+                .project-name-dialog .drawer-preview {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .project-name-dialog .drawer-item {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 8px 12px;
+                    background: white;
+                    border-radius: 6px;
+                }
+
+                .project-name-dialog .drawer-name {
+                    font-weight: 500;
+                    color: var(--text);
+                }
+
+                .project-name-dialog .drawer-count {
+                    font-size: 12px;
+                    color: var(--text-light);
+                    background: var(--bg);
+                    padding: 2px 8px;
+                    border-radius: 12px;
+                }
+
+                .project-name-dialog .dialog-actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: flex-end;
+                }
+
+                .project-name-dialog .btn {
+                    padding: 12px 24px;
+                    border: none;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+
+                .project-name-dialog .btn.secondary {
+                    background: var(--bg);
+                    color: var(--text);
+                }
+
+                .project-name-dialog .btn.primary {
+                    background: var(--primary);
+                    color: white;
+                }
+
+                .project-name-dialog .btn:hover {
+                    opacity: 0.9;
+                }
             </style>
         `;
     }
