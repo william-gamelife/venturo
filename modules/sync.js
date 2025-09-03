@@ -533,3 +533,5 @@ export { SyncManager
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { SyncManager };

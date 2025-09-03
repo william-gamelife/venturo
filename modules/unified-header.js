@@ -140,3 +140,5 @@ export { getUnifiedHeaderHTML, getUnifiedButtonStyle, getUnifiedPrimaryButtonSty
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { UnifiedHeaderModule };

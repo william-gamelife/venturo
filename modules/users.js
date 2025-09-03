@@ -947,3 +947,5 @@ export { UsersModule
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { UsersModule };

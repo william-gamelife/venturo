@@ -401,3 +401,5 @@ export { TravelPdfModule
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { TravelPdfModule };

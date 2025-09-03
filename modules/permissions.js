@@ -393,3 +393,5 @@ export { PermissionManager
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { PermissionsModule };

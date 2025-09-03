@@ -461,11 +461,6 @@ class AuthManagerV2 {
 const authManager = new AuthManagerV2();
 
 // 匯出功能（相容舊版）
-export {
-    authManager,
-    AuthManagerV2
-};
-
 // 相容舊版的函數
 export async function validateLogin(username, password) {
     return await authManager.validateLogin(username, password);
@@ -544,3 +539,5 @@ export function isSuperAdmin() {
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { getCurrentUser, isLoggedIn, logout, AuthModule };

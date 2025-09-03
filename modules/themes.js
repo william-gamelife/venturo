@@ -396,3 +396,5 @@ if (typeof window !== 'undefined') {
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { ThemesModule };

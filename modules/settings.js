@@ -915,3 +915,5 @@ export { SettingsModule
         console.log(`${this.constructor.name} destroyed`);
     }
 }
+
+export { SettingsModule };

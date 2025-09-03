@@ -8,6 +8,10 @@
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     
+    <!-- Permission System -->
+    <script src="./permission-helper-browser.js"></script>
+    <script src="./auth-bridge.js"></script>
+    
     <!-- Auth Module removed to avoid CORS -->
     
     <style>
@@ -644,48 +648,15 @@
             loginBtn.textContent = '登入中...';
             
             try {
-                // 直接驗證登入（不使用模組）
-                const users = await fetchUsersFromCloud();
-                const user = users.find(u => 
-                    u.username && u.username.toLowerCase() === selectedUser.username.toLowerCase()
-                );
+                // 使用新的權限系統登入
+                const success = await window.authBridge.login(selectedUser.username, password);
                 
-                if (!user) {
-                    showError('找不到此使用者');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = '登入';
+                if (!success) {
+                    showError('使用者名稱或密碼錯誤');
                     return;
                 }
                 
-                if (!user.password || user.password !== password) {
-                    showError('密碼錯誤');
-                    loginBtn.disabled = false;
-                    loginBtn.textContent = '登入';
-                    return;
-                }
-                
-                // 登入成功，儲存資訊
-                const loginData = {
-                    uuid: user.uuid,
-                    display_name: user.display_name,
-                    role: user.role,
-                    username: user.username,
-                    title: user.title,
-                    loginTime: Date.now(),
-                    expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000)
-                };
-                
-                // 儲存到 localStorage
-                localStorage.setItem('gamelife_auth', JSON.stringify(loginData));
-                
-                // 儲存到 sessionStorage（相容舊版）
-                sessionStorage.setItem('user_uuid', user.uuid);
-                sessionStorage.setItem('display_name', user.display_name);
-                sessionStorage.setItem('role', user.role);
-                sessionStorage.setItem('username', user.username);
-                sessionStorage.setItem('title', user.title);
-                
-                console.log('登入成功:', user.username);
+                console.log('登入成功:', selectedUser.username);
                 
                 // 跳轉到儀表板
                 window.location.href = './dashboard.html';
@@ -726,9 +697,8 @@
             // 載入使用者
             loadUsers();
             
-            // 檢查是否已登入（使用原本的方式）
-            const userUuid = sessionStorage.getItem('user_uuid');
-            if (userUuid) {
+            // 檢查是否已登入（使用新的權限系統）
+            if (window.authBridge && window.authBridge.isLoggedIn()) {
                 // 已登入，跳轉到儀表板
                 window.location.href = './dashboard.html';
                 return;
