@@ -1388,11 +1388,23 @@ class TimeboxModule {
             grid.addEventListener('selectstart', (e) => e.preventDefault());
             grid.addEventListener('dragstart', (e) => e.preventDefault());
             
-            // 全域鼠標事件（清理拖拽狀態）
+            // 全域鼠標事件（處理快速拖拽）
+            document.addEventListener('mousemove', (e) => {
+                if (this.isDragging) {
+                    // 快速拖拽時用座標計算來選取格子
+                    this.handleFastDrag(e);
+                }
+            });
+            
             document.addEventListener('mouseup', () => {
                 if (this.isDragging) {
                     this.isDragging = false;
-                    // 移除自動彈出對話框，避免衝突
+                    // 拖拽結束後自動彈出編輯對話框
+                    if (this.selectedTimeSlots.size > 0) {
+                        setTimeout(() => {
+                            this.showSlotEditDialog();
+                        }, 200);
+                    }
                 }
                 if (this.dragTimer) {
                     clearTimeout(this.dragTimer);
@@ -1450,7 +1462,7 @@ class TimeboxModule {
         
         if (this.isDragging) {
             this.isDragging = false;
-            // 拖拽結束後顯示選擇數量，不自動彈出對話框
+            // 拖拽結束後直接彈出編輯對話框（移除重複邏輯）
             if (this.selectedTimeSlots.size > 0) {
                 this.updateSlotSelection();
             }
@@ -1526,6 +1538,15 @@ class TimeboxModule {
     editSelection() {
         if (this.selectedTimeSlots.size > 0) {
             this.showSlotEditDialog();
+        }
+    }
+
+    handleFastDrag(e) {
+        // 用座標計算快速拖拽時經過的格子
+        const element = document.elementFromPoint(e.clientX, e.clientY);
+        if (element && element.classList.contains('time-slot') && element.dataset.key) {
+            this.selectedTimeSlots.add(element.dataset.key);
+            this.updateSlotSelection();
         }
     }
 
