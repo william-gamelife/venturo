@@ -696,6 +696,11 @@ class LifeSimulatorModule {
     }
 
     renderQuests() {
+        // 確保 inventory 屬性存在
+        if (!this.gameState.inventory) {
+            this.gameState.inventory = [];
+        }
+        
         const quests = [
             { 
                 name: `達到等級 ${this.gameState.level + 1}`,
@@ -756,7 +761,7 @@ class LifeSimulatorModule {
         const achievements = [
             { name: '第一桶金', desc: '賺到$100', done: this.gameState.totalEarned >= 100 },
             { name: '工作狂', desc: '工作10次', done: this.gameState.workCount >= 10 },
-            { name: '收藏家', desc: '收集10個物品', done: this.gameState.inventory.length >= 10 },
+            { name: '收藏家', desc: '收集10個物品', done: (this.gameState.inventory || []).length >= 10 },
             { name: '富豪', desc: '存款$10000', done: this.gameState.money >= 10000 }
         ];
         
@@ -957,6 +962,9 @@ class LifeSimulatorModule {
 
     collectItem(tileType, item) {
         // 收集物品
+        if (!this.gameState.inventory) {
+            this.gameState.inventory = [];
+        }
         this.gameState.inventory.push(item.name);
         
         if (item.value) {
@@ -1137,19 +1145,31 @@ class LifeSimulatorModule {
 
     checkAchievements() {
         // 檢查成就
+        if (!this.gameState.achievements) {
+            this.gameState.achievements = [];
+        }
         const oldAchievements = [...this.gameState.achievements];
         
-        if (this.gameState.totalEarned >= 100 && !this.gameState.achievements.includes('first_money')) {
+        if (this.gameState.totalEarned >= 100 && !(this.gameState.achievements || []).includes('first_money')) {
+            if (!this.gameState.achievements) {
+                this.gameState.achievements = [];
+            }
             this.gameState.achievements.push('first_money');
             this.showMessage('🏆 成就解鎖：第一桶金！');
         }
         
-        if (this.gameState.workCount >= 10 && !this.gameState.achievements.includes('workaholic')) {
+        if (this.gameState.workCount >= 10 && !(this.gameState.achievements || []).includes('workaholic')) {
+            if (!this.gameState.achievements) {
+                this.gameState.achievements = [];
+            }
             this.gameState.achievements.push('workaholic');
             this.showMessage('🏆 成就解鎖：工作狂！');
         }
         
-        if (this.gameState.inventory.length >= 10 && !this.gameState.achievements.includes('collector')) {
+        if ((this.gameState.inventory || []).length >= 10 && !(this.gameState.achievements || []).includes('collector')) {
+            if (!this.gameState.achievements) {
+                this.gameState.achievements = [];
+            }
             this.gameState.achievements.push('collector');
             this.showMessage('🏆 成就解鎖：收藏家！');
         }
