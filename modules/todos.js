@@ -96,22 +96,6 @@ class TodosModule {
             }
         ];
         
-        // 分類圖標映射
-        this.categoryIcons = {
-            '機票': '✈️',
-            '住宿': '🏨',
-            '訂房': '🏨',
-            '飯店': '🏨',
-            '餐飲': '🍽️',
-            '餐廳': '🍽️',
-            '合約': '📋',
-            '交通': '🚗',
-            '活動': '🎪',
-            '保險': '🛡️',
-            '文件': '📄',
-            '其他': '📌'
-        };
-
         // 快速分類標籤
         this.quickTags = [
             { id: 'quote', name: '報價', color: '#007bff' },
@@ -2007,16 +1991,11 @@ class TodosModule {
     }
 
     getTaskCard(todo) {
-        // 獲取任務的第一個標籤作為主分類
-        const primaryTag = todo.tags && todo.tags.length > 0 ? todo.tags[0] : null;
-        const categoryIcon = primaryTag ? (this.categoryIcons[primaryTag] || '📌') : '📌';
-
         return `
             <div class="task-card" 
                  data-task-id="${todo.id}">
                 
                 <div class="task-card-header">
-                    <div class="category-icon">${categoryIcon}</div>
                     <div class="task-content-main">
                         <div class="task-title">${todo.title}</div>
                         ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
