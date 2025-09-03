@@ -537,14 +537,14 @@ class ProjectsModuleV2 {
             try {
                 const bridgeModule = await import('./task-bridge-v2.js');
                 const bridge = new bridgeModule.TaskBridgeV2();
-                await bridge.syncTaskStatus(targetTask.mergedFromTodos, targetTask.completed, this.currentUser.id);
+                await bridge.syncTaskStatus(targetTask.mergedFromTodos, targetTask.completed, this.currentUser.uuid);
             } catch (error) {
                 console.error('同步任務狀態失敗:', error);
             }
         }
         
         await this.saveData();
-        await this.render(this.currentUser.id);
+        await this.render(this.currentUser.uuid);
     }
 
     findTaskInTree(tasks, taskId) {
@@ -626,7 +626,7 @@ class ProjectsModuleV2 {
         
         this.projects.unshift(project);
         await this.saveData();
-        await this.render(this.currentUser.id);
+        await this.render(this.currentUser.uuid);
         
         document.querySelector('.modal-overlay').remove();
         this.showToast('專案建立成功', 'success');
@@ -688,7 +688,7 @@ class ProjectsModuleV2 {
     }
 
     async saveData() {
-        if (!this.syncManager || !this.currentUser.id) return;
+        if (!this.syncManager || !this.currentUser.uuid) return;
         
         const dataToSave = {
             projects: this.projects,
@@ -775,7 +775,7 @@ class ProjectsModuleV2 {
         
         this.projects = this.projects.filter(p => p.id !== projectId);
         await this.saveData();
-        await this.render(this.currentUser.id);
+        await this.render(this.currentUser.uuid);
         this.showToast('專案已刪除', 'success');
     }
 

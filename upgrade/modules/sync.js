@@ -35,7 +35,10 @@ class SyncManager {
                 return this.saveToLocalStorage(userId, module, data);
             }
 
-            console.log(`☁️ 正在儲存到雲端: ${module} (${userId.substring(0, 8)}...)`);
+            // 檢查是否為 UUID 格式（長度 >= 36）
+            const isUUID = userId && userId.length >= 36;
+            const shortUserId = isUUID ? userId.substring(0, 8) : userId;
+            console.log(`☁️ 正在儲存到雲端: ${module} (${shortUserId}...)`);
 
             // 準備要儲存的資料
             const saveData = {
@@ -88,7 +91,10 @@ class SyncManager {
                 return this.loadFromLocalStorage(userId, module);
             }
 
-            console.log(`☁️ 正在從雲端載入: ${module} (${userId.substring(0, 8)}...)`);
+            // 檢查是否為 UUID 格式（長度 >= 36）
+            const isUUID = userId && userId.length >= 36;
+            const shortUserId = isUUID ? userId.substring(0, 8) : userId;
+            console.log(`☁️ 正在從雲端載入: ${module} (${shortUserId}...)`);
 
             const { data, error } = await this.supabase
                 .from('user_data')

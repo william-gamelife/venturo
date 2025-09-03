@@ -75,13 +75,20 @@ class TodosModuleV2 {
 
     async render(uuid) {
         this.currentUser = JSON.parse(sessionStorage.getItem('currentUser') || '{}');
+        console.log('當前使用者資料:', this.currentUser);
+        console.log('UUID 格式:', this.currentUser.uuid, '長度:', this.currentUser.uuid?.length);
+        
+        if (!this.currentUser.uuid) {
+            console.error('找不到使用者UUID，無法載入待辦事項');
+            return;
+        }
         
         // 動態載入同步管理器
         const syncModule = await import('./sync.js');
         this.syncManager = new syncModule.SyncManager();
         
-        // 載入資料
-        await this.loadData(uuid);
+        // 載入資料  
+        await this.loadData(this.currentUser.uuid);
         
         // 渲染介面
         const moduleContainer = document.getElementById('moduleContainer');
