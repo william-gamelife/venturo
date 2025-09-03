@@ -1413,6 +1413,220 @@ class TodosModule {
         }
     }
 
+    // 展開任務卡片 - 三區域設計
+    expandTask(taskId) {
+        const task = this.todos.find(t => t.id === taskId);
+        if (!task) return;
+
+        const modal = document.createElement('div');
+        modal.className = 'task-expand-modal';
+        modal.innerHTML = this.getExpandedTaskHTML(task);
+        document.body.appendChild(modal);
+
+        // 綁定事件
+        this.bindExpandedTaskEvents(taskId);
+    }
+
+    // 獲取來源資訊晶片
+    getSourceInfo(task) {
+        const source = task.source === 'assigned' ? '指派' : '便條';
+        const container = task.status || '尚未整理';
+        const containerNames = {
+            'unorganized': '尚未整理',
+            'in-progress': '進行中', 
+            'waiting': '等待確認',
+            'project': '專案打包',
+            'completed': '完成'
+        };
+        
+        return `
+            <div class="source-chips">
+                <span class="source-chip">${source}</span>
+                <span class="container-chip">${containerNames[container] || container}</span>
+            </div>
+        `;
+    }
+
+    // 獲取抽屜預覽
+    getDrawerPreview(task) {
+        const drawer = this.decideDrawer(task.tags || []);
+        const drawerNames = {
+            'flight': '機票',
+            'hotel': '住宿',
+            'restaurant': '餐飲', 
+            'contract': '合約',
+            'other': '其他'
+        };
+
+        if (task.project_id) {
+            // 已經屬於專案，顯示同類任務
+            return `
+                <div class="project-info">
+                    <h4>專案資訊</h4>
+                    <p>此任務屬於「${task.project_name}」專案</p>
+                    <p>分類：${drawerNames[drawer]} 大類</p>
+                    
+                    <div class="same-category-tasks">
+                        <h5>同類其他任務：</h5>
+                        <div class="task-checklist">
+                            <!-- 這裡之後整合專案資料時填入 -->
+                            <div class="placeholder">專案整合後顯示同類任務清單</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else {
+            // 尚未打包，顯示預覽
+            return `
+                <div class="package-preview">
+                    <h4>專案打包預覽</h4>
+                    <p>這張卡的標籤會讓它進入：<strong>${drawerNames[drawer]} 大類</strong></p>
+                    
+                    <div class="quick-actions">
+                        <button class="preview-btn" onclick="window.activeModule.addToPackage('${task.id}')">
+                            加入「專案打包」
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+
+    // 獲取展開任務的完整 HTML  
+    getExpandedTaskHTML(task) {
+        const drawerPreview = this.getDrawerPreview(task);
+        const sourceInfo = this.getSourceInfo(task);
+        
+        return `
+            <div class="expand-backdrop" onclick="this.parentElement.remove()"></div>
+            <div class="expand-container">
+                <div class="expand-header">
+                    <div class="header-main">
+                        <input type="text" class="expand-title" value="${task.title}" placeholder="任務標題">
+                        <button class="close-btn" onclick="this.closest('.task-expand-modal').remove()">×</button>
+                    </div>
+                    <div class="header-meta">
+                        ${sourceInfo}
+                        <div class="tag-editor">
+                            <label>標籤：</label>
+                            <input type="text" class="task-tags-input" value="${(task.tags || []).join(', ')}" placeholder="機票, 住宿, 餐飲...">
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="quick-btn package" onclick="window.activeModule.addToPackage('${task.id}')">加入專案打包</button>
+                        <button class="quick-btn complete" onclick="window.activeModule.markComplete('${task.id}')">標記完成</button>
+                    </div>
+                </div>
+                <div class="expand-content">
+                    <div class="content-section">
+                        <label>內容/備註：</label>
+                        <textarea class="task-notes" placeholder="輸入重點內容...">${task.description || ''}</textarea>
+                    </div>
+                    <div class="comments-section">
+                        <label>留言（時間線）：</label>
+                        <div class="comments-timeline">
+                            ${task.comments ? task.comments.map(comment => `
+                                <div class="comment-item">
+                                    <div class="comment-time">${new Date(comment.created_at).toLocaleString('zh-TW')}</div>
+                                    <div class="comment-text">${comment.text}</div>
+                                </div>
+                            `).join('') : '<div class="no-comments">暫無留言</div>'}
+                        </div>
+                        <div class="add-comment">
+                            <input type="text" class="comment-input" placeholder="例：等客戶、週五追...">
+                            <button onclick="window.activeModule.addComment('${task.id}')">新增</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="expand-extension">${drawerPreview}</div>
+                <div class="expand-footer">
+                    <button class="save-btn" onclick="window.activeModule.saveExpandedTask('${task.id}')">儲存變更</button>
+                </div>
+            </div>
+        `;
+    }
+
+    // 快捷操作函數
+    addToPackage(taskId) {
+        const task = this.todos.find(t => t.id === taskId);
+        if (task) {
+            task.status = 'project';
+            task.updated_at = new Date().toISOString();
+            this.saveData();
+            this.showToast('已移至專案打包', 'success');
+            document.querySelector('.task-expand-modal')?.remove();
+            this.render(this.currentUser.uuid);
+        }
+    }
+
+    markComplete(taskId) {
+        const task = this.todos.find(t => t.id === taskId);
+        if (task) {
+            if (task.project_id) {
+                task.completed = true;
+                task.completed_at = new Date().toISOString();
+                this.showToast('專案任務已完成', 'success');
+            } else {
+                task.status = 'completed';
+                task.completed_at = new Date().toISOString();
+                this.showToast('任務已完成', 'success');
+            }
+            this.saveData();
+            document.querySelector('.task-expand-modal')?.remove();
+            this.render(this.currentUser.uuid);
+        }
+    }
+
+    addComment(taskId) {
+        const input = document.querySelector('.comment-input');
+        const text = input.value.trim();
+        if (!text) return;
+
+        const task = this.todos.find(t => t.id === taskId);
+        if (task) {
+            if (!task.comments) task.comments = [];
+            task.comments.push({
+                id: this.generateUUID(),
+                text: text,
+                created_at: new Date().toISOString()
+            });
+            input.value = '';
+            this.saveData();
+            
+            const timeline = document.querySelector('.comments-timeline');
+            timeline.innerHTML = task.comments.map(comment => `
+                <div class="comment-item">
+                    <div class="comment-time">${new Date(comment.created_at).toLocaleString('zh-TW')}</div>
+                    <div class="comment-text">${comment.text}</div>
+                </div>
+            `).join('');
+        }
+    }
+
+    saveExpandedTask(taskId) {
+        const task = this.todos.find(t => t.id === taskId);
+        if (!task) return;
+
+        const title = document.querySelector('.expand-title').value;
+        const notes = document.querySelector('.task-notes').value;
+        const tags = document.querySelector('.task-tags-input').value
+            .split(',').map(t => t.trim()).filter(t => t);
+
+        task.title = title;
+        task.description = notes;
+        task.tags = tags;
+        task.updated_at = new Date().toISOString();
+
+        this.saveData();
+        this.showToast('任務已更新', 'success');
+        document.querySelector('.task-expand-modal').remove();
+        this.render(this.currentUser.uuid);
+    }
+
+    bindExpandedTaskEvents(taskId) {
+        // 綁定展開任務的其他事件
+    }
+
     getTaskCard(todo) {
         const tagColors = {
             '報價': '#3b82f6',
@@ -1440,6 +1654,9 @@ class TodosModule {
                 </div>
 
                 <div class="task-actions">
+                    <button class="task-action-btn expand" onclick="window.activeModule.expandTask('${todo.id}')" title="展開">
+                        ↗
+                    </button>
                     <button class="task-action-btn edit" onclick="window.activeModule.editTask('${todo.id}')" title="編輯">
                         ✎
                     </button>
