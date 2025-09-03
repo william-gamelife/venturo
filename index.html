@@ -744,31 +744,5 @@
         window.addEventListener('DOMContentLoaded', init);
     </script>
 
-    <!-- 升級模式開關 -->
-    <div style="position: fixed; bottom: 20px; right: 20px; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); z-index: 9999;">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="upgradeMode" style="width: 20px; height: 20px;">
-            <span style="font-size: 14px; color: #666;">升級模式</span>
-        </label>
-    </div>
-
-    <script>
-    // 升級模式控制
-    document.getElementById('upgradeMode').addEventListener('change', function(e) {
-        if (e.target.checked) {
-            if (confirm('即將進入系統升級模式，這會開啟獨立的測試環境。確定要繼續嗎？')) {
-                localStorage.setItem('upgrade_mode', 'true');
-                window.location.href = './upgrade/index.html';
-            } else {
-                e.target.checked = false;
-            }
-        }
-    });
-
-    // 記住上次的選擇
-    if (localStorage.getItem('upgrade_mode') === 'true') {
-        document.getElementById('upgradeMode').checked = true;
-    }
-    </script>
 </body>
 </html>

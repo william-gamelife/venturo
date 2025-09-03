@@ -1,28 +1,23 @@
 /**
- * 待辦事項管理系統 - 遊戲人生 3.0 大改版
+ * 待辦事項管理系統 - 遊戲人生 3.0 簡化版
  * 符合 building-manual 規範
  * 
  * 核心功能：
- * 1. 智能五欄看板系統（待處理、今日執行、本週規劃、最近完成、轉為專案）
- * 2. 增強快速分類標籤（報價、行程、簡報、合約、團務機票、團務訂房、團務訂車）
- * 3. 流暢拖曳移動與多選功能
- * 4. 智能合併成專案功能
- * 5. 進階篩選與搜尋
- * 6. 留言系統與協作功能
- * 7. 任務優先級與到期日管理
- * 8. 專案識別標籤系統
- * 9. Enter/ESC 快捷鍵支持
- * 10. 響應式互動體驗
+ * 1. 簡潔清單系統
+ * 2. 快速分類標籤
+ * 3. 拖曳重新排序
+ * 4. 搜尋與篩選
+ * 5. 任務完成標記
  */
 
 class TodosModule {
     // SignageHost 招牌資料
     static signage = {
         title: '待辦事項',
-        subtitle: '郵務總局｜任務與流程',
+        subtitle: '任務清單管理',
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 11l3 3L20 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         actions: [
-            { id: 'mergeProject', label: '轉為專案', kind: 'primary', onClick: 'convertToProject' }
+            { id: 'addTask', label: '新增任務', kind: 'primary', onClick: 'showAddDialog' }
         ]
     };
 
@@ -47,6 +42,8 @@ class TodosModule {
         this.todos = [];
         this.selectedTodos = new Set();
         this.draggedItem = null;
+        this.searchTerm = '';
+        this.filteredTodos = [];
         
         // 新增狀態管理
         this.isSelecting = false;
@@ -148,9 +145,15 @@ class TodosModule {
     getHTML() {
         return `
             <div class="todos-container">
-                <!-- 五欄看板 -->
-                <div class="kanban-board">
-                    ${this.getKanbanColumns()}
+                <!-- 搜尋欄 -->
+                <div class="search-container">
+                    <input type="text" class="search-input" placeholder="搜尋任務..." 
+                           oninput="window.activeModule.handleSearch(this.value)">
+                </div>
+
+                <!-- 任務清單 -->
+                <div class="todos-list" id="todosList">
+                    ${this.getTodosList()}
                 </div>
             </div>
 
@@ -159,19 +162,186 @@ class TodosModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
+                    gap: 20px;
                     padding: 0;
-                    gap: 0;
                 }
-                
 
-                /* 看板欄位 */
-                .kanban-board {
+                /* 搜尋欄 */
+                .search-container {
+                    padding: 20px 20px 0;
+                }
+
+                .search-input {
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: 1px solid var(--border);
+                    border-radius: 12px;
+                    font-size: 14px;
+                    background: white;
+                    transition: all 0.2s;
+                }
+
+                .search-input:focus {
+                    outline: none;
+                    border-color: var(--primary);
+                    box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+                }
+
+                /* 任務清單 */
+                .todos-list {
                     flex: 1;
-                    display: grid;
-                    grid-template-columns: repeat(5, 1fr);
-                    gap: 16px;
-                    overflow-x: auto;
-                    min-height: 400px;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                    overflow-y: auto;
+                    padding: 0 20px 20px;
+                }
+
+                /* 空狀態 */
+                .empty-state {
+                    text-align: center;
+                    padding: 60px 20px;
+                    color: var(--text-light);
+                }
+
+                .empty-icon {
+                    margin-bottom: 16px;
+                }
+
+                .empty-text {
+                    font-size: 18px;
+                    font-weight: 500;
+                    margin-bottom: 8px;
+                }
+
+                .empty-hint {
+                    font-size: 14px;
+                    opacity: 0.7;
+                }
+
+                /* 任務卡片 */
+                .task-card {
+                    background: white;
+                    border: 1px solid var(--border);
+                    border-radius: 12px;
+                    padding: 16px;
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 12px;
+                    transition: all 0.2s ease;
+                    cursor: grab;
+                    position: relative;
+                }
+
+                .task-card:hover {
+                    border-color: var(--primary);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                }
+
+                .task-card.completed {
+                    opacity: 0.6;
+                    background: var(--bg);
+                }
+
+                .task-card.completed .task-title {
+                    text-decoration: line-through;
+                }
+
+                .task-main {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 12px;
+                    flex: 1;
+                }
+
+                .task-checkbox {
+                    width: 20px;
+                    height: 20px;
+                    border: 2px solid var(--border);
+                    border-radius: 6px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    flex-shrink: 0;
+                    margin-top: 2px;
+                }
+
+                .task-checkbox:hover {
+                    border-color: var(--primary);
+                }
+
+                .task-card.completed .task-checkbox {
+                    background: var(--primary);
+                    border-color: var(--primary);
+                }
+
+                .task-content {
+                    flex: 1;
+                }
+
+                .task-title {
+                    font-weight: 500;
+                    color: var(--text);
+                    line-height: 1.4;
+                    margin-bottom: 4px;
+                }
+
+                .task-description {
+                    font-size: 14px;
+                    color: var(--text-light);
+                    line-height: 1.4;
+                    margin-bottom: 8px;
+                }
+
+                .task-tags {
+                    display: flex;
+                    gap: 4px;
+                    flex-wrap: wrap;
+                }
+
+                .task-tag {
+                    font-size: 11px;
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 4px;
+                    font-weight: 500;
+                }
+
+                .task-actions {
+                    display: flex;
+                    gap: 4px;
+                    opacity: 0;
+                    transition: opacity 0.2s;
+                }
+
+                .task-card:hover .task-actions {
+                    opacity: 1;
+                }
+
+                .task-action-btn {
+                    width: 28px;
+                    height: 28px;
+                    border: none;
+                    background: var(--bg);
+                    border-radius: 6px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    color: var(--text-light);
+                    transition: all 0.2s;
+                }
+
+                .task-action-btn:hover {
+                    background: var(--border);
+                }
+
+                .task-action-btn.delete:hover {
+                    background: #fee2e2;
+                    color: #dc2626;
                 }
 
                 .kanban-column {
@@ -862,36 +1032,72 @@ class TodosModule {
     }
 
     getKanbanColumns() {
-        const columns = [
-            { id: 'pending', title: '等待中', icon: 'clipboard' },
-            { id: 'today', title: '進行中', icon: 'fire' },
-            { id: 'week', title: '待整理', icon: 'calendar' },
-            { id: 'completed', title: '完成', icon: 'check' },
-            { id: 'project', title: '專案', icon: 'folder' }
-        ];
-
-        return columns.map(column => {
-            const tasks = this.getTasksByColumn(column.id);
-            const hasAddButton = ['pending', 'today', 'week'].includes(column.id);
-            
+    getTodosList() {
+        if (this.todos.length === 0) {
             return `
-                <div class="kanban-column" data-column="${column.id}">
-                    <div class="column-header">
-                        <div class="column-title">
-                            ${column.title}
-                            ${hasAddButton ? '<button class="add-btn" onclick="window.activeModule.showAddDialog(\'' + column.id + '\')">＋</button>' : ''}
-                        </div>
-                        <div class="column-count">${tasks.length}</div>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <svg viewBox="0 0 24 24" width="48" height="48">
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-dasharray="4,4" opacity="0.5"/>
+                            <path d="M8 12h8M12 8v8" stroke="var(--text-light)" stroke-width="2" opacity="0.5"/>
+                        </svg>
                     </div>
-                    <div class="column-tasks" 
-                         ondrop="window.activeModule.handleDrop(event, '${column.id}')"
-                         ondragover="window.activeModule.handleDragOver(event)"
-                         ondragleave="window.activeModule.handleDragLeave(event)">
-                        ${tasks.map(task => this.getTaskCard(task)).join('')}
-                    </div>
+                    <p class="empty-text">還沒有任務</p>
+                    <p class="empty-hint">點擊右上角新增按鈕建立第一個任務</p>
                 </div>
             `;
-        }).join('');
+        }
+
+        return this.todos.map(todo => this.getSimpleTaskCard(todo)).join('');
+    }
+
+    getSimpleTaskCard(todo) {
+        const isCompleted = todo.status === 'completed';
+        const tagColors = {
+            '報價': '#3b82f6',
+            '行程': '#10b981', 
+            '簡報': '#f59e0b',
+            '合約': '#ef4444',
+            '機票': '#8b5cf6',
+            '訂房': '#06b6d4',
+            '訂車': '#84cc16'
+        };
+
+        return `
+            <div class="task-card ${isCompleted ? 'completed' : ''}" 
+                 data-task-id="${todo.id}"
+                 draggable="true"
+                 ondragstart="window.activeModule.handleDragStart(event, '${todo.id}')">
+                
+                <div class="task-main">
+                    <div class="task-checkbox" onclick="window.activeModule.toggleTaskComplete('${todo.id}')">
+                        ${isCompleted ? '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 12l2 2 4-4" stroke="white" stroke-width="3" fill="none"/></svg>' : ''}
+                    </div>
+                    
+                    <div class="task-content">
+                        <div class="task-title">${todo.title}</div>
+                        ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
+                        ${todo.category ? `<div class="task-tags">
+                            <span class="task-tag" style="background: ${tagColors[todo.category] || '#6b7280'}">${todo.category}</span>
+                        </div>` : ''}
+                    </div>
+                </div>
+
+                <div class="task-actions">
+                    <button class="task-action-btn" onclick="window.activeModule.editTask('${todo.id}')" title="編輯">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" fill="none"/>
+                            <path d="m18.5 2.5-1 1L22 8l1-1-1-4.5zM17 4l4 4L10 19H6v-4L17 4z" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <button class="task-action-btn delete" onclick="window.activeModule.deleteTask('${todo.id}')" title="刪除">
+                        <svg viewBox="0 0 24 24" width="14" height="14">
+                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="currentColor" stroke-width="2" fill="none"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
     }
 
     getTasksByColumn(columnId) {
@@ -2055,6 +2261,79 @@ class TodosModule {
         
         // 暫時顯示提示
         alert('轉為專案功能開發中...');
+    }
+
+    // 新增的簡化方法
+
+    // 搜尋處理
+    handleSearch(term) {
+        this.searchTerm = term.toLowerCase().trim();
+        this.refreshTodosList();
+    }
+
+    // 刷新任務清單
+    refreshTodosList() {
+        let displayTodos = this.todos;
+        
+        // 搜尋過濾
+        if (this.searchTerm) {
+            displayTodos = displayTodos.filter(todo => 
+                todo.title.toLowerCase().includes(this.searchTerm) ||
+                (todo.description && todo.description.toLowerCase().includes(this.searchTerm)) ||
+                (todo.category && todo.category.toLowerCase().includes(this.searchTerm))
+            );
+        }
+
+        const todosList = document.getElementById('todosList');
+        if (todosList) {
+            todosList.innerHTML = displayTodos.length === 0 && this.searchTerm ? 
+                `<div class="empty-state">
+                    <div class="empty-icon">
+                        <svg viewBox="0 0 24 24" width="48" height="48">
+                            <circle cx="11" cy="11" r="8" fill="none" stroke="var(--text-light)" stroke-width="2"/>
+                            <path d="m21 21-4.35-4.35" stroke="var(--text-light)" stroke-width="2"/>
+                        </svg>
+                    </div>
+                    <p class="empty-text">找不到符合的任務</p>
+                    <p class="empty-hint">試試其他關鍵字</p>
+                </div>` : 
+                displayTodos.map(todo => this.getSimpleTaskCard(todo)).join('');
+        }
+    }
+
+    // 切換任務完成狀態
+    async toggleTaskComplete(taskId) {
+        const task = this.todos.find(t => t.id === taskId);
+        if (!task) return;
+
+        task.status = task.status === 'completed' ? 'pending' : 'completed';
+        task.completedAt = task.status === 'completed' ? new Date().toISOString() : null;
+        task.updatedAt = new Date().toISOString();
+
+        await this.saveData();
+        this.refreshTodosList();
+    }
+
+    // 刪除任務
+    async deleteTask(taskId) {
+        if (!confirm('確定要刪除這個任務嗎？')) return;
+
+        this.todos = this.todos.filter(t => t.id !== taskId);
+        await this.saveData();
+        this.refreshTodosList();
+        this.showToast('任務已刪除', 'success');
+    }
+
+    // 簡化的拖拽處理
+    handleDragStart(event, taskId) {
+        this.draggedItem = taskId;
+        event.dataTransfer.effectAllowed = 'move';
+        event.target.style.opacity = '0.5';
+    }
+
+    // 覆寫原本的刷新方法
+    refreshView() {
+        this.refreshTodosList();
     }
 }
 

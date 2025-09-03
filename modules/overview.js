@@ -341,6 +341,45 @@ class OverviewModule {
                     color: var(--text);
                 }
 
+                /* 預留空間樣式 */
+                .tool-card.placeholder {
+                    border: 2px dashed var(--border);
+                    background: rgba(244, 241, 235, 0.5);
+                    opacity: 0.6;
+                    cursor: default;
+                }
+
+                .tool-card.placeholder:hover {
+                    transform: none;
+                    box-shadow: none;
+                    border-color: var(--border);
+                }
+
+                .placeholder-icon {
+                    background: rgba(201, 169, 97, 0.1);
+                    color: var(--text-light);
+                }
+
+                .tool-card.placeholder .tool-title,
+                .tool-card.placeholder .tool-value {
+                    color: var(--text-muted);
+                }
+
+                /* 番茄鐘進行中樣式 */
+                .tool-card.active-pomodoro.running {
+                    border-color: var(--primary);
+                    background: rgba(201, 169, 97, 0.05);
+                }
+
+                .tool-card.active-pomodoro.running .tool-icon {
+                    animation: pulse 2s infinite;
+                }
+
+                @keyframes pulse {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.05); }
+                }
+
                 /* 功能卡片 */
                 .modules-grid {
                     display: grid;
@@ -462,7 +501,7 @@ class OverviewModule {
                     </div>
 
                     <!-- 番茄鐘 -->
-                    <div class="tool-card clickable" onclick="window.activeModule.startPomodoro()">
+                    <div class="tool-card clickable active-pomodoro" onclick="window.activeModule.startPomodoro()">
                         <div class="tool-icon">
                             <svg viewBox="0 0 24 24">
                                 <defs>
@@ -482,6 +521,46 @@ class OverviewModule {
                         <div class="tool-content">
                             <div class="tool-title">番茄鐘</div>
                             <div class="tool-value">開始專注</div>
+                        </div>
+                    </div>
+
+                    <!-- 預留空間 - 虛線框 -->
+                    <div class="tool-card placeholder">
+                        <div class="tool-icon placeholder-icon">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4,4" opacity="0.3"/>
+                                <circle cx="12" cy="12" r="1" fill="currentColor" opacity="0.3"/>
+                            </svg>
+                        </div>
+                        <div class="tool-content">
+                            <div class="tool-title">待開發</div>
+                            <div class="tool-value">敬請期待</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-card placeholder">
+                        <div class="tool-icon placeholder-icon">
+                            <svg viewBox="0 0 24 24">
+                                <rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4,4" opacity="0.3"/>
+                                <circle cx="12" cy="12" r="1" fill="currentColor" opacity="0.3"/>
+                            </svg>
+                        </div>
+                        <div class="tool-content">
+                            <div class="tool-title">待開發</div>
+                            <div class="tool-value">敬請期待</div>
+                        </div>
+                    </div>
+
+                    <div class="tool-card placeholder">
+                        <div class="tool-icon placeholder-icon">
+                            <svg viewBox="0 0 24 24">
+                                <polygon points="12,2 22,20 2,20" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4,4" opacity="0.3"/>
+                                <circle cx="12" cy="16" r="1" fill="currentColor" opacity="0.3"/>
+                            </svg>
+                        </div>
+                        <div class="tool-content">
+                            <div class="tool-title">待開發</div>
+                            <div class="tool-value">敬請期待</div>
                         </div>
                     </div>
                 </div>
@@ -511,17 +590,213 @@ class OverviewModule {
     }
 
     startPomodoro() {
-        // 快速開啟箱型時間模組並啟動番茄鐘
-        if (window.loadModule) {
-            window.loadModule('timebox');
-            setTimeout(() => {
-                if (window.activeModule && window.activeModule.startTimer) {
-                    window.activeModule.togglePomodoroPanel();
-                    setTimeout(() => {
-                        window.activeModule.startTimer();
-                    }, 300);
+        // 顯示番茄鐘時間選擇對話框
+        this.showPomodoroDialog();
+    }
+
+    showPomodoroDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'pomodoro-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-backdrop" onclick="this.parentElement.remove()"></div>
+            <div class="dialog-content">
+                <h3>番茄鐘</h3>
+                <div class="time-options">
+                    <button class="time-btn" data-minutes="15">15分鐘</button>
+                    <button class="time-btn" data-minutes="25">25分鐘</button>
+                    <button class="time-btn" data-minutes="30">30分鐘</button>
+                    <button class="time-btn" data-minutes="45">45分鐘</button>
+                </div>
+                <div class="dialog-actions">
+                    <button class="btn secondary" onclick="this.closest('.pomodoro-dialog').remove()">取消</button>
+                </div>
+            </div>
+            <style>
+                .pomodoro-dialog {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
-            }, 500);
+                
+                .dialog-backdrop {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                }
+                
+                .dialog-content {
+                    position: relative;
+                    background: white;
+                    border-radius: 16px;
+                    padding: 24px;
+                    min-width: 300px;
+                    box-shadow: var(--shadow-lg);
+                }
+                
+                .dialog-content h3 {
+                    margin: 0 0 20px 0;
+                    color: var(--text);
+                }
+                
+                .time-options {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                    margin-bottom: 20px;
+                }
+                
+                .time-btn {
+                    padding: 12px;
+                    border: 2px solid var(--border);
+                    border-radius: 12px;
+                    background: white;
+                    color: var(--text);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                }
+                
+                .time-btn:hover {
+                    border-color: var(--primary);
+                    background: var(--primary-light);
+                    transform: translateY(-1px);
+                }
+                
+                .dialog-actions {
+                    display: flex;
+                    justify-content: flex-end;
+                }
+                
+                .btn {
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    border: 1px solid var(--border);
+                    background: white;
+                    color: var(--text);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                }
+                
+                .btn.secondary {
+                    background: var(--bg);
+                }
+                
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+            </style>
+        `;
+        
+        // 綁定時間按鈕事件
+        dialog.querySelectorAll('.time-btn').forEach(btn => {
+            btn.onclick = () => {
+                const minutes = parseInt(btn.dataset.minutes);
+                this.startPomodoroTimer(minutes);
+                dialog.remove();
+            };
+        });
+        
+        document.body.appendChild(dialog);
+    }
+
+    startPomodoroTimer(minutes) {
+        // 開始番茄鐘計時
+        this.pomodoroEndTime = Date.now() + (minutes * 60 * 1000);
+        this.pomodoroInterval = setInterval(() => {
+            this.updatePomodoroDisplay();
+        }, 1000);
+        this.updatePomodoroDisplay();
+        
+        // 添加進行中樣式
+        const pomodoroCard = document.querySelector('.tool-card.active-pomodoro');
+        if (pomodoroCard) {
+            pomodoroCard.classList.add('running');
+        }
+        
+        // 顯示開始通知
+        this.showNotification(`番茄鐘已開始 (${minutes}分鐘)`);
+    }
+
+    updatePomodoroDisplay() {
+        const now = Date.now();
+        const remaining = this.pomodoroEndTime - now;
+        
+        if (remaining <= 0) {
+            // 計時完成
+            clearInterval(this.pomodoroInterval);
+            this.showNotification('番茄鐘完成！休息一下吧');
+            this.updatePomodoroCard(null);
+            
+            // 移除進行中樣式
+            const pomodoroCard = document.querySelector('.tool-card.active-pomodoro');
+            if (pomodoroCard) {
+                pomodoroCard.classList.remove('running');
+            }
+            return;
+        }
+        
+        const minutes = Math.floor(remaining / 60000);
+        const seconds = Math.floor((remaining % 60000) / 1000);
+        const timeText = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        
+        this.updatePomodoroCard(timeText);
+    }
+
+    updatePomodoroCard(timeText) {
+        const pomodoroCard = document.querySelector('.tool-card[onclick*="startPomodoro"] .tool-value');
+        if (pomodoroCard) {
+            pomodoroCard.textContent = timeText || '開始專注';
+        }
+    }
+
+    showNotification(message) {
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease forwards';
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+        
+        // 添加動畫樣式
+        if (!document.getElementById('notificationStyles')) {
+            const styles = document.createElement('style');
+            styles.id = 'notificationStyles';
+            styles.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(styles);
         }
     }
 
@@ -545,6 +820,11 @@ class OverviewModule {
         // 清理時鐘
         if (this.timeInterval) {
             clearInterval(this.timeInterval);
+        }
+        
+        // 清理番茄鐘
+        if (this.pomodoroInterval) {
+            clearInterval(this.pomodoroInterval);
         }
     }
 }
