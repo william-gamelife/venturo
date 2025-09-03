@@ -1,283 +1,219 @@
 /**
- * 認證橋接器 - 整合舊系統與新權限系統
- * 確保向後相容性的同時啟用新的權限控制
+ * GameLife 權限系統核心 - AuthBridge
+ * 統一認證入口，無複雜依賴，快速啟動
  */
 
 class AuthBridge {
     constructor() {
-        this.permissionHelper = null;
         this.currentUser = null;
-        this.legacyMode = false;
+        this.permissionHelper = null;
+        this.ready = false;
         this.initialized = false;
         
-        // 延遲初始化，避免阻塞頁面載入
-        setTimeout(() => this.initializeSystem(), 0);
+        // 立即同步初始化
+        this.init();
     }
 
-    async initializeSystem() {
+    init() {
         try {
-            // 嘗試載入新權限系統
-            if (typeof require !== 'undefined') {
-                const { getPermissionHelper } = require('./permission-helper.js');
-                this.permissionHelper = getPermissionHelper();
-                console.log('🔗 AuthBridge: 新權限系統已連接');
+            // 直接使用瀏覽器權限助手
+            if (window.permissionHelper) {
+                this.permissionHelper = window.permissionHelper;
+                console.log('🔗 AuthBridge: 瀏覽器權限系統已連接');
             } else {
-                // 瀏覽器環境，直接使用 permission-helper-browser.js
-                if (window.permissionHelper) {
-                    this.permissionHelper = window.permissionHelper;
-                    console.log('🔗 AuthBridge: 瀏覽器權限系統已連接');
+                console.warn('⚠️ AuthBridge: 權限助手尚未載入，將重試...');
+                // 如果權限助手未載入，等待一下再重試
+                setTimeout(() => this.init(), 100);
+                return;
+            }
+            
+            // 從 localStorage 恢復登入狀態
+            this.restoreLoginState();
+            
+            this.ready = true;
+            this.initialized = true;
+            console.log('🌉 AuthBridge 初始化完成');
+            
+        } catch (error) {
+            console.error('❌ AuthBridge 初始化失敗:', error);
+            this.initialized = false;
+        }
+    }
+
+    // 恢復登入狀態
+    restoreLoginState() {
+        try {
+            const stored = localStorage.getItem('gamelife_auth');
+            if (stored) {
+                const authData = JSON.parse(stored);
+                
+                // 檢查是否過期
+                if (authData.expireTime && authData.expireTime > Date.now()) {
+                    this.currentUser = authData;
+                    console.log('🔄 已恢復登入狀態:', authData.username);
                 } else {
-                    throw new Error('瀏覽器權限系統未載入');
+                    // 清除過期資料
+                    localStorage.removeItem('gamelife_auth');
+                    console.log('🕐 登入狀態已過期，已清除');
                 }
             }
         } catch (error) {
-            console.warn('⚠️ AuthBridge: 回退到舊版認證系統', error.message);
-            this.legacyMode = true;
-            this.initializeLegacyMode();
+            console.warn('⚠️ 恢復登入狀態失敗:', error);
+            localStorage.removeItem('gamelife_auth');
         }
-        
-        this.initialized = true;
-        console.log('🌉 AuthBridge 初始化完成');
-    }
-
-
-    initializeLegacyMode() {
-        // 回退到原有的使用者資料
-        this.users = [
-            {
-                uuid: '550e8400-e29b-41d4-a716-446655440000',
-                username: 'william',
-                displayName: '威廉',
-                password: 'pass1234',
-                role: 'SUPER_ADMIN'
-            },
-            {
-                uuid: '550e8400-e29b-41d4-a716-446655440001', 
-                username: 'carson',
-                displayName: 'Carson',
-                password: 'pass1234',
-                role: 'BUSINESS_ADMIN'
-            },
-            {
-                uuid: 'user-kai-001',
-                username: 'kai',
-                displayName: 'KAI', 
-                password: 'pass1234',
-                role: 'GENERAL_USER'
-            }
-        ];
-        console.log('🔄 AuthBridge: 舊版模式已啟用');
     }
 
     // 等待初始化完成
-    async waitForInitialization() {
-        while (!this.initialized) {
-            await new Promise(resolve => setTimeout(resolve, 10));
+    async waitForInit() {
+        let attempts = 0;
+        while (!this.initialized && attempts < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        if (!this.initialized) {
+            throw new Error('AuthBridge 初始化超時');
         }
     }
 
-    // =============  認證方法 =============
+    // =============  核心認證方法 =============
 
-    async validateLogin(username, password) {
-        await this.waitForInitialization();
-        if (this.permissionHelper && !this.legacyMode) {
-            // 使用新權限系統
-            return this.permissionHelper.validateUser(username, password);
-        } else {
-            // 使用內建資料
-            const user = this.users.find(u => u.username === username);
-            if (user && user.password === password) {
-                return {
-                    uuid: user.uuid,
-                    username: user.username,
-                    displayName: user.displayName,
-                    role: user.role
-                };
-            }
-            return null;
+    async login(username, password) {
+        await this.waitForInit();
+        
+        if (!this.permissionHelper) {
+            throw new Error('權限系統未載入');
         }
-    }
-
-    getCurrentUser() {
-        // 從 sessionStorage 取得當前使用者
-        try {
-            const stored = sessionStorage.getItem('currentUser');
-            if (stored) {
-                this.currentUser = JSON.parse(stored);
-                return this.currentUser;
-            }
-        } catch (error) {
-            console.warn('無法取得當前使用者:', error);
+        
+        const user = this.permissionHelper.validateUser(username, password);
+        if (user) {
+            // 建立完整的登入資料
+            const loginData = {
+                uuid: user.uuid,
+                username: user.username,
+                displayName: user.displayName,
+                role: user.role,
+                permissions: user.permissions,
+                loginTime: Date.now(),
+                expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7天過期
+            };
+            
+            this.currentUser = loginData;
+            
+            // 保存到 localStorage
+            localStorage.setItem('gamelife_auth', JSON.stringify(loginData));
+            
+            console.log('✅ 登入成功:', username);
+            return true;
         }
-        return null;
-    }
-
-    setCurrentUser(user) {
-        this.currentUser = user;
-        sessionStorage.setItem('currentUser', JSON.stringify(user));
+        
+        console.log('❌ 登入失敗:', username);
+        return false;
     }
 
     logout() {
         this.currentUser = null;
-        sessionStorage.removeItem('currentUser');
+        localStorage.removeItem('gamelife_auth');
+        sessionStorage.clear();
+        console.log('👋 使用者已登出');
+    }
+
+    isLoggedIn() {
+        return this.currentUser !== null;
+    }
+
+    getCurrentUser() {
+        return this.currentUser;
     }
 
     // =============  權限檢查方法 =============
 
     canAccessModule(moduleName) {
-        if (!this.initialized) return false; // 未初始化時禁止存取
-        const user = this.getCurrentUser();
-        if (!user) return false;
-
-        if (this.permissionHelper && !this.legacyMode) {
-            return this.permissionHelper.canAccessModule(user.uuid, moduleName);
-        } else {
-            // 舊版邏輯
-            return this.legacyPermissionCheck(user.role, moduleName, 'read');
+        if (!this.initialized || !this.currentUser || !this.permissionHelper) {
+            return false;
         }
+
+        return this.permissionHelper.canAccessModule(this.currentUser.uuid, moduleName);
     }
 
     canModifyModule(moduleName) {
-        const user = this.getCurrentUser();
-        if (!user) return false;
-
-        if (this.permissionHelper && !this.legacyMode) {
-            return this.permissionHelper.canModifyModule(user.uuid, moduleName);
-        } else {
-            return this.legacyPermissionCheck(user.role, moduleName, 'write');
+        if (!this.initialized || !this.currentUser || !this.permissionHelper) {
+            return false;
         }
+
+        return this.permissionHelper.canModifyModule(this.currentUser.uuid, moduleName);
+    }
+
+    canDeleteFromModule(moduleName) {
+        if (!this.initialized || !this.currentUser || !this.permissionHelper) {
+            return false;
+        }
+
+        return this.permissionHelper.canDeleteFromModule(this.currentUser.uuid, moduleName);
     }
 
     canUsePackageFeature() {
-        const user = this.getCurrentUser();
-        if (!user) return false;
-
-        if (this.permissionHelper && !this.legacyMode) {
-            return this.permissionHelper.canUsePackageFeature(user.uuid);
-        } else {
-            return user.role === 'SUPER_ADMIN' || user.role === 'BUSINESS_ADMIN';
+        if (!this.initialized || !this.currentUser || !this.permissionHelper) {
+            return false;
         }
+
+        return this.permissionHelper.canUsePackageFeature(this.currentUser.uuid);
     }
 
     getVisibleModules() {
-        if (!this.initialized) return []; // 未初始化時返回空陣列
-        const user = this.getCurrentUser();
-        if (!user) return [];
-
-        if (this.permissionHelper && !this.legacyMode) {
-            return this.permissionHelper.getVisibleModules(user.uuid);
-        } else {
-            // 舊版邏輯
-            return this.getLegacyVisibleModules(user.role);
+        if (!this.initialized || !this.currentUser || !this.permissionHelper) {
+            return [];
         }
-    }
 
-    // =============  舊版相容性方法 =============
-
-    legacyPermissionCheck(role, moduleName, action) {
-        const permissions = {
-            'SUPER_ADMIN': {
-                // 所有模組的所有權限
-                '*': ['read', 'write', 'delete']
-            },
-            'BUSINESS_ADMIN': {
-                'todos': ['read', 'write', 'delete'],
-                'projects': ['read', 'write', 'delete'],
-                'calendar': ['read', 'write', 'delete'],
-                'finance': ['read', 'write', 'delete'],
-                'timebox': ['read', 'write', 'delete'],
-                'overview': ['read', 'write'],
-                'settings': ['read', 'write'],
-                'themes': ['read'],
-                'sync': ['read']
-            },
-            'GENERAL_USER': {
-                'todos': ['read', 'write', 'delete'],
-                'calendar': ['read', 'write', 'delete'], 
-                'finance': ['read', 'write', 'delete'],
-                'timebox': ['read', 'write', 'delete'],
-                'overview': ['read'],
-                'life-simulator': ['read', 'write'],
-                'pixel-life': ['read', 'write']
-            }
-        };
-
-        const rolePermissions = permissions[role];
-        if (!rolePermissions) return false;
-
-        // 超級管理員有全部權限
-        if (rolePermissions['*']) return true;
-
-        const modulePermissions = rolePermissions[moduleName];
-        return modulePermissions && modulePermissions.includes(action);
-    }
-
-    getLegacyVisibleModules(role) {
-        const moduleMap = {
-            'SUPER_ADMIN': [
-                'users', 'overview', 'todos', 'calendar', 'finance', 
-                'projects', 'timebox', 'life-simulator', 'pixel-life',
-                'travel-pdf', 'settings', 'themes', 'sync'
-            ],
-            'BUSINESS_ADMIN': [
-                'overview', 'todos', 'calendar', 'finance', 
-                'projects', 'timebox', 'life-simulator', 'pixel-life',
-                'travel-pdf', 'settings', 'themes', 'sync'
-            ],
-            'GENERAL_USER': [
-                'overview', 'todos', 'calendar', 'finance', 
-                'timebox', 'life-simulator', 'pixel-life', 'travel-pdf'
-            ]
-        };
-
-        return moduleMap[role] || [];
-    }
-
-    // =============  公用方法 =============
-
-    isLoggedIn() {
-        return this.getCurrentUser() !== null;
+        return this.permissionHelper.getVisibleModules(this.currentUser.uuid);
     }
 
     getUserRole() {
-        const user = this.getCurrentUser();
-        return user ? user.role : null;
+        if (!this.currentUser) return null;
+        
+        if (this.permissionHelper) {
+            return this.permissionHelper.getUserRole(this.currentUser.uuid);
+        }
+        
+        return {
+            role: this.currentUser.role,
+            displayName: this.currentUser.displayName
+        };
     }
 
+    // =============  角色檢查方法 =============
+
     isSuperAdmin() {
-        return this.getUserRole() === 'SUPER_ADMIN';
+        return this.currentUser && this.currentUser.role === 'SUPER_ADMIN';
     }
 
     isBusinessAdmin() {
-        return this.getUserRole() === 'BUSINESS_ADMIN';
+        return this.currentUser && this.currentUser.role === 'BUSINESS_ADMIN';
     }
 
-    getUserInfo() {
-        return this.getCurrentUser();
+    isGeneralUser() {
+        return this.currentUser && this.currentUser.role === 'GENERAL_USER';
     }
 
-    // =============  相容性 API =============
+    // =============  除錯資訊 =============
 
-    // 提供與舊 auth.js 相同的介面
-    async login(username, password) {
-        const user = await this.validateLogin(username, password);
-        if (user) {
-            this.setCurrentUser(user);
-            return true;
-        }
-        return false;
+    getDebugInfo() {
+        return {
+            initialized: this.initialized,
+            ready: this.ready,
+            hasUser: !!this.currentUser,
+            hasPermissionHelper: !!this.permissionHelper,
+            currentUser: this.currentUser ? {
+                username: this.currentUser.username,
+                role: this.currentUser.role
+            } : null
+        };
     }
 }
 
-// 建立全域實例
+// 建立全域單例
 window.authBridge = new AuthBridge();
 
-// 提供舊版相容 API
-window.getCurrentUser = () => window.authBridge.getCurrentUser();
-window.isLoggedIn = () => window.authBridge.isLoggedIn();
-window.logout = () => window.authBridge.logout();
-window.canAccessModule = (module) => window.authBridge.canAccessModule(module);
-window.canModifyModule = (module) => window.authBridge.canModifyModule(module);
-window.getVisibleModules = () => window.authBridge.getVisibleModules();
+// 全域除錯函數
+window.getAuthDebug = () => window.authBridge.getDebugInfo();
 
-console.log('🌉 AuthBridge 已初始化，提供向後相容的認證服務');
+console.log('🚀 AuthBridge 已載入並初始化');
