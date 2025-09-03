@@ -190,6 +190,11 @@ class TimeboxModule {
                     </div>
                 </div>
 
+                <!-- 番茄鐘面板 -->
+                <div id="pomodoroPanel" class="pomodoro-panel" style="display: none;">
+                    ${this.getPomodoroHTML()}
+                </div>
+
                 <!-- 主要時間格子區 -->
                 <div class="timebox-grid-wrapper">
                     <div class="timebox-grid">
@@ -2434,10 +2439,16 @@ class TimeboxModule {
 
     // SignageHost 按鈕方法：切換番茄鐘
     toggleTimer() {
-        if (this.timerState?.isRunning) {
-            this.pauseTimer();
-        } else {
-            this.startTimer();
+        const panel = document.getElementById('pomodoroPanel');
+        if (panel) {
+            if (panel.style.display === 'none') {
+                // 顯示番茄鐘面板
+                panel.style.display = 'block';
+                this.updatePomodoroDisplay();
+            } else {
+                // 隱藏面板
+                panel.style.display = 'none';
+            }
         }
     }
 
