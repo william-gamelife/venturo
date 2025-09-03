@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儀表板 - 遊戲人生 3.0 升級版</title>
+    
+    <!-- 版本控制 - 強制刷新快取 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    
+    <!-- Auth Module -->
+    <script type="module" src="./modules/auth.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            /* 主色調 - 金棕色系 */
+            --primary: #c9a961;  /* 金棕色 */
+            --primary-light: #e4d4a8;  /* 淺金色 */
+            --primary-dark: #8b7355;  /* 深棕色 */
+            
+            /* 背景色 - 和紙質感 */
+            --bg: #f4f1eb;  /* 米白色 */
+            --bg-dark: #e8e2d5;  /* 深米色 */
+            --card: rgba(255, 255, 255, 0.85);  /* 半透明卡片 */
+            
+            /* 輔助色 - 青苔綠 */
+            --accent: #7a8b74;  /* 青苔綠 */
+            --accent-light: #a3b39c;  /* 淺綠 */
+            
+            /* 文字色 */
+            --text: #3a3833;  /* 墨色 */
+            --text-light: #6d685f;  /* 淺墨色 */
+            --text-muted: #9b9588;  /* 極淺色 */
+            
+            /* 邊框與陰影 */
+            --border: rgba(201, 169, 97, 0.2);
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12);
+            
+            /* 側邊欄選中色 - 金棕色系 */
+            --sidebar-active-bg: rgba(201, 169, 97, 0.2);
+            --sidebar-hover: rgba(201, 169, 97, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            background: linear-gradient(135deg, var(--bg) 0%, var(--bg-dark) 100%);
+            min-height: 100vh;
+        }
+
+        /* 側邊欄 */
+        .sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 260px;
+            height: 100vh;
+            background: rgba(255, 253, 250, 0.9);
+            backdrop-filter: blur(20px);
+            padding: 24px 20px;
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+        }
+
+        .logo-text {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .user-info {
+            padding: 12px 16px;
+            background: rgba(247, 245, 242, 0.6);
+            border-radius: 12px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border);
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 2px;
+            font-size: 14px;
+        }
+
+        .user-role {
+            font-size: 11px;
+            color: var(--text-light);
+        }
+
+        .nav-menu {
+            list-style: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .nav-item {
+            margin-bottom: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            color: var(--text);
+            text-decoration: none;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            background: var(--sidebar-hover);
+        }
+
+        .nav-link.active {
+            background: var(--sidebar-active-bg);
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .nav-link:hover .nav-icon {
+            transform: scale(1.1);
+        }
+
+        /* 主內容 */
+        .main-content {
+            margin-left: 260px;
+            padding: 40px;
+        }
+
+        /* 歡迎卡片 */
+        .welcome-card {
+            background: var(--card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 24px 32px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .welcome-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 300px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(139, 115, 85, 0.05));
+            pointer-events: none;
+        }
+
+        .welcome-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+            gap: 20px;
+        }
+
+        .module-info {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .module-icon-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .module-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+            font-size: 20px;
+            box-shadow: 0 2px 8px rgba(201, 169, 97, 0.3);
+        }
+
+        .module-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+        }
+
+        .module-stats {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-badge {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            background: var(--bg);
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+
+        .stat-badge.highlight {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .module-right-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 12px;
+        }
+
+        .quick-categories {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        
+        .quick-categories-top {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .module-filters-inline {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .module-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .module-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            text-decoration: none;
+        }
+
+        .module-btn.primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .module-btn.secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .module-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .module-btn.primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .module-btn.secondary:hover {
+            background: var(--bg-dark);
+        }
+
+        .module-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .category-tag, .filter-tag {
+            padding: 3px 8px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .category-tag:hover, .filter-tag:hover {
+            background: var(--bg);
+        }
+
+        .category-tag.active, .filter-tag.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .category-tag {
+            background: var(--accent-light);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .category-tag.active {
+            background: var(--accent);
+            color: white;
+        }
+        
+        /* 頂部快速分類標籤增強樣式 */
+        .quick-categories-top .category-tag {
+            padding: 8px 16px;
+            font-weight: 600;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--accent-light), rgba(201, 169, 97, 0.1));
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            border: 2px solid var(--accent);
+        }
+        
+        .quick-categories-top .category-tag::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .quick-categories-top .category-tag:hover::before {
+            left: 100%;
+        }
+        
+        .quick-categories-top .category-tag:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(201, 169, 97, 0.25);
+        }
+        
+        .quick-categories-top .category-tag.active {
+            background: linear-gradient(135deg, var(--accent), var(--primary));
+            color: white;
+            box-shadow: 0 4px 12px rgba(201, 169, 97, 0.4);
+            border-color: var(--primary);
+        }
+
+        .welcome-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, var(--text), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.2;
+        }
+
+        .welcome-subtitle {
+            color: var(--text-light);
+            font-size: 0.875rem;
+            line-height: 1.2;
+        }
+
+        /* 登出按鈕 */
+        .logout-btn {
+            margin-top: auto;
+            padding: 12px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .logout-btn:hover {
+            background: var(--text);
+            color: white;
+        }
+
+        /* 手機版底部選單 */
+        .mobile-bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border);
+            z-index: 1001;
+            overflow: hidden;
+        }
+        
+        .mobile-nav-slider {
+            display: flex;
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            height: 100%;
+        }
+        
+        .mobile-nav-page {
+            display: flex;
+            width: 100%;
+            flex-shrink: 0;
+        }
+        
+        .mobile-nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            padding: 8px 4px;
+            min-width: 0;
+            position: relative;
+            border-radius: 8px;
+        }
+        
+        .mobile-nav-item:active {
+            transform: scale(0.95);
+            background: rgba(139, 115, 85, 0.1);
+        }
+        
+        .mobile-nav-item.active {
+            color: var(--primary);
+        }
+        
+        .mobile-nav-icon {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+            transition: transform 0.2s ease;
+            flex-shrink: 0;
+        }
+        
+        .mobile-nav-item.active .mobile-nav-icon {
+            transform: scale(1.1);
+        }
+        
+        .mobile-nav-text {
+            font-size: 10px;
+            font-weight: 500;
+            text-align: center;
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+        
+        .mobile-nav-dots {
+            position: absolute;
+            bottom: 4px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+        }
+        
+        .mobile-nav-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(139, 115, 85, 0.3);
+            transition: all 0.2s ease;
+        }
+        
+        .mobile-nav-dot.active {
+            background: var(--primary);
+            transform: scale(1.2);
+        }
+
+        /* 響應式 */
+        @media (max-width: 768px) {
+            .mobile-bottom-nav {
+                display: block;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .main-content {
+                margin-left: 0;
+                padding: 24px 20px 100px;
+            }
+
+            .welcome-card {
+                padding: 16px;
+                margin: 0 12px 16px;
+            }
+
+            .module-header {
+                flex-direction: column;
+                gap: 16px;
+                align-items: stretch;
+            }
+
+            .module-actions {
+                justify-content: flex-start;
+            }
+
+            .module-filters {
+                flex-direction: column;
+                gap: 12px;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .welcome-card {
+                height: auto;
+                padding: 20px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            
+            .welcome-content {
+                flex: none;
+                width: 100%;
+            }
+        }
+        
+        /* 模組容器統一樣式 */
+        .module-container {
+            padding: 0;
+            min-height: calc(100vh - 180px);
+            background: transparent;
+            width: 100%;
+        }
+        
+        .module-container > * {
+            width: 100%;
+            margin: 0;
+        }
+
+        /* 招牌框：行事曆規格 */
+        #signageHost { margin-bottom: 20px; }
+        .signage-card{
+            height:100px;background:var(--card);border:1px solid var(--border);
+            border-radius:16px;padding:0 24px;display:flex;align-items:center;
+            justify-content:space-between;backdrop-filter:blur(20px);
+        }
+        .signage-left{display:flex;align-items:center;gap:16px;}
+        .signage-icon{width:40px;height:40px;border-radius:12px;color:#fff;
+            display:flex;align-items:center;justify-content:center;
+            background:linear-gradient(135deg,var(--primary),var(--accent));
+        }
+        .signage-icon svg{width:24px;height:24px}
+        .signage-title{margin:0;font-size:1.25rem;font-weight:600;color:var(--text)}
+        .signage-sub{margin:0;font-size:.875rem;color:var(--text-light)}
+        .signage-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+        .sg-btn{height:36px;padding:0 14px;border-radius:8px;font-size:.875rem;cursor:pointer;
+            display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+        .sg-btn.secondary{background:#fff;border:1px solid var(--border);color:var(--text)}
+        .sg-btn.primary{background:linear-gradient(135deg,var(--primary),var(--accent));border:none;color:#fff;font-weight:500}
+        .sg-badge{font-size:.85rem;color:var(--text-light);background:var(--bg);padding:4px 8px;border-radius:12px}
+        @media (max-width:768px){
+            .signage-card{height:auto;padding:16px;flex-direction:column;align-items:flex-start;gap:12px}
+        }
+    </style>
+</head>
+<body>
+    <!-- 全域 SVG 定義 -->
+    <svg style="position: absolute; width: 0; height: 0;">
+        <defs>
+            <!-- 主色漸層 - 棕金 -->
+            <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#c4b5a0;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#8b7355;stop-opacity:1" />
+            </linearGradient>
+            
+            <!-- 暖色漸層 - 米白到淺棕 -->
+            <linearGradient id="warmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#e8e5e0;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#d5c8b8;stop-opacity:1" />
+            </linearGradient>
+        </defs>
+    </svg>
+    
+    <!-- 側邊欄 -->
+    <aside class="sidebar" id="sidebar">
+        <!-- SVG 漸變定義 -->
+        <svg style="position: absolute; width: 0; height: 0;">
+            <defs>
+                <!-- 秋日黃金漸變 -->
+                <linearGradient id="warmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                    <stop offset="30%" style="stop-color:#8b6914;stop-opacity:1" />
+                    <stop offset="60%" style="stop-color:#4a6b4a;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+        </svg>
+        
+        <div class="sidebar-logo">
+            <div class="logo-icon">GL</div>
+            <div class="logo-text">遊戲人生 3.0 
+                <span style="font-size: 0.8em; color: #667eea; font-weight: 600;">升級版</span>
+            </div>
+        </div>
+        
+        <div class="user-info">
+            <div class="user-name" id="currentUserName">載入中...</div>
+            <div class="user-role" id="currentUserRole">使用者</div>
+        </div>
+        
+        <nav>
+            <ul class="nav-menu">
+                <!-- 系統總覽 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link active" onclick="loadModule('dashboard', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <defs>
+                                <linearGradient id="navHome" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#cd853f;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#355e3b;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <rect x="3" y="3" width="7" height="7" rx="1" fill="url(#navHome)" opacity="0.3"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1" fill="url(#navHome)" opacity="0.3"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1" fill="url(#navHome)" opacity="0.3"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1" fill="url(#navHome)" opacity="0.3"/>
+                            <rect x="3" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <rect x="14" y="3" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <rect x="3" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <rect x="14" y="14" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span>系統總覽</span>
+                    </a>
+                </li>
+                
+                <!-- 待辦事項 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('todos', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="2" fill="url(#warmGradient)" opacity="0.3"/>
+                            <rect x="3" y="3" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M9 11l3 3L20 5" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span>待辦事項</span>
+                    </a>
+                </li>
+                
+                <!-- 人員管理 -->
+                <li class="nav-item" id="usersNavItem">
+                    <a href="#" class="nav-link" onclick="loadModule('users', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <circle cx="9" cy="7" r="4" fill="url(#warmGradient)" opacity="0.3"/>
+                            <circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="url(#warmGradient)" opacity="0.2"/>
+                            <path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span>人員管理</span>
+                    </a>
+                </li>
+
+                <!-- 行事曆 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('calendar', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <rect x="3" y="4" width="18" height="18" rx="2" fill="url(#warmGradient)" opacity="0.3"/>
+                            <rect x="3" y="4" width="18" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="12" cy="16" r="2" fill="currentColor"/>
+                        </svg>
+                        <span>行事曆</span>
+                    </a>
+                </li>
+
+                <!-- 箱型時間 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('timebox', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="url(#warmGradient)" opacity="0.3"/>
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="12 6 12 12 16 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+                        </svg>
+                        <span>箱型時間</span>
+                    </a>
+                </li>
+
+                <!-- 財務管理 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('finance', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" fill="url(#warmGradient)" opacity="0.3"/>
+                            <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5" 
+                                  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>財務管理</span>
+                    </a>
+                </li>
+
+                <!-- 專案管理 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('projects', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                                  fill="url(#warmGradient)" opacity="0.3"/>
+                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                            <line x1="7" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                            <line x1="7" y1="16" x2="14" y2="16" stroke="currentColor" stroke-width="1" opacity="0.5"/>
+                        </svg>
+                        <span>專案管理</span>
+                    </a>
+                </li>
+
+                <!-- 心靈女巫 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('witch', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" 
+                                  fill="url(#warmGradient)" opacity="0.3"/>
+                            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" 
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="14" cy="9" r="0.8" fill="currentColor"/>
+                            <circle cx="10" cy="13" r="0.5" fill="currentColor"/>
+                            <circle cx="16" cy="15" r="0.6" fill="currentColor"/>
+                        </svg>
+                        <span>心靈女巫</span>
+                    </a>
+                </li>
+
+                <!-- 旅遊PDF -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('travel-pdf', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
+                                  fill="url(#warmGradient)" opacity="0.3"/>
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" 
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                            <polyline points="14 2 14 8 20 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+                            <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                            <polyline points="10 9 9 9 8 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                        <span>旅遊PDF</span>
+                    </a>
+                </li>
+
+
+                <!-- Supabase測試 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('supabase-test', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <circle cx="12" cy="5" r="2" fill="currentColor"/>
+                            <circle cx="7" cy="12" r="2" fill="url(#warmGradient)" opacity="0.8"/>
+                            <circle cx="17" cy="12" r="2" fill="url(#warmGradient)" opacity="0.8"/>
+                            <circle cx="5" cy="19" r="1.5" fill="currentColor"/>
+                            <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
+                            <circle cx="19" cy="19" r="1.5" fill="currentColor"/>
+                            <path d="M12 7v5M7 14v3M17 14v3M12 14v3" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+                            <path d="M10 6l-3 5M14 6l3 5" stroke="currentColor" stroke-width="1.5" opacity="0.6"/>
+                        </svg>
+                        <span>Supabase測試</span>
+                    </a>
+                </li>
+
+                <!-- 系統設定 -->
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('settings', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24">
+                            <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z" 
+                                  fill="url(#warmGradient)" opacity="0.3"/>
+                            <path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.08-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z" 
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                        </svg>
+                        <span>系統設定</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        
+        <!-- 返回正式版按鈕 -->
+        <button onclick="if(confirm('返回正式版？')) { localStorage.removeItem('upgrade_mode'); window.location.href = '../index.html'; }" 
+                style="width: 100%; padding: 12px; margin-bottom: 12px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: transform 0.2s;"
+                onmouseover="this.style.transform = 'translateY(-2px)'"
+                onmouseout="this.style.transform = 'translateY(0)'">
+            ⬅️ 返回正式版
+        </button>
+        
+        <button class="logout-btn" onclick="handleLogout()">登出</button>
+    </aside>
+
+    <!-- 主內容 -->
+    <main class="main-content">
+        <!-- 招牌框 -->
+        <div id="signageHost"></div>
+        <!-- 模組容器 -->
+        <div id="moduleContainer" class="module-container">
+            <!-- 模組內容將動態載入 -->
+        </div>
+    </main>
+    
+    <!-- 手機版底部導航 -->
+    <div class="mobile-bottom-nav" id="mobileBottomNav">
+        <div class="mobile-nav-slider" id="mobileNavSlider">
+            <!-- 動態生成導航項目 -->
+        </div>
+        <div class="mobile-nav-dots" id="mobileNavDots">
+            <!-- 動態生成指示器 -->
+        </div>
+    </div>
+
+    <!-- 載入核心應用 -->
+    <script type="module">
+        import { getCurrentUser, isLoggedIn, logout } from './modules/auth.js';
+        
+        // 檢查登入狀態
+        function checkAuth() {
+            if (!isLoggedIn()) {
+                window.location.href = './index.html';
+                return false;
+            }
+            return true;
+        }
+        
+        // 載入使用者資訊
+        function loadUserInfo() {
+            const user = getCurrentUser();
+            if (user) {
+                
+                document.getElementById('currentUserName').textContent = user.display_name;
+                document.getElementById('currentUserRole').textContent = user.title || getRoleDisplayName(user.role);
+            }
+        }
+        
+        // 取得角色顯示名稱
+        function getRoleDisplayName(role) {
+            const roleMap = {
+                'admin': '管理員',
+                'user': '使用者'
+            };
+            return roleMap[role] || '使用者';
+        }
+        
+        // 登出處理
+        function handleLogout() {
+            // 使用自訂確認對話框
+            showLogoutConfirm();
+        }
+        
+        // 執行登出
+        function performLogout() {
+            try {
+                // 清除 sessionStorage
+                sessionStorage.removeItem('user_uuid');
+                sessionStorage.removeItem('display_name');
+                sessionStorage.removeItem('role');
+                sessionStorage.removeItem('username');
+                sessionStorage.removeItem('title');
+                sessionStorage.removeItem('avatar');
+                
+                // 跳轉到登入頁面
+                window.location.href = './index.html';
+            } catch (error) {
+                console.error('登出錯誤:', error);
+                // 強制跳轉到登入頁面
+                window.location.href = './index.html';
+            }
+        }
+
+
+        // 登出確認對話框
+        function showLogoutConfirm() {
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            `;
+            
+            const dialog = document.createElement('div');
+            dialog.style.cssText = `
+                background: white;
+                border-radius: 16px;
+                padding: 24px;
+                max-width: 400px;
+                width: 90%;
+            `;
+            
+            dialog.innerHTML = `
+                <h3 style="margin: 0 0 16px 0; color: var(--text);">確認登出</h3>
+                <p style="margin: 0 0 20px 0; color: var(--text-light);">您確定要登出系統嗎？</p>
+                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                    <button onclick="this.closest('.logout-dialog')?.remove()" 
+                            style="padding: 8px 16px; border: 1px solid var(--border); background: white; border-radius: 8px; cursor: pointer;">
+                        取消
+                    </button>
+                    <button onclick="performLogout(); this.closest('.logout-dialog')?.remove();" 
+                            style="padding: 8px 16px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        確定登出
+                    </button>
+                </div>
+            `;
+            
+            overlay.className = 'logout-dialog';
+            overlay.appendChild(dialog);
+            document.body.appendChild(overlay);
+            
+            // 點擊遮罩關閉
+            overlay.onclick = (e) => {
+                if (e.target === overlay) overlay.remove();
+            };
+        }
+        
+        // 招牌渲染函式
+        function renderSignage(ModuleClass, instance){
+            const meta = ModuleClass.signage || ModuleClass.moduleInfo || {};
+            const el = document.getElementById('signageHost');
+            const actions = (meta.actions||[])
+              .map(a=>`<button class="sg-btn ${a.kind||'secondary'}" data-action="${a.onClick||''}">${a.label}</button>`)
+              .join('');
+            const badges = (meta.badges||[])
+              .map(b=>`<span class="sg-badge">${b.label}：${b.value}</span>`).join('');
+            el.innerHTML = `
+              <div class="signage-card">
+                <div class="signage-left">
+                  <div class="signage-icon">${meta.iconSVG||''}</div>
+                  <div>
+                    <h2 class="signage-title">${meta.title||'模組'}</h2>
+                    <p class="signage-sub">${meta.subtitle||''}</p>
+                  </div>
+                </div>
+                <div class="signage-right">
+                  ${badges}
+                  ${actions}
+                </div>
+              </div>
+            `;
+            // 綁定右側按鈕
+            el.querySelectorAll('[data-action]').forEach(btn=>{
+              const fn = btn.getAttribute('data-action');
+              if (fn && typeof instance?.[fn] === 'function') btn.onclick = ()=>instance[fn]();
+            });
+        }
+
+        // 模組載入功能
+        let currentModule = null;
+        
+
+        async function loadModule(moduleName, navElement) {
+            try {
+                // 檢查登入狀態
+                const user = getCurrentUser();
+                if (!user || !user.uuid) {
+                    window.location.href = './index.html';
+                    return;
+                }
+                
+                // 記住當前模組位置，同時儲存到 localStorage
+                window.location.hash = moduleName;
+                localStorage.setItem('current-module', moduleName);
+                
+                // 更新導航狀態
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                });
+                if (navElement) {
+                    navElement.classList.add('active');
+                }
+                
+                // 清理舊模組
+                if (currentModule && typeof currentModule.destroy === 'function') {
+                    currentModule.destroy();
+                }
+                
+                // 載入狀態
+                const moduleContainer = document.getElementById('moduleContainer');
+                moduleContainer.innerHTML = '<div style="text-align: center; padding: 40px; color: var(--text-light);">載入中...</div>';
+                
+                // 升級版模組映射表
+                const moduleMap = {
+                    'overview': './modules/overview.js',
+                    'dashboard': './modules/overview.js',
+                    'todos': './modules/todos-v2.js',
+                    'users': './modules/users.js',
+                    'calendar': './modules/calendar.js',
+                    'timebox': './modules/timebox.js',
+                    'projects': './modules/projects-v2.js',
+                    'finance': './modules/finance.js',
+                    'witch': './modules/witch.js',
+                    'travel-pdf': './modules/travel-pdf.js',
+                    'supabase-test': './modules/supabase-test.js',
+                    'settings': './modules/settings.js'
+                };
+                
+                const moduleUrl = moduleMap[moduleName] || moduleMap.dashboard;
+                const module = await import(moduleUrl);
+                
+                // 智慧尋找模組類別（支援 V2 和普通版本）
+                const possibleNames = [
+                    moduleName.charAt(0).toUpperCase() + moduleName.slice(1) + 'ModuleV2',
+                    moduleName.charAt(0).toUpperCase() + moduleName.slice(1) + 'Module'
+                ];
+                
+                let ModuleClass = null;
+                for (const name of possibleNames) {
+                    if (module[name]) {
+                        ModuleClass = module[name];
+                        console.log(`✅ 找到升級版模組類別: ${name}`);
+                        break;
+                    }
+                }
+                
+                // 如果沒找到，用原來的方法（向後相容）
+                if (!ModuleClass) {
+                    ModuleClass = Object.values(module).find(x => typeof x === 'function');
+                    if (ModuleClass) {
+                        console.log(`📦 使用標準模組: ${ModuleClass.name}`);
+                    }
+                }
+                
+                if (!ModuleClass) {
+                    throw new Error(`❌ 無法找到模組類別: ${moduleName} (${moduleUrl})`);
+                }
+                
+                // 實例化並渲染模組
+                currentModule = new ModuleClass();
+                window.activeModule = currentModule; // 重要：設定全域引用供按鈕使用
+                
+                // 先掛招牌（不等資料，避免空白）
+                renderSignage(ModuleClass, currentModule);
+                
+                // 再渲染內容
+                await currentModule.render(user.uuid);
+                
+                console.log(`🚀 已載入升級版模組: ${moduleName} (${moduleUrl})`);
+                
+            } catch (error) {
+                console.error('載入模組失敗:', error);
+                const moduleContainer = document.getElementById('moduleContainer');
+                moduleContainer.innerHTML = `
+                    <div style="background: var(--card); border-radius: 20px; padding: 40px; text-align: center; backdrop-filter: blur(20px); border: 1px solid var(--border);">
+                        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 16px; display: block;">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        <h3 style="color: var(--text); margin-bottom: 8px;">載入失敗</h3>
+                        <p style="color: var(--text-light);">無法載入 ${moduleName} 模組</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // 更新導航狀態
+        function updateNavigationState(moduleName) {
+            // 清除所有 active 狀態
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // 設置當前模組的 active 狀態
+            const activeNavElement = document.querySelector(`[onclick*="'${moduleName}'"]`);
+            if (activeNavElement) {
+                activeNavElement.classList.add('active');
+            }
+            
+            // 更新手機版導航狀態
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const activeMobileNavElement = document.querySelector(`.mobile-nav-item[onclick*="'${moduleName}'"]`);
+            if (activeMobileNavElement) {
+                activeMobileNavElement.classList.add('active');
+            }
+        }
+
+        // 權限檢查 - 隱藏無權限的功能
+        function checkPermissions() {
+            const user = getCurrentUser();
+            if (!user) return;
+            
+            // 只有管理員可以看到人員管理
+            const usersNavItem = document.getElementById('usersNavItem');
+            if (user.role !== 'admin' && usersNavItem) {
+                usersNavItem.style.display = 'none';
+            }
+        }
+        
+        // 初始化主題系統
+        async function initTheme() {
+            try {
+                // 載入主題管理器
+                const { ThemeManager } = await import('./modules/themes.js');
+                const themeManager = new ThemeManager();
+                
+                // 設定 HTML 的 data-theme 屬性
+                document.documentElement.setAttribute('data-theme', themeManager.currentTheme);
+                
+                // 載入當前選擇的主題CSS
+                await themeManager.loadTheme(themeManager.currentTheme);
+                
+                // 全域設置主題管理器
+                window.themeManager = themeManager;
+                
+                console.log('主題系統初始化完成，當前主題:', themeManager.currentTheme);
+            } catch (error) {
+                console.error('主題系統初始化失敗:', error);
+            }
+        }
+
+        // 生成手機版底部導航
+        function generateMobileNavigation() {
+            const user = getCurrentUser();
+            
+            // 導航項目配置（只顯示主要功能）
+            const navItems = [
+                { id: 'dashboard', icon: '📊', label: '總覽', module: 'dashboard' },
+                { id: 'todos', icon: '✓', label: '待辦', module: 'todos' },
+                { id: 'calendar', icon: '📅', label: '行事曆', module: 'calendar' },
+                { id: 'timebox', icon: '⏰', label: '時間', module: 'timebox' },
+                { id: 'settings', icon: '⚙️', label: '設定', module: 'settings' }
+            ];
+            
+            // 如果是管理員，添加人員管理
+            if (user && user.role === 'admin') {
+                navItems.splice(4, 0, { id: 'users', icon: '👥', label: '人員', module: 'users' });
+            }
+            
+            const mobileNavSlider = document.getElementById('mobileNavSlider');
+            const mobileNavDots = document.getElementById('mobileNavDots');
+            
+            if (!mobileNavSlider || !mobileNavDots) return;
+            
+            // 清空現有內容
+            mobileNavSlider.innerHTML = '';
+            mobileNavDots.innerHTML = '';
+            
+            // 每頁顯示 5 個項目
+            const itemsPerPage = 5;
+            const totalPages = Math.ceil(navItems.length / itemsPerPage);
+            
+            // 生成頁面
+            for (let page = 0; page < totalPages; page++) {
+                const pageDiv = document.createElement('div');
+                pageDiv.className = 'mobile-nav-page';
+                
+                const startIndex = page * itemsPerPage;
+                const endIndex = Math.min(startIndex + itemsPerPage, navItems.length);
+                
+                for (let i = startIndex; i < endIndex; i++) {
+                    const item = navItems[i];
+                    const navItem = document.createElement('div');
+                    navItem.className = 'mobile-nav-item';
+                    navItem.onclick = () => {
+                        const navElement = document.querySelector(`[onclick*="'${item.module}'"]`);
+                        loadModule(item.module, navElement);
+                    };
+                    
+                    navItem.innerHTML = `
+                        <div class="mobile-nav-icon">${item.icon}</div>
+                        <div class="mobile-nav-text">${item.label}</div>
+                    `;
+                    
+                    pageDiv.appendChild(navItem);
+                }
+                
+                mobileNavSlider.appendChild(pageDiv);
+                
+                // 生成指示器圓點
+                const dot = document.createElement('div');
+                dot.className = 'mobile-nav-dot';
+                if (page === 0) dot.classList.add('active');
+                mobileNavDots.appendChild(dot);
+            }
+            
+            // 如果只有一頁，隱藏圓點指示器
+            if (totalPages <= 1) {
+                mobileNavDots.style.display = 'none';
+            }
+        }
+        
+        // 更新手機版導航狀態
+        function updateMobileNavigationState(moduleName) {
+            document.querySelectorAll('.mobile-nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // 找到對應的手機版導航項目並設為 active
+            const mobileNavItems = document.querySelectorAll('.mobile-nav-item');
+            mobileNavItems.forEach(item => {
+                const onclick = item.getAttribute('onclick') || item.onclick?.toString() || '';
+                if (onclick.includes(`'${moduleName}'`)) {
+                    item.classList.add('active');
+                }
+            });
+        }
+
+        // 初始化
+        async function init() {
+            if (!checkAuth()) return;
+            
+            // 先載入主題
+            await initTheme();
+            
+            loadUserInfo();
+            checkPermissions();
+            
+            // 生成手機版導航
+            generateMobileNavigation();
+            
+            // 從 URL hash 或 localStorage 取得當前模組
+            const currentHash = window.location.hash.slice(1);
+            const savedModule = localStorage.getItem('current-module');
+            const moduleToLoad = currentHash || savedModule || 'dashboard';
+            
+            // 如果使用了儲存的模組，更新 URL hash
+            if (!currentHash && savedModule) {
+                window.location.hash = savedModule;
+            }
+            
+            // 找到對應的導航元素並載入
+            const navElement = document.querySelector(`[onclick*="'${moduleToLoad}'"]`);
+            loadModule(moduleToLoad, navElement);
+            
+            // 確保導航狀態正確
+            updateNavigationState(moduleToLoad);
+            updateMobileNavigationState(moduleToLoad);
+        }
+        
+        // 全域函數
+        window.loadModule = loadModule;
+        window.handleLogout = handleLogout;
+        window.performLogout = performLogout;
+        
+        // 處理瀏覽器前進/後退按鈕
+        window.addEventListener('hashchange', function() {
+            const newModule = window.location.hash.slice(1);
+            if (newModule && newModule !== localStorage.getItem('current-module')) {
+                const navElement = document.querySelector(`[onclick*="'${newModule}'"]`);
+                loadModule(newModule, navElement);
+            }
+        });
+
+        // 初始化應用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
