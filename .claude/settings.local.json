@@ -9,7 +9,9 @@
       "Bash(python3:*)",
       "Bash(open http://localhost:8001)",
       "Bash(open http://localhost:8000)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(./push.sh)"
     ],
     "deny": [],
     "ask": []
