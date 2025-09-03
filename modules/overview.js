@@ -578,14 +578,234 @@ class OverviewModule {
     }
 
     openQuickNote() {
-        // 快速開啟待辦事項模組並新增任務
-        if (window.loadModule) {
-            window.loadModule('todos');
-            setTimeout(() => {
-                if (window.activeModule && window.activeModule.showAddDialog) {
-                    window.activeModule.showAddDialog();
+        // 顯示快速記事對話框
+        this.showQuickNoteDialog();
+    }
+
+    showQuickNoteDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'quick-note-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-backdrop" onclick="this.parentElement.remove()"></div>
+            <div class="dialog-content">
+                <h3>快速記事</h3>
+                <textarea 
+                    id="quickNoteText" 
+                    placeholder="快速記錄你的想法..."
+                    rows="4"
+                    style="width: 100%; resize: vertical; padding: 12px; border: 2px solid var(--border); border-radius: 8px; font-family: inherit;"
+                ></textarea>
+                <div class="note-options">
+                    <div class="tag-options">
+                        <label class="tag-option">
+                            <input type="radio" name="noteType" value="general" checked>
+                            <span class="tag-label">📝 一般</span>
+                        </label>
+                        <label class="tag-option">
+                            <input type="radio" name="noteType" value="idea">
+                            <span class="tag-label">💡 靈感</span>
+                        </label>
+                        <label class="tag-option">
+                            <input type="radio" name="noteType" value="urgent">
+                            <span class="tag-label">⚡ 重要</span>
+                        </label>
+                        <label class="tag-option">
+                            <input type="radio" name="noteType" value="reminder">
+                            <span class="tag-label">🔔 提醒</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="dialog-actions">
+                    <button class="btn secondary" onclick="this.closest('.quick-note-dialog').remove()">取消</button>
+                    <button class="btn primary" onclick="window.activeModule.saveQuickNote()">儲存</button>
+                </div>
+            </div>
+            <style>
+                .quick-note-dialog {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
-            }, 500);
+                
+                .dialog-backdrop {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0, 0, 0, 0.5);
+                }
+                
+                .quick-note-dialog .dialog-content {
+                    position: relative;
+                    background: white;
+                    border-radius: 16px;
+                    padding: 24px;
+                    min-width: 400px;
+                    max-width: 500px;
+                    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+                }
+                
+                .quick-note-dialog .dialog-content h3 {
+                    margin: 0 0 16px 0;
+                    color: var(--text);
+                    font-size: 1.25rem;
+                    font-weight: 600;
+                }
+                
+                .note-options {
+                    margin: 16px 0;
+                }
+                
+                .tag-options {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 8px;
+                }
+                
+                .tag-option {
+                    display: flex;
+                    align-items: center;
+                    padding: 8px 12px;
+                    border: 2px solid var(--border);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    background: white;
+                }
+                
+                .tag-option:hover {
+                    border-color: var(--primary);
+                    background: var(--primary-light);
+                }
+                
+                .tag-option input[type="radio"] {
+                    margin-right: 8px;
+                    accent-color: var(--primary);
+                }
+                
+                .tag-option input[type="radio"]:checked + .tag-label {
+                    font-weight: 600;
+                    color: var(--primary);
+                }
+                
+                .tag-label {
+                    font-size: 0.875rem;
+                    color: var(--text);
+                }
+                
+                .dialog-actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: flex-end;
+                    margin-top: 20px;
+                }
+                
+                .btn {
+                    padding: 10px 20px;
+                    border-radius: 8px;
+                    border: 1px solid var(--border);
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-weight: 500;
+                    font-size: 0.875rem;
+                }
+                
+                .btn.secondary {
+                    background: var(--bg);
+                    color: var(--text);
+                }
+                
+                .btn.primary {
+                    background: var(--primary);
+                    color: white;
+                    border-color: var(--primary);
+                }
+                
+                .btn:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                }
+            </style>
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // 聚焦到文字區域
+        setTimeout(() => {
+            const textarea = document.getElementById('quickNoteText');
+            if (textarea) {
+                textarea.focus();
+            }
+        }, 100);
+        
+        // 支援 Enter 鍵儲存 (Ctrl+Enter 或 Cmd+Enter)
+        document.getElementById('quickNoteText').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                this.saveQuickNote();
+            }
+        });
+    }
+
+    async saveQuickNote() {
+        const dialog = document.querySelector('.quick-note-dialog');
+        const textarea = document.getElementById('quickNoteText');
+        const selectedType = document.querySelector('input[name="noteType"]:checked');
+        
+        if (!textarea || !textarea.value.trim()) {
+            this.showNotification('請輸入記事內容');
+            return;
+        }
+        
+        const noteText = textarea.value.trim();
+        const noteType = selectedType ? selectedType.value : 'general';
+        
+        // 根據類型設定標籤和圖示
+        const typeConfig = {
+            general: { tags: ['記事'], emoji: '📝' },
+            idea: { tags: ['靈感', '想法'], emoji: '💡' },
+            urgent: { tags: ['重要', '緊急'], emoji: '⚡' },
+            reminder: { tags: ['提醒', '備忘'], emoji: '🔔' }
+        };
+        
+        const config = typeConfig[noteType] || typeConfig.general;
+        
+        try {
+            // 建立便條任務
+            const quickNote = {
+                id: 'note_' + Date.now(),
+                title: noteText,
+                description: `快速記事 - ${new Date().toLocaleString('zh-TW')}`,
+                tags: config.tags,
+                priority: noteType === 'urgent' ? 'high' : 'medium',
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+                type: 'quick-note'
+            };
+            
+            // 如果有同步管理器，儲存到雲端
+            if (window.syncManager && this.currentUser) {
+                await window.syncManager.save(this.currentUser.uuid, 'quicknotes', quickNote);
+            }
+            
+            // 顯示成功通知
+            this.showNotification(`${config.emoji} 快速記事已儲存`);
+            
+            // 關閉對話框
+            dialog.remove();
+            
+            // 可選：自動跳轉到待辦事項查看
+            // window.loadModule('todos');
+            
+        } catch (error) {
+            console.error('儲存快速記事失敗:', error);
+            this.showNotification('儲存失敗，請重試');
         }
     }
 

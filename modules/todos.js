@@ -224,6 +224,27 @@ class TodosModule {
                     transform: translateY(-2px);
                 }
 
+                .task-card.completed {
+                    opacity: 0.6;
+                    transform: scale(0.95);
+                    background: linear-gradient(145deg, #f7fafc 0%, #e2e8f0 100%);
+                    transition: all 0.4s ease;
+                }
+
+                .task-card.completed:hover {
+                    transform: scale(0.95) translateY(-1px);
+                    opacity: 0.8;
+                }
+
+                .task-card.completed .task-title {
+                    text-decoration: line-through;
+                    color: #718096;
+                }
+
+                .task-card.completed .task-tags-simple .task-tag-simple {
+                    opacity: 0.5;
+                }
+
                 .task-checkbox-area {
                     opacity: 0;
                     transform: translateX(-4px);
@@ -2042,10 +2063,17 @@ class TodosModule {
     }
 
     getTaskCard(task) {
+        const isSelected = this.selectedTodos.has(task.id);
+        const isDraggable = this.selectedTodos.size > 0 && isSelected;
+        const isCompleted = task.status === 'completed';
+        
         return `
-            <div class="task-card" data-task-id="${task.id}">
+            <div class="task-card ${isSelected ? 'selected' : ''} ${isCompleted ? 'completed' : ''}" 
+                 data-task-id="${task.id}"
+                 ${isDraggable ? 'draggable="true"' : ''}
+                 ${isDraggable ? `ondragstart="window.activeModule.handleDragStart(event, '${task.id}')" ondragend="window.activeModule.handleDragEnd(event)"` : ''}>
                 <div class="task-checkbox-area">
-                    <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" onclick="event.stopPropagation(); window.activeModule.toggleTaskSelection('${task.id}')">
+                    <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" ${isSelected ? 'checked' : ''} onclick="event.stopPropagation(); window.activeModule.toggleTaskSelection('${task.id}')">
                 </div>
                 
                 <div class="task-card-content" onclick="window.activeModule.expandTask('${task.id}')">
@@ -2443,11 +2471,42 @@ class TodosModule {
             }
         }
         
-        // 更新卡片顯示
-        const card = document.querySelector(`[data-task-id="${taskId}"]`);
-        if (card) {
-            card.classList.toggle('selected');
-        }
+        // 重新渲染以更新拖曳屬性和選取狀態
+        this.renderColumns();
+    }
+
+    // 拖曳處理
+    handleDragStart(event, taskId) {
+        this.draggedTasks = Array.from(this.selectedTodos);
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', JSON.stringify(this.draggedTasks));
+        
+        // 設定拖曳效果
+        const draggedCard = event.target;
+        draggedCard.style.opacity = '0.5';
+        
+        // 為所有選中的任務添加拖曳樣式
+        this.selectedTodos.forEach(id => {
+            const card = document.querySelector(`[data-task-id="${id}"]`);
+            if (card && card !== draggedCard) {
+                card.style.opacity = '0.5';
+                card.classList.add('being-dragged');
+            }
+        });
+    }
+
+    handleDragEnd(event) {
+        // 恢復所有卡片樣式
+        this.selectedTodos.forEach(id => {
+            const card = document.querySelector(`[data-task-id="${id}"]`);
+            if (card) {
+                card.style.opacity = '';
+                card.classList.remove('being-dragged');
+            }
+        });
+        
+        this.draggedTasks = null;
+    }
     }
 
 

@@ -5,17 +5,13 @@
 
 class SyncManager {
     constructor() {
-        // Supabase 配置
-        this.SUPABASE_URL = 'https://jjazipnkoccgmbpccalf.supabase.co';
-        this.SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqYXppcG5rb2NjZ21icGNjYWxmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY0MDMxOTIsImV4cCI6MjA3MTk3OTE5Mn0.jHH2Jf-gbx0UKqvUgxG-Nx2f_QwVqZBOFqtbAxzYvnY';
+        // 使用全域單例 Supabase 客戶端
+        this.supabase = window.getSupabaseClient ? window.getSupabaseClient() : null;
         
-        // 初始化 Supabase 客戶端
-        if (typeof window.supabase === 'undefined') {
-            console.error('Supabase 客戶端未載入，請確認已引入 Supabase JavaScript 客戶端');
-            this.supabase = null;
+        if (!this.supabase) {
+            console.warn('☁️ 全域 Supabase 客戶端未找到，將僅使用本地儲存');
         } else {
-            this.supabase = window.supabase.createClient(this.SUPABASE_URL, this.SUPABASE_KEY);
-            console.log('☁️ Supabase 同步管理器已初始化');
+            console.log('☁️ SyncManager 已連接到全域 Supabase 客戶端');
         }
         
         // localStorage 作為快取
