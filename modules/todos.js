@@ -311,53 +311,7 @@ class TodosModule {
                     margin-top: 4px;
                 }
 
-                .task-actions {
-                    display: flex;
-                    gap: 6px;
-                    position: absolute;
-                    top: 12px;
-                    right: 12px;
-                    opacity: 0;
-                    transform: translateY(0px);
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                }
 
-                .task-card:hover .task-actions {
-                    opacity: 1;
-                }
-
-                .task-action-btn {
-                    width: 24px;
-                    height: 24px;
-                    border: none;
-                    background: rgba(255, 255, 255, 0.9);
-                    border-radius: 8px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                    color: #718096;
-                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-                    font-size: 14px;
-                    font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-                    backdrop-filter: blur(10px);
-                }
-
-                .task-action-btn:hover {
-                    transform: translateY(-1px) scale(1.05);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                }
-
-                .task-action-btn.edit:hover {
-                    background: linear-gradient(135deg, #e6f3ff 0%, #cce7ff 100%);
-                    color: #3182ce;
-                }
-
-                .task-action-btn.delete:hover {
-                    background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
-                    color: #e53e3e;
-                }
 
                 .kanban-column {
                     background: rgba(255, 255, 255, 0.9);
@@ -627,48 +581,7 @@ class TodosModule {
                     flex-shrink: 0; /* 防止 SVG 被壓縮 */
                 }
 
-                .task-actions {
-                    position: absolute;
-                    top: 12px;
-                    right: 12px;
-                    display: flex;
-                    gap: 4px;
-                    opacity: 0;
-                    transition: opacity 0.2s;
-                }
 
-                .task-card:hover .task-actions {
-                    opacity: 1;
-                }
-
-                .task-btn {
-                    width: 24px;
-                    height: 24px;
-                    border-radius: 4px;
-                    border: 1px solid var(--border);
-                    background: white;
-                    cursor: pointer;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    transition: all 0.2s;
-                }
-
-                .task-btn:hover {
-                    background: var(--bg);
-                }
-
-                .task-btn-complete:hover {
-                    background: rgba(40, 167, 69, 0.1);
-                    border-color: #28a745;
-                    color: #28a745;
-                }
-
-                .task-btn-reopen:hover {
-                    background: rgba(255, 193, 7, 0.1);
-                    border-color: #ffc107;
-                    color: #ffc107;
-                }
 
                 /* 對話框 */
                 .dialog-overlay {
@@ -1992,23 +1905,13 @@ class TodosModule {
 
     getTaskCard(todo) {
         return `
-            <div class="task-card" 
-                 data-task-id="${todo.id}">
-                
-                <div class="task-card-header">
-                    <div class="task-content-main">
-                        <div class="task-title">${todo.title}</div>
-                        ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
-                        ${todo.tags && todo.tags.length > 0 ? `<div class="task-tags-simple">
-                            ${todo.tags.slice(0, 3).map(tag => `<span class="task-tag-simple">${tag}</span>`).join('')}
-                            ${todo.tags.length > 3 ? `<span class="task-tag-more">+${todo.tags.length - 3}</span>` : ''}
-                        </div>` : ''}
-                    </div>
-                    <div class="task-actions">
-                        <button class="task-action-btn expand" onclick="window.activeModule.expandTask('${todo.id}')" title="展開">
-                            ↗
-                        </button>
-                    </div>
+            <div class="task-card" data-task-id="${todo.id}" onclick="window.activeModule.expandTask('${todo.id}')">
+                <div class="task-card-content">
+                    <div class="task-title">${todo.title}</div>
+                    ${todo.tags && todo.tags.length > 0 ? `<div class="task-tags-simple">
+                        ${todo.tags.slice(0, 3).map(tag => `<span class="task-tag-simple">${tag}</span>`).join('')}
+                        ${todo.tags.length > 3 ? `<span class="task-tag-more">+${todo.tags.length - 3}</span>` : ''}
+                    </div>` : ''}
                 </div>
             </div>
         `;
@@ -2141,10 +2044,6 @@ class TodosModule {
                         </div>
                     ` : ''}
                     
-                    <div class="expanded-section">
-                        <div class="expanded-label">狀態</div>
-                        <div class="expanded-value">${this.getStatusLabel(task.status)}</div>
-                    </div>
                     
                     ${task.tags && task.tags.length > 0 ? `
                         <div class="expanded-section">
@@ -2165,37 +2064,6 @@ class TodosModule {
                         </div>
                     ` : ''}
                     
-                    <div class="expanded-actions">
-                        <button class="expanded-btn" onclick="window.activeModule.editTask('${task.id}'); event.stopPropagation();">
-                            <svg width="12" height="12" viewBox="0 0 14 14">
-                                <path d="M10 2l2 2-7 7-3 1 1-3z" fill="none" stroke="currentColor"/>
-                            </svg>
-                            編輯
-                        </button>
-                        
-                        ${task.status === 'pending' ? `
-                            <button class="expanded-btn success" onclick="window.activeModule.completeTask('${task.id}'); event.stopPropagation();">
-                                <svg width="12" height="12" viewBox="0 0 14 14">
-                                    <path d="M2 7l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/>
-                                </svg>
-                                完成
-                            </button>
-                        ` : `
-                            <button class="expanded-btn" onclick="window.activeModule.reopenTask('${task.id}'); event.stopPropagation();">
-                                <svg width="12" height="12" viewBox="0 0 14 14">
-                                    <path d="M1 7l2-2m0 0l2 2m-2-2v6a2 2 0 002 2h6" stroke="currentColor" fill="none" stroke-width="1.5"/>
-                                </svg>
-                                重開
-                            </button>
-                        `}
-                        
-                        <button class="expanded-btn danger" onclick="window.activeModule.deleteTask('${task.id}'); event.stopPropagation();">
-                            <svg width="12" height="12" viewBox="0 0 14 14">
-                                <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                            刪除
-                        </button>
-                    </div>
                 </div>
             </div>
         `;
@@ -2805,10 +2673,6 @@ class TodosModule {
                         </h4>
                         
                         <div class="task-meta-large">
-                            <div class="meta-item">
-                                <span class="meta-label">狀態：</span>
-                                <span class="task-status status-${task.status}">${this.getStatusLabel(task.status)}</span>
-                            </div>
                             
                             ${task.priority > 0 ? `
                                 <div class="meta-item">
@@ -2881,27 +2745,6 @@ class TodosModule {
                 
                 <div class="dialog-actions">
                     <button class="btn btn-secondary" onclick="window.activeModule.closeDialog()">關閉</button>
-                    <button class="btn" onclick="window.activeModule.editTask('${task.id}')">
-                        <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right: 4px;">
-                            <path d="M10 2l2 2-7 7-3 1 1-3z" fill="none" stroke="currentColor"/>
-                        </svg>
-                        編輯任務
-                    </button>
-                    ${task.status === 'pending' ? `
-                        <button class="btn btn-success" onclick="window.activeModule.completeTask('${task.id}')">
-                            <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right: 4px;">
-                                <path d="M2 8l3 3 7-7" stroke="currentColor" fill="none" stroke-width="2"/>
-                            </svg>
-                            完成
-                        </button>
-                    ` : task.status === 'completed' ? `
-                        <button class="btn" onclick="window.activeModule.reopenTask('${task.id}')">
-                            <svg width="16" height="16" viewBox="0 0 16 16" style="margin-right: 4px;">
-                                <path d="M1 8l2-2m0 0l2 2m-2-2v6a2 2 0 002 2h6" stroke="currentColor" fill="none" stroke-width="1.5"/>
-                            </svg>
-                            重新開啟
-                        </button>
-                    ` : ''}
                 </div>
             </div>
         `;
