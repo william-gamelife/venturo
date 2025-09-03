@@ -1,12 +1,13 @@
 /**
- * 待辦事項管理系統 - 看板式管理
+ * 待辦事項管理系統 - 看板式管理 v2.1
  * 符合 building-manual 規範
  * 
  * 核心功能：
  * 1. 五欄看板系統（尚未整理、進行中、等待確認、專案打包、完成）
  * 2. 自由拖曳任務卡片
- * 3. 快速分類標籤
+ * 3. 快速分類標籤  
  * 4. 任務卡片管理
+ * 5. 優雅的懸浮編輯按鈕
  */
 
 class TodosModule {
@@ -156,7 +157,6 @@ class TodosModule {
                     display: flex;
                     flex-direction: column;
                     padding: 0;
-                    background: linear-gradient(135deg, #faf9f6 0%, #f5f3ee 100%);
                 }
 
                 /* 看板佈局 */
