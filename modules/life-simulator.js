@@ -39,14 +39,15 @@ class LifeSimulatorModule {
         this.initGame();
         // 移除不存在的 startGameLoop 調用
         
-        this.autoSaveTimer = setInterval(() => {
-            this.saveGameData();
-        }, 30000); // 每30秒自動存檔
+        // 暫時移除自動存檔功能，直到實作 saveGameData 函數
+        // this.autoSaveTimer = setInterval(() => {
+        //     this.saveGameData();
+        // }, 30000);
     }
 
     getHTML() {
         const g = this.gameState;
-        const room = this.getRoomConfig();
+        // const room = this.getRoomConfig(); // 暫時移除不存在的函數
         
         return `
             <style>
