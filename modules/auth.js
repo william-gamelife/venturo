@@ -153,6 +153,14 @@ class AuthManagerV2 {
             },
             {
                 uuid: '550e8400-e29b-41d4-a716-446655440003',
+                username: 'jess',
+                display_name: 'Jess',
+                password: 'pass1234',
+                role: 'project_manager',
+                title: '專案經理'
+            },
+            {
+                uuid: '550e8400-e29b-41d4-a716-446655440004',
                 username: 'KAI',
                 display_name: 'KAI',
                 password: 'pass1234',

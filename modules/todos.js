@@ -119,7 +119,7 @@ class TodosModule {
         
         // 渲染介面
         const moduleContainer = document.getElementById('moduleContainer');
-        moduleContainer.innerHTML = this.getHTML();
+        moduleContainer.innerHTML = await this.getHTML();
         
         // 設定全域模組參考
         window.activeModule = this;
@@ -154,12 +154,13 @@ class TodosModule {
         }
     }
 
-    getHTML() {
+    async getHTML() {
+        const kanbanColumns = await this.getKanbanColumns();
         return `
             <div class="todos-container">
                 <!-- 看板欄位 -->
                 <div class="kanban-board">
-                    ${this.getKanbanColumns()}
+                    ${kanbanColumns}
                 </div>
             </div>
 
@@ -1621,12 +1622,13 @@ class TodosModule {
         `;
     }
 
-    getKanbanColumns() {
+    async getKanbanColumns() {
+        const hasPermission = await this.hasProjectPermission();
         const columns = [
             { id: 'unorganized', title: '尚未整理', icon: '' },
             { id: 'in-progress', title: '進行中', icon: '' },
             { id: 'waiting', title: '等待確認', icon: '' },
-            ...(this.hasProjectPermission() ? [{ id: 'project', title: '專案打包', icon: '' }] : []),
+            ...(hasPermission ? [{ id: 'project', title: '專案打包', icon: '' }] : []),
             { id: 'completed', title: '完成', icon: '' }
         ];
 
@@ -1997,7 +1999,7 @@ class TodosModule {
                         </div>
                     </div>
                     <div class="header-actions">
-                        ${this.hasProjectPermission() ? `<button class="quick-btn package" onclick="window.activeModule.addToPackage('${task.id}')">加入專案打包</button>` : ''}
+                        ${await this.hasProjectPermission() ? `<button class="quick-btn package" onclick="window.activeModule.addToPackage('${task.id}')">加入專案打包</button>` : ''}
                         <button class="quick-btn complete" onclick="window.activeModule.markComplete('${task.id}')">標記完成</button>
                     </div>
                 </div>
@@ -3020,7 +3022,7 @@ class TodosModule {
             
             await this.saveData();
             this.closeDialog();
-            this.refreshView();
+            await this.refreshView();
             this.showToast('任務已重新開啟', 'success');
         }
     }
@@ -3094,10 +3096,10 @@ class TodosModule {
     }
     
     // 刷新視圖
-    refreshView() {
+    async refreshView() {
         const moduleContainer = document.getElementById('moduleContainer');
         if (moduleContainer) {
-            moduleContainer.innerHTML = this.getHTML();
+            moduleContainer.innerHTML = await this.getHTML();
             this.attachEventListeners();
         }
     }
@@ -3226,26 +3228,30 @@ class TodosModule {
         this.showToast('任務已刪除', 'success');
     }
 
-    // 覆寫原本的刷新方法
-    refreshView() {
-        this.refreshTodosList();
+    // 覆寫原本的刷新方法 (保持相容)
+    refreshTodosList() {
+        // 觸發完整的重新渲染
+        this.render(this.currentUser.uuid);
     }
 
     // 權限檢查方法
-    hasProjectPermission() {
-        // 檢查用戶是否有專案功能權限
-        const adminUsers = ['william', 'carson'];
-        const projectUsers = ['william', 'carson']; // 可以擴展更多專案用戶
-        
-        if (!this.currentUser) return false;
-        
-        const userId = this.currentUser.uuid || this.currentUser.id || '';
-        return projectUsers.some(user => userId.toLowerCase().includes(user.toLowerCase()));
+    async hasProjectPermission() {
+        // 使用新的權限系統檢查專案功能權限
+        try {
+            const authModule = await import('./auth.js');
+            return authModule.checkPermission('all_projects') || authModule.isAdmin();
+        } catch (error) {
+            console.warn('無法載入權限檢查，使用備用方案');
+            // 備用檢查
+            const adminUsers = ['william', 'carson'];
+            const userId = this.currentUser?.uuid || this.currentUser?.id || '';
+            return adminUsers.some(user => userId.toLowerCase().includes(user.toLowerCase()));
+        }
     }
 
     // 檢查是否為一般用戶（無專案權限）
-    isBasicUser() {
-        return !this.hasProjectPermission();
+    async isBasicUser() {
+        return !(await this.hasProjectPermission());
     }
 }
 

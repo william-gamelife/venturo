@@ -326,6 +326,15 @@ class UsersModule {
                 username: 'jess',
                 display_name: 'Jess',
                 title: '專案經理',
+                role: 'project_manager',
+                created_at: '2024-01-01T00:00:00Z',
+                last_login_at: new Date().toISOString()
+            },
+            {
+                uuid: '550e8400-e29b-41d4-a716-446655440004',
+                username: 'KAI',
+                display_name: 'KAI',
+                title: '使用者',
                 role: 'user',
                 created_at: '2024-01-01T00:00:00Z',
                 last_login_at: new Date().toISOString()
