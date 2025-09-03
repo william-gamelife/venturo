@@ -848,6 +848,12 @@
         
         // 檢查登入狀態
         function checkAuth() {
+            // 使用 AuthBridge 檢查登入狀態
+            if (window.authBridge && !window.authBridge.isLoggedIn()) {
+                window.location.href = './index.html';
+                return false;
+            }
+            // 備用檢查
             if (!isLoggedIn()) {
                 window.location.href = './index.html';
                 return false;
@@ -857,10 +863,18 @@
         
         // 載入使用者資訊
         function loadUserInfo() {
-            const user = getCurrentUser();
+            // 優先使用 AuthBridge
+            let user = null;
+            if (window.authBridge) {
+                user = window.authBridge.getCurrentUser();
+            }
+            // 備用方案
+            if (!user) {
+                user = getCurrentUser();
+            }
+            
             if (user) {
-                
-                document.getElementById('currentUserName').textContent = user.display_name;
+                document.getElementById('currentUserName').textContent = user.displayName || user.display_name;
                 document.getElementById('currentUserRole').textContent = user.title || getRoleDisplayName(user.role);
             }
         }
@@ -1019,6 +1033,18 @@
                     return;
                 }
                 
+                // 檢查模組存取權限
+                if (!window.authBridge.canAccessModule(moduleName)) {
+                    const moduleContainer = document.getElementById('moduleContainer');
+                    moduleContainer.innerHTML = `
+                        <div style="text-align: center; padding: 60px; color: var(--text-light);">
+                            <h3>存取被拒絕</h3>
+                            <p>您沒有存取「${moduleName}」模組的權限</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
                 // 記住當前模組位置，同時儲存到 localStorage
                 window.location.hash = moduleName;
                 localStorage.setItem('current-module', moduleName);
@@ -1116,8 +1142,31 @@
         // 權限檢查 - 隱藏無權限的功能
         function checkPermissions() {
             const user = getCurrentUser();
-            if (!user) return;
+            if (!user || !window.authBridge) return;
             
+            // 取得使用者可見的模組列表
+            const visibleModules = window.authBridge.getVisibleModules();
+            console.log('使用者可見模組:', visibleModules);
+            
+            // 隱藏無權限的導航項目
+            document.querySelectorAll('.nav-item').forEach(navItem => {
+                const link = navItem.querySelector('a[onclick*="loadModule"]');
+                if (link) {
+                    const match = link.onclick.toString().match(/loadModule\(['"]([^'"]+)['"]/);
+                    if (match) {
+                        const moduleId = match[1];
+                        // dashboard 和 overview 都對應到 overview 模組
+                        const actualModule = moduleId === 'dashboard' ? 'overview' : moduleId;
+                        
+                        if (!visibleModules.includes(actualModule)) {
+                            navItem.style.display = 'none';
+                            console.log('隱藏模組:', moduleId);
+                        } else {
+                            navItem.style.display = '';
+                        }
+                    }
+                }
+            });
         }
         
         // 初始化主題系統
@@ -1144,16 +1193,33 @@
 
         // 生成手機版底部導航
         function generateMobileNavigation() {
-            const user = getCurrentUser();
+            // 優先使用 AuthBridge 取得使用者和權限
+            let user = null;
+            let visibleModules = [];
             
-            // 導航項目配置（只顯示主要功能）
-            const navItems = [
-                { id: 'dashboard', icon: '📊', label: '總覽', module: 'dashboard' },
+            if (window.authBridge) {
+                user = window.authBridge.getCurrentUser();
+                visibleModules = window.authBridge.getVisibleModules();
+            } else {
+                user = getCurrentUser();
+                // 備用：顯示所有主要功能
+                visibleModules = ['overview', 'todos', 'calendar', 'timebox', 'settings'];
+            }
+            
+            // 所有可能的導航項目
+            const allNavItems = [
+                { id: 'dashboard', icon: '📊', label: '總覽', module: 'overview' },
                 { id: 'todos', icon: '✓', label: '待辦', module: 'todos' },
                 { id: 'calendar', icon: '📅', label: '行事曆', module: 'calendar' },
                 { id: 'timebox', icon: '⏰', label: '時間', module: 'timebox' },
+                { id: 'finance', icon: '💰', label: '財務', module: 'finance' },
+                { id: 'projects', icon: '📁', label: '專案', module: 'projects' },
+                { id: 'users', icon: '👥', label: '使用者', module: 'users' },
                 { id: 'settings', icon: '⚙️', label: '設定', module: 'settings' }
             ];
+            
+            // 根據權限過濾導航項目
+            const navItems = allNavItems.filter(item => visibleModules.includes(item.module));
             
             
             const mobileNavSlider = document.getElementById('mobileNavSlider');
