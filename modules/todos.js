@@ -423,6 +423,16 @@ class TodosModule {
                     box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4);
                 }
 
+                .add-task-btn.package-mode {
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                }
+
+                .add-task-btn.package-mode:hover {
+                    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+                }
+
 
                 .add-btn {
                     width: 24px;
@@ -1109,7 +1119,7 @@ class TodosModule {
                     <div class="column-header">
                         <div class="column-title">
                             ${column.title}
-                            ${!isCompletedColumn ? `<button class="add-task-btn" onclick="${isProjectColumn && hasTasksToPackage ? 'window.activeModule.packageProjectTasks()' : `window.activeModule.showAddDialog('${column.id}')`}" title="${isProjectColumn && hasTasksToPackage ? '建立專案' : '新增任務'}">+</button>` : ''}
+                            ${!isCompletedColumn ? `<button class="add-task-btn ${isProjectColumn && hasTasksToPackage ? 'package-mode' : ''}" onclick="${isProjectColumn && hasTasksToPackage ? 'window.activeModule.packageProjectTasks()' : `window.activeModule.showAddDialog('${column.id}')`}" title="${isProjectColumn && hasTasksToPackage ? '建立專案' : '新增任務'}">+</button>` : ''}
                         </div>
                         <div class="column-count">${tasks.length}</div>
                     </div>
