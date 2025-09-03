@@ -177,7 +177,7 @@ class TodosModule {
                     grid-template-columns: repeat(5, 1fr);
                     gap: 24px;
                     overflow-x: auto;
-                    padding: 0 32px 32px 32px;
+                    padding: 0 20px 32px 20px;
                     min-height: 500px;
                 }
 
@@ -220,10 +220,8 @@ class TodosModule {
                 }
 
                 .task-card:hover {
-                    transform: translateY(-4px) scale(1.02);
                     box-shadow: 0 12px 32px rgba(45, 55, 72, 0.15);
                     border-color: rgba(201, 169, 97, 0.4);
-                    background: linear-gradient(145deg, #ffffff 0%, #fffefe 100%);
                 }
 
                 .task-card.completed {
@@ -320,13 +318,12 @@ class TodosModule {
                     top: 12px;
                     right: 12px;
                     opacity: 0;
-                    transform: translateY(-4px);
+                    transform: translateY(0px);
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 }
 
                 .task-card:hover .task-actions {
                     opacity: 1;
-                    transform: translateY(0);
                 }
 
                 .task-action-btn {
@@ -376,7 +373,6 @@ class TodosModule {
                 }
 
                 .kanban-column:hover {
-                    transform: translateY(-8px);
                     box-shadow: 0 24px 60px rgba(45, 55, 72, 0.12);
                     border-color: rgba(201, 169, 97, 0.3);
                 }
@@ -424,40 +420,9 @@ class TodosModule {
 
                 .add-task-btn:hover {
                     background: linear-gradient(135deg, #b8975a 0%, #a68650 100%);
-                    transform: translateY(-2px) scale(1.05);
                     box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4);
                 }
 
-                /* 專案打包按鈕區域 */
-                .package-action {
-                    margin-bottom: 16px;
-                    display: flex;
-                    justify-content: center;
-                }
-
-                .package-btn {
-                    width: 100%;
-                    padding: 12px 16px;
-                    border: none;
-                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-                    color: white;
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    gap: 8px;
-                    cursor: pointer;
-                    font-size: 14px;
-                    font-weight: 700;
-                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-                }
-
-                .package-btn:hover {
-                    background: linear-gradient(135deg, #059669 0%, #047857 100%);
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-                }
 
                 .add-btn {
                     width: 24px;
@@ -1136,6 +1101,7 @@ class TodosModule {
         return columns.map(column => {
             const tasks = this.getTasksByStatus(column.id);
             const isProjectColumn = column.id === 'project';
+            const isCompletedColumn = column.id === 'completed';
             const hasTasksToPackage = isProjectColumn && tasks.length > 0;
             
             return `
@@ -1143,21 +1109,11 @@ class TodosModule {
                     <div class="column-header">
                         <div class="column-title">
                             ${column.title}
-                            <button class="add-task-btn" onclick="window.activeModule.showAddDialog('${column.id}')" title="新增任務">+</button>
+                            ${!isCompletedColumn ? `<button class="add-task-btn" onclick="${isProjectColumn && hasTasksToPackage ? 'window.activeModule.packageProjectTasks()' : `window.activeModule.showAddDialog('${column.id}')`}" title="${isProjectColumn && hasTasksToPackage ? '建立專案' : '新增任務'}">+</button>` : ''}
                         </div>
                         <div class="column-count">${tasks.length}</div>
                     </div>
                     
-                    ${hasTasksToPackage ? `
-                        <div class="package-action">
-                            <button class="package-btn" onclick="window.activeModule.packageProjectTasks()" title="建立專案">
-                                <svg viewBox="0 0 24 24" width="16" height="16">
-                                    <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-                                </svg>
-                                建立專案
-                            </button>
-                        </div>
-                    ` : ''}
                     
                     <div class="column-tasks" 
                          ondrop="window.activeModule.handleDrop(event, '${column.id}')"
@@ -1915,6 +1871,10 @@ class TodosModule {
 
     // 增強版新增任務對話框
     showAddDialog(columnId = null, prefillData = null) {
+        // 防止專案打包欄位顯示新增對話框
+        if (columnId === 'project') {
+            return;
+        }
         const dialog = document.createElement('div');
         dialog.className = 'dialog-overlay';
         dialog.innerHTML = `
@@ -2171,6 +2131,18 @@ class TodosModule {
             }
         } else {
             // 新增模式：創建新任務
+            // 防止重複創建 - 檢查是否已經存在相同標題的任務（5秒內）
+            const existingTask = this.todos.find(todo => 
+                todo.title === title && 
+                Math.abs(new Date() - new Date(todo.createdAt)) < 5000 // 5秒內
+            );
+            
+            if (existingTask) {
+                this.showToast('任務已存在，避免重複創建', 'warning');
+                this.closeDialog();
+                return;
+            }
+            
             const newTask = {
                 id: Date.now().toString(),
                 title,

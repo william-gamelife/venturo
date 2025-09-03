@@ -1622,13 +1622,12 @@ class ProjectsModule {
         }, 5000);
     }
 
-    // 新增方法：從待辦事項建立專案
-    async createProjectFromTodos(projectId, projectData) {
-        const { name, template, mergedTasks } = projectData;
+    // 新增方法：從待辦事項建立專案 
+    async createProjectFromPackaging(projectId, projectData) {
+        const { name, mergedTasks } = projectData;
         
-        // 獲取模板
-        const selectedTemplate = this.projectTemplates.find(t => t.id === template) || 
-                                this.projectTemplates.find(t => t.id === 'travel-basic');
+        // 使用旅行社基礎模板
+        const selectedTemplate = this.projectTemplates.find(t => t.id === 'travel-basic');
         
         // 建立專案基礎結構
         const project = {

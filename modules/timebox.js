@@ -1596,10 +1596,10 @@ class TimeboxModule {
     <div id="normalSection" style="display: ${existingData?.activityId === 'workout' ? 'none' : 'block'};">
         <div class="form-group">
             <label class="form-label">內容描述（選填）</label>
-                <textarea class="form-textarea" id="contentInput" rows="3"
-                               placeholder="例如：跑步 5公里">${existingData?.content || ''}</textarea>
-                    </div>
-                </div>
+            <textarea class="form-textarea" id="contentInput" rows="3" 
+                      placeholder="例如：跑步 5公里">${existingData?.content || ''}</textarea>
+        </div>
+    </div>
                 
                 <div class="form-group">
                     <label class="form-label checkbox-label">

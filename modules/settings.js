@@ -1,13 +1,39 @@
 /**
  * 系統設定模組 - 遊戲人生 3.0
  * 純雲端架構，個人化設定與偏好，UUID隔離
+ * 符合 building-manual 規範
  */
 
 class SettingsModule {
+    // SignageHost 招牌資料
+    static signage = {
+        title: '系統設定',
+        subtitle: '控制中心｜個人化設定與偏好管理',
+        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/></svg>',
+        actions: [
+            { id: 'export', label: '匯出設定', kind: 'secondary', onClick: 'exportSettings' },
+            { id: 'reset', label: '重置設定', kind: 'danger', onClick: 'resetSettings' }
+        ]
+    };
+
+    // 靜態資訊（必填）- 店家招牌
+    static moduleInfo = {
+        name: '系統設定',
+        subtitle: '個人化設定與偏好管理',
+        icon: `<svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2"/>
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/>
+               </svg>`,
+        version: '3.0.0',
+        author: 'william',
+        themeSupport: true,
+        mobileSupport: true
+    };
     constructor() {
         this.syncManager = null;
         this.userId = null;
         this.settings = {};
+        this.moduleOrder = [];
         this.themes = {
             'zen': '枯山水',
             'ivory-charcoal': '象牙炭灰'
@@ -46,7 +72,7 @@ class SettingsModule {
                 <div class="welcome-card" style="min-height: 120px; max-height: 120px; display: flex; align-items: center; padding: 24px; overflow: hidden; margin-bottom: 24px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); box-shadow: var(--shadow);">
                     <div style="flex: 1; text-align: center;">
                         <h2 style="margin: 0 0 4px 0; color: var(--text); font-size: 1.8rem; line-height: 1.2;">系統設定</h2>
-                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">個人化設定與偏好管理</p>
+                        <p style="margin: 0; color: var(--text-light); font-size: 1rem; line-height: 1.3; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">控制中心｜個人化設定與偏好管理</p>
                     </div>
                 </div>
 
@@ -170,6 +196,34 @@ class SettingsModule {
                         </div>
                     </div>
 
+                    <!-- 模組排序 -->
+                    <div class="setting-section" style="background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+                        <h3 style="margin: 0 0 16px 0; color: var(--primary); font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            模組排序
+                        </h3>
+                        
+                        <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">拖拽調整導航列中模組的顯示順序（僅影響個人視圖）</p>
+                        
+                        <div id="moduleOrderList" class="module-order-list">
+                            <!-- 動態載入模組清單 -->
+                        </div>
+                        
+                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border);">
+                            <button onclick="window.activeModule.resetModuleOrder()" 
+                                    style="background: transparent; color: var(--text-light); border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 12px;">
+                                恢復預設順序
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- 系統資訊 -->
                     <div class="setting-section" style="background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow);">
                         <h3 style="margin: 0 0 16px 0; color: var(--text-light); font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
@@ -265,11 +319,75 @@ class SettingsModule {
                     grid-template-columns: 1fr;
                 }
             }
+            .module-order-list {
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            
+            .module-order-item {
+                display: flex;
+                align-items: center;
+                padding: 12px 16px;
+                background: white;
+                border-bottom: 1px solid var(--border);
+                cursor: move;
+                transition: all 0.2s;
+            }
+            
+            .module-order-item:last-child {
+                border-bottom: none;
+            }
+            
+            .module-order-item:hover {
+                background: var(--bg);
+            }
+            
+            .module-order-item.dragging {
+                opacity: 0.5;
+                transform: scale(0.95);
+            }
+            
+            .module-drag-handle {
+                margin-right: 12px;
+                color: var(--text-light);
+                cursor: move;
+            }
+            
+            .module-info {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                gap: 12px;
+            }
+            
+            .module-icon {
+                width: 24px;
+                height: 24px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--primary);
+            }
+            
+            .module-details h4 {
+                margin: 0;
+                font-size: 14px;
+                font-weight: 500;
+                color: var(--text);
+            }
+            
+            .module-details p {
+                margin: 2px 0 0 0;
+                font-size: 12px;
+                color: var(--text-light);
+            }
             </style>
         `;
         
         this.attachEventListeners();
         this.renderSettings();
+        this.loadModuleOrder();
     }
 
     async loadData() {
@@ -296,6 +414,7 @@ class SettingsModule {
                         compact_mode: false,
                         dark_sidebar: false
                     },
+                    module_order: ['overview', 'todos', 'calendar', 'finance', 'projects', 'travel-pdf', 'timebox', 'settings'],
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 };
@@ -504,6 +623,153 @@ class SettingsModule {
                 this.saveSettings();
             }
         });
+    }
+
+    // 載入模組順序
+    loadModuleOrder() {
+        const modules = [
+            { id: 'overview', name: '總覽', subtitle: '儀表板｜快速掌握整體狀況', icon: 'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z' },
+            { id: 'todos', name: '待辦事項', subtitle: '任務管理｜五欄位容器系統', icon: 'M22 11.08V12a10 10 0 1 1-5.93-9.14' },
+            { id: 'calendar', name: '行事曆', subtitle: '時間管理｜日程安排與提醒', icon: 'M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z' },
+            { id: 'finance', name: '金流', subtitle: '財務管理｜收支記錄與分析', icon: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
+            { id: 'projects', name: '專案管理', subtitle: '市政廳｜容器、報表與總覽', icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z' },
+            { id: 'travel-pdf', name: '旅遊PDF', subtitle: '行程規劃｜PDF產生與管理', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' },
+            { id: 'timebox', name: '時間盒', subtitle: '時間區塊｜專注力管理工具', icon: 'M12 2v20m8-8H4' },
+            { id: 'settings', name: '系統設定', subtitle: '控制中心｜個人化設定與偏好管理', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z' }
+        ];
+
+        const currentOrder = this.settings.module_order || ['overview', 'todos', 'calendar', 'finance', 'projects', 'travel-pdf', 'timebox', 'settings'];
+        const container = document.getElementById('moduleOrderList');
+        
+        if (!container) return;
+
+        container.innerHTML = currentOrder.map(moduleId => {
+            const module = modules.find(m => m.id === moduleId);
+            if (!module) return '';
+            
+            return `
+                <div class="module-order-item" data-module-id="${module.id}" draggable="true">
+                    <div class="module-drag-handle">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="9" cy="5" r="1"/>
+                            <circle cx="9" cy="12" r="1"/>
+                            <circle cx="9" cy="19" r="1"/>
+                            <circle cx="15" cy="5" r="1"/>
+                            <circle cx="15" cy="12" r="1"/>
+                            <circle cx="15" cy="19" r="1"/>
+                        </svg>
+                    </div>
+                    <div class="module-info">
+                        <div class="module-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="${module.icon}"/>
+                            </svg>
+                        </div>
+                        <div class="module-details">
+                            <h4>${module.name}</h4>
+                            <p>${module.subtitle}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        this.initializeDragAndDrop();
+    }
+
+    // 初始化拖拽功能
+    initializeDragAndDrop() {
+        const container = document.getElementById('moduleOrderList');
+        if (!container) return;
+
+        let draggedElement = null;
+
+        container.addEventListener('dragstart', (e) => {
+            draggedElement = e.target.closest('.module-order-item');
+            if (draggedElement) {
+                draggedElement.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+            }
+        });
+
+        container.addEventListener('dragend', (e) => {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+            }
+        });
+
+        container.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            
+            const afterElement = this.getDragAfterElement(container, e.clientY);
+            if (draggedElement && draggedElement !== afterElement) {
+                if (afterElement == null) {
+                    container.appendChild(draggedElement);
+                } else {
+                    container.insertBefore(draggedElement, afterElement);
+                }
+            }
+        });
+
+        container.addEventListener('drop', (e) => {
+            e.preventDefault();
+            this.saveModuleOrder();
+        });
+    }
+
+    // 計算拖拽位置
+    getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.module-order-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // 保存模組順序
+    async saveModuleOrder() {
+        const items = document.querySelectorAll('.module-order-item');
+        const newOrder = Array.from(items).map(item => item.dataset.moduleId);
+        
+        this.settings.module_order = newOrder;
+        this.settings.updated_at = new Date().toISOString();
+        
+        await this.saveSettings();
+        
+        // 通知儀表板更新模組順序
+        if (window.dashboardManager && window.dashboardManager.reorderModules) {
+            window.dashboardManager.reorderModules(newOrder);
+        }
+        
+        console.log('模組順序已更新:', newOrder);
+    }
+
+    // 重置模組順序
+    async resetModuleOrder() {
+        if (!confirm('確定要重置模組順序為預設值嗎？')) return;
+        
+        const defaultOrder = ['overview', 'todos', 'calendar', 'finance', 'projects', 'travel-pdf', 'timebox', 'settings'];
+        this.settings.module_order = defaultOrder;
+        this.settings.updated_at = new Date().toISOString();
+        
+        await this.saveSettings();
+        this.loadModuleOrder();
+        
+        // 通知儀表板更新模組順序
+        if (window.dashboardManager && window.dashboardManager.reorderModules) {
+            window.dashboardManager.reorderModules(defaultOrder);
+        }
+        
+        console.log('模組順序已重置為預設值');
     }
 
     generateUUID() {
