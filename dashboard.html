@@ -1310,10 +1310,21 @@
                 Object.values(navItems).forEach(item => item.remove());
                 
                 // 按新順序插入
+                const inserted = new Set();
                 newOrder.forEach(moduleId => {
                     if (navItems[moduleId]) {
                         insertAfter.insertAdjacentElement('afterend', navItems[moduleId]);
                         insertAfter = navItems[moduleId];
+                        inserted.add(moduleId);
+                    }
+                });
+                
+                // 插入任何未在 newOrder 中的現有模組（避免遺失模組）
+                Object.keys(navItems).forEach(moduleId => {
+                    if (!inserted.has(moduleId)) {
+                        insertAfter.insertAdjacentElement('afterend', navItems[moduleId]);
+                        insertAfter = navItems[moduleId];
+                        console.log(`新增遺漏的模組到導航: ${moduleId}`);
                     }
                 });
                 
