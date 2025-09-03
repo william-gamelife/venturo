@@ -260,7 +260,7 @@ class TravelPdfModule {
     renderPdfCard(pdf) {
         return `
             <div class="pdf-card" onclick="window.activeModule.viewPdf('${pdf.id}')">
-                <div class="pdf-preview">📄</div>
+                <div class="pdf-preview">PDF</div>
                 <div class="pdf-info">
                     <div class="pdf-name">${pdf.name}</div>
                     <div class="pdf-meta">

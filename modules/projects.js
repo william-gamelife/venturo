@@ -1675,12 +1675,12 @@ class ProjectsModule {
         projectData.categories.forEach(category => {
             html += `
                 <div class="category">
-                    <h3>📋 ${category.name} (${category.tasks.length} 個任務)</h3>
+                    <h3>${category.name} (${category.tasks.length} 個任務)</h3>
             `;
             
             category.tasks.forEach(task => {
                 const statusClass = task.status === 'completed' ? 'completed' : 'pending';
-                const statusText = task.status === 'completed' ? '✅ 已完成' : '⏳ 待處理';
+                const statusText = task.status === 'completed' ? '已完成' : '待處理';
                 
                 html += `
                     <div class="task">

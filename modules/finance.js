@@ -51,21 +51,21 @@ class FinanceModule {
         this.currentMonth = new Date();
         this.categories = {
             income: [
-                { id: 'salary', name: '薪資', color: '#22c55e', icon: '💰' },
-                { id: 'bonus', name: '獎金', color: '#10b981', icon: '🎁' },
-                { id: 'investment', name: '投資收益', color: '#06b6d4', icon: '📈' },
-                { id: 'freelance', name: '兼職', color: '#3b82f6', icon: '💼' },
-                { id: 'other_income', name: '其他收入', color: '#8b5cf6', icon: '💵' }
+                { id: 'salary', name: '薪資', color: '#22c55e', icon: '$' },
+                { id: 'bonus', name: '獎金', color: '#10b981', icon: '+' },
+                { id: 'investment', name: '投資收益', color: '#06b6d4', icon: '↗' },
+                { id: 'freelance', name: '兼職', color: '#3b82f6', icon: '◊' },
+                { id: 'other_income', name: '其他收入', color: '#8b5cf6', icon: '○' }
             ],
             expense: [
-                { id: 'food', name: '飲食', color: '#ef4444', icon: '🍔' },
-                { id: 'transport', name: '交通', color: '#f97316', icon: '🚗' },
-                { id: 'shopping', name: '購物', color: '#f59e0b', icon: '🛍️' },
-                { id: 'entertainment', name: '娛樂', color: '#eab308', icon: '🎮' },
-                { id: 'bills', name: '帳單', color: '#84cc16', icon: '📄' },
-                { id: 'health', name: '醫療', color: '#ec4899', icon: '🏥' },
-                { id: 'education', name: '教育', color: '#a855f7', icon: '📚' },
-                { id: 'other_expense', name: '其他支出', color: '#6b7280', icon: '📦' }
+                { id: 'food', name: '飲食', color: '#ef4444', icon: '♦' },
+                { id: 'transport', name: '交通', color: '#f97316', icon: '→' },
+                { id: 'shopping', name: '購物', color: '#f59e0b', icon: '◎' },
+                { id: 'entertainment', name: '娛樂', color: '#eab308', icon: '♠' },
+                { id: 'bills', name: '帳單', color: '#84cc16', icon: '□' },
+                { id: 'health', name: '醫療', color: '#ec4899', icon: '♡' },
+                { id: 'education', name: '教育', color: '#a855f7', icon: '◈' },
+                { id: 'other_expense', name: '其他支出', color: '#6b7280', icon: '▽' }
             ]
         };
     }
