@@ -689,6 +689,19 @@
                 sessionStorage.setItem('username', user.username);
                 sessionStorage.setItem('title', user.title);
                 
+                // 設定 currentUser 物件供升級版模組使用
+                const currentUser = {
+                    uuid: user.uuid,
+                    id: user.uuid,  // 保持相容性
+                    name: user.username,
+                    display_name: user.display_name,
+                    role: user.role,
+                    title: user.title
+                };
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                console.log('登入成功，設定 currentUser:', currentUser);
+                
                 console.log('登入成功:', user.username);
                 
                 // 跳轉到儀表板
