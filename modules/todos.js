@@ -477,11 +477,6 @@ class TodosModule {
                     padding: 4px;
                 }
 
-                .column-tasks.drag-over {
-                    background: rgba(201, 169, 97, 0.1);
-                    border: 2px dashed var(--primary);
-                    border-radius: 8px;
-                }
 
                 /* 任務卡片 */
                 .task-card {
@@ -513,10 +508,6 @@ class TodosModule {
                     background: var(--primary-light);
                 }
 
-                .task-card.dragging {
-                    opacity: 0.5;
-                    transform: rotate(2deg);
-                }
 
                 .task-content {
                     margin-left: 12px;
@@ -1489,10 +1480,7 @@ class TodosModule {
                     </div>
                     
                     
-                    <div class="column-tasks" 
-                         ondrop="window.activeModule.handleDrop(event, '${column.id}')"
-                         ondragover="window.activeModule.handleDragOver(event)"
-                         ondragleave="window.activeModule.handleDragLeave(event)">
+                    <div class="column-tasks">
                         ${tasks.map(task => this.getTaskCard(task)).join('')}
                     </div>
                 </div>
@@ -1970,9 +1958,7 @@ class TodosModule {
 
         return `
             <div class="task-card" 
-                 data-task-id="${todo.id}"
-                 draggable="true"
-                 ondragstart="window.activeModule.handleDragStart(event, '${todo.id}')">
+                 data-task-id="${todo.id}">
                 
                 <div class="task-content">
                     <div class="task-title">${todo.title}</div>
@@ -2047,11 +2033,7 @@ class TodosModule {
         return `
             <div class="task-card ${isSelected ? 'selected' : ''} ${task.status === 'completed' ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" 
                  data-task-id="${task.id}"
-                 draggable="true"
-                 ondragstart="window.activeModule.handleDragStart(event, '${task.id}')"
-                 ondragend="window.activeModule.handleDragEnd(event)"
-                 onclick="window.activeModule.handleTaskCardClick(event, '${task.id}')"
-                 ondblclick="window.activeModule.editTask('${task.id}')">
+                 onclick="window.activeModule.handleTaskCardClick(event, '${task.id}')">
                 
                 <div class="task-content">
                     <div class="task-title">
@@ -2560,54 +2542,6 @@ class TodosModule {
         }
     }
 
-    // 拖曳功能
-    handleDragStart(e, taskId) {
-        this.draggedItem = taskId;
-        e.dataTransfer.effectAllowed = 'move';
-        e.target.classList.add('dragging');
-    }
-
-    handleDragEnd(e) {
-        e.target.classList.remove('dragging');
-        document.querySelectorAll('.column-tasks').forEach(col => {
-            col.classList.remove('drag-over');
-        });
-    }
-
-    handleDragOver(e) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-        e.currentTarget.classList.add('drag-over');
-    }
-
-    handleDragLeave(e) {
-        e.currentTarget.classList.remove('drag-over');
-    }
-
-    async handleDrop(e, columnId) {
-        e.preventDefault();
-        e.currentTarget.classList.remove('drag-over');
-        
-        if (!this.draggedItem) return;
-        
-        const task = this.todos.find(t => t.id === this.draggedItem);
-        if (!task) return;
-        
-        // 根據目標欄位更新任務狀態
-        task.status = columnId;
-        task.updatedAt = new Date().toISOString();
-        
-        // 特殊處理完成狀態
-        if (columnId === 'completed') {
-            task.completedAt = new Date().toISOString();
-        } else {
-            delete task.completedAt;
-        }
-        
-        await this.saveData();
-        this.render(this.currentUser.uuid);
-        this.showToast('任務已移動', 'success');
-    }
 
     // 合併成專案
     showMergeDialog() {
@@ -3179,13 +3113,6 @@ class TodosModule {
         await this.saveData();
         this.refreshTodosList();
         this.showToast('任務已刪除', 'success');
-    }
-
-    // 簡化的拖拽處理
-    handleDragStart(event, taskId) {
-        this.draggedItem = taskId;
-        event.dataTransfer.effectAllowed = 'move';
-        event.target.style.opacity = '0.5';
     }
 
     // 覆寫原本的刷新方法
