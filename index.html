@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title id="pageTitle">遊戲人生</title>
+    <title id="pageTitle">遊戲管理系統</title>
     
     <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -602,7 +602,7 @@
                     companyName = '管理顧問';
                 }
                 
-                pageTitle.textContent = `遊戲人生 V2.0 - ${companyName}`;
+                pageTitle.textContent = `遊戲管理系統 - ${companyName}`;
                 brandTagline.textContent = `${companyName} · 極簡化個人管理系統`;
             }
         }
@@ -617,7 +617,7 @@
             // 還原頁面標題
             const pageTitle = document.getElementById('pageTitle');
             const brandTagline = document.getElementById('brandTagline');
-            pageTitle.textContent = '遊戲人生 V2.0';
+            pageTitle.textContent = '遊戲管理系統';
             brandTagline.textContent = '極簡化個人管理系統';
             
             // 移除選中狀態
