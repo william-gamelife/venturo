@@ -177,7 +177,7 @@ class TodosModule {
                     grid-template-columns: repeat(5, 1fr);
                     gap: 24px;
                     overflow-x: auto;
-                    padding: 0 20px 32px 20px;
+                    padding: 0 0 32px 0;
                     min-height: 500px;
                 }
 
