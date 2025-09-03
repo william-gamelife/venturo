@@ -96,6 +96,22 @@ class TodosModule {
             }
         ];
         
+        // 分類圖標映射
+        this.categoryIcons = {
+            '機票': '✈️',
+            '住宿': '🏨',
+            '訂房': '🏨',
+            '飯店': '🏨',
+            '餐飲': '🍽️',
+            '餐廳': '🍽️',
+            '合約': '📋',
+            '交通': '🚗',
+            '活動': '🎪',
+            '保險': '🛡️',
+            '文件': '📄',
+            '其他': '📌'
+        };
+
         // 快速分類標籤
         this.quickTags = [
             { id: 'quote', name: '報價', color: '#007bff' },
@@ -509,8 +525,53 @@ class TodosModule {
                 }
 
 
+                /* 新任務卡片設計 */
+                .task-card-header {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 12px;
+                    width: 100%;
+                }
+
+                .category-icon {
+                    font-size: 20px;
+                    line-height: 1;
+                    flex-shrink: 0;
+                    margin-top: 2px;
+                }
+
+                .task-content-main {
+                    flex: 1;
+                    min-width: 0;
+                }
+
                 .task-content {
                     margin-left: 12px;
+                }
+
+                .task-tags-simple {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 4px;
+                    margin-top: 8px;
+                }
+
+                .task-tag-simple {
+                    background: var(--bg);
+                    color: var(--text-light);
+                    padding: 2px 6px;
+                    border-radius: 10px;
+                    font-size: 11px;
+                    line-height: 1.3;
+                }
+
+                .task-tag-more {
+                    background: var(--primary);
+                    color: white;
+                    padding: 2px 6px;
+                    border-radius: 10px;
+                    font-size: 11px;
+                    line-height: 1.3;
                 }
 
                 .task-title {
@@ -1946,33 +2007,29 @@ class TodosModule {
     }
 
     getTaskCard(todo) {
-        const tagColors = {
-            '報價': '#3b82f6',
-            '行程': '#10b981', 
-            '簡報': '#f59e0b',
-            '合約': '#ef4444',
-            '機票': '#8b5cf6',
-            '訂房': '#06b6d4',
-            '訂車': '#84cc16'
-        };
+        // 獲取任務的第一個標籤作為主分類
+        const primaryTag = todo.tags && todo.tags.length > 0 ? todo.tags[0] : null;
+        const categoryIcon = primaryTag ? (this.categoryIcons[primaryTag] || '📌') : '📌';
 
         return `
             <div class="task-card" 
                  data-task-id="${todo.id}">
                 
-                <div class="task-content">
-                    <div class="task-title">${todo.title}</div>
-                    ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
-                    ${todo.category ? `<div class="task-tags">
-                        <span class="task-tag" style="background: ${tagColors[todo.category] || '#6b7280'}">${todo.category}</span>
-                    </div>` : ''}
-                    ${todo.dueDate ? `<div class="task-due-date">${new Date(todo.dueDate).toLocaleDateString('zh-TW')}</div>` : ''}
-                </div>
-
-                <div class="task-actions">
-                    <button class="task-action-btn expand" onclick="window.activeModule.expandTask('${todo.id}')" title="展開">
-                        ↗
-                    </button>
+                <div class="task-card-header">
+                    <div class="category-icon">${categoryIcon}</div>
+                    <div class="task-content-main">
+                        <div class="task-title">${todo.title}</div>
+                        ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
+                        ${todo.tags && todo.tags.length > 0 ? `<div class="task-tags-simple">
+                            ${todo.tags.slice(0, 3).map(tag => `<span class="task-tag-simple">${tag}</span>`).join('')}
+                            ${todo.tags.length > 3 ? `<span class="task-tag-more">+${todo.tags.length - 3}</span>` : ''}
+                        </div>` : ''}
+                    </div>
+                    <div class="task-actions">
+                        <button class="task-action-btn expand" onclick="window.activeModule.expandTask('${todo.id}')" title="展開">
+                            ↗
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
