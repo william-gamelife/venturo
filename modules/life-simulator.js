@@ -39,10 +39,9 @@ class LifeSimulatorModule {
         this.initGame();
         // 移除不存在的 startGameLoop 調用
         
-        // 暫時移除自動存檔功能，直到實作 saveGameData 函數
-        // this.autoSaveTimer = setInterval(() => {
-        //     this.saveGameData();
-        // }, 30000);
+        this.autoSaveTimer = setInterval(() => {
+            this.saveGameData();
+        }, 30000); // 每30秒自動存檔
     }
 
     getHTML() {
@@ -1227,17 +1226,34 @@ class LifeSimulatorModule {
         menu.className = 'action-menu';
     }
 
+    createDefaultGameState() {
+        return {
+            level: 1,
+            money: 100,
+            energy: 100,
+            happiness: 100,
+            playerX: 5,
+            playerY: 5,
+            currentRoom: 'studio',
+            inventory: [],
+            furniture: [],
+            achievements: [],
+            exp: 0,
+            roomLevel: 1
+        };
+    }
+
     async loadGameData(uuid) {
         try {
             const data = await this.syncManager.load(uuid, 'life-simulator');
             if (data && data.gameState) {
                 this.gameState = data.gameState;
             } else {
-                this.gameState = this.getDefaultGameState();
+                this.gameState = this.createDefaultGameState();
             }
         } catch (error) {
             console.error('載入遊戲失敗:', error);
-            this.gameState = this.getDefaultGameState();
+            this.gameState = this.createDefaultGameState();
         }
     }
 
