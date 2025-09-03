@@ -286,11 +286,22 @@ class UsersModule {
             } else if (data && data.data) {
                 this.users = data.data;
                 console.log('✅ 從雲端載入使用者資料:', this.users.length, '筆');
+                console.log('使用者列表:', this.users.map(u => u.username));
                 
                 // 檢查是否缺少使用者，如果少於4個就重新初始化
                 if (this.users.length < 4) {
                     console.log('⚠️ 使用者數量不足，強制重新初始化');
                     await this.forceReinitUsers();
+                } else {
+                    // 檢查是否缺少特定使用者
+                    const expectedUsers = ['william', 'carson', 'jess', 'KAI'];
+                    const existingUsers = this.users.map(u => u.username.toLowerCase());
+                    const missingUsers = expectedUsers.filter(u => !existingUsers.includes(u.toLowerCase()));
+                    
+                    if (missingUsers.length > 0) {
+                        console.log('⚠️ 缺少使用者:', missingUsers);
+                        await this.forceReinitUsers();
+                    }
                 }
                 
                 // 清除本地快取（如果存在）

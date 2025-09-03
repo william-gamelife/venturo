@@ -1926,7 +1926,9 @@ class TimeboxModule {
 
         // 計算時間範圍
         const times = slots.map(slot => {
-            const [day, hour, minute] = slot.split('-');
+            // slotKey 格式是 "dateStr_timeStr"，例如 "2024-01-01_09:30"
+            const [dateStr, timeStr] = slot.split('_');
+            const [hour, minute] = timeStr.split(':');
             return parseInt(hour) * 60 + parseInt(minute);
         }).sort((a, b) => a - b);
 
@@ -1984,6 +1986,15 @@ class TimeboxModule {
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = this.getHTML();
         this.attachEventListeners();
+    }
+
+    // 生成UUID
+    generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     }
 
     // 顯示時段編輯對話框

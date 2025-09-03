@@ -37,7 +37,7 @@ class LifeSimulatorModule {
         container.innerHTML = this.getHTML();
         
         this.initGame();
-        this.startGameLoop();
+        // 移除不存在的 startGameLoop 調用
         
         this.autoSaveTimer = setInterval(() => {
             this.saveGameData();

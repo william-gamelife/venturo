@@ -1999,7 +1999,7 @@ class TodosModule {
                         </div>
                     </div>
                     <div class="header-actions">
-                        ${await this.hasProjectPermission() ? `<button class="quick-btn package" onclick="window.activeModule.addToPackage('${task.id}')">加入專案打包</button>` : ''}
+                        <div class="project-permission-placeholder" data-task-id="${task.id}"></div>
                         <button class="quick-btn complete" onclick="window.activeModule.markComplete('${task.id}')">標記完成</button>
                     </div>
                 </div>
