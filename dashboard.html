@@ -844,16 +844,33 @@
 
     <!-- 載入核心應用 -->
     <script>
-        // 動態載入 auth 模組
-        let authModule = null;
-        let getCurrentUser, isLoggedIn, logout;
+        // 簡化：直接使用 AuthBridge，不依賴 auth 模組
+        function getCurrentUser() {
+            if (window.authBridge) {
+                return window.authBridge.getCurrentUser();
+            }
+            // 備用：從 sessionStorage 取得
+            try {
+                const stored = sessionStorage.getItem('currentUser');
+                return stored ? JSON.parse(stored) : null;
+            } catch (e) {
+                return null;
+            }
+        }
         
-        // 初始化 auth 模組
-        async function initAuth() {
-            authModule = await import('./modules/auth.js');
-            getCurrentUser = authModule.getCurrentUser;
-            isLoggedIn = authModule.isLoggedIn;
-            logout = authModule.logout;
+        function isLoggedIn() {
+            if (window.authBridge) {
+                return window.authBridge.isLoggedIn();
+            }
+            return getCurrentUser() !== null;
+        }
+        
+        function logout() {
+            if (window.authBridge) {
+                window.authBridge.logout();
+            }
+            sessionStorage.clear();
+            window.location.href = './index.html';
         }
         
         // 檢查登入狀態
@@ -873,15 +890,7 @@
         
         // 載入使用者資訊
         function loadUserInfo() {
-            // 優先使用 AuthBridge
-            let user = null;
-            if (window.authBridge) {
-                user = window.authBridge.getCurrentUser();
-            }
-            // 備用方案
-            if (!user) {
-                user = getCurrentUser();
-            }
+            const user = getCurrentUser();
             
             if (user) {
                 document.getElementById('currentUserName').textContent = user.displayName || user.display_name;
@@ -1203,15 +1212,12 @@
 
         // 生成手機版底部導航
         function generateMobileNavigation() {
-            // 優先使用 AuthBridge 取得使用者和權限
-            let user = null;
+            const user = getCurrentUser();
             let visibleModules = [];
             
             if (window.authBridge) {
-                user = window.authBridge.getCurrentUser();
                 visibleModules = window.authBridge.getVisibleModules();
             } else {
-                user = getCurrentUser();
                 // 備用：顯示所有主要功能
                 visibleModules = ['overview', 'todos', 'calendar', 'timebox', 'settings'];
             }
@@ -1327,9 +1333,6 @@
 
         // 初始化
         async function init() {
-            // 先載入 auth 模組
-            await initAuth();
-            
             if (!checkAuth()) return;
             
             // 載入主題
