@@ -287,6 +287,12 @@ class UsersModule {
                 this.users = data.data;
                 console.log('✅ 從雲端載入使用者資料:', this.users.length, '筆');
                 
+                // 檢查是否缺少使用者，如果少於4個就重新初始化
+                if (this.users.length < 4) {
+                    console.log('⚠️ 使用者數量不足，強制重新初始化');
+                    await this.forceReinitUsers();
+                }
+                
                 // 清除本地快取（如果存在）
                 this.clearLocalCache();
             } else {
@@ -385,10 +391,32 @@ class UsersModule {
         try {
             const key = `gamelife_${this.userId}_users`;
             localStorage.removeItem(key);
+            
+            // 也清除系統管理員的快取
+            const systemKey = 'gamelife_550e8400-e29b-41d4-a716-446655440000_users';
+            localStorage.removeItem(systemKey);
+            
             console.log('🧹 已清除人員管理本地快取');
         } catch (error) {
             console.error('清除本地快取失敗:', error);
         }
+    }
+
+    // 強制重新初始化使用者資料
+    async forceReinitUsers() {
+        console.log('🔄 強制重新初始化使用者資料...');
+        
+        // 清除所有快取
+        this.clearLocalCache();
+        
+        // 重新初始化預設使用者
+        this.initDefaultUsers();
+        
+        // 強制儲存到雲端
+        await this.saveUsersToCloud();
+        
+        console.log('✅ 使用者資料已重新初始化');
+        return true;
     }
 
     renderUsers() {

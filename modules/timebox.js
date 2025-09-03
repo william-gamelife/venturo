@@ -1693,22 +1693,50 @@ class TimeboxModule {
         }
     }
 
-    // 滑鼠事件處理（僅用於已佔用格子的右鍵編輯）
+    // 滑鼠事件處理
     onSlotMouseDown(e, slotKey) {
-        // 只允許右鍵點擊已佔用的格子來編輯
+        // 右鍵點擊已佔用的格子來編輯
         if (e.button === 2 && this.timeboxData[slotKey]) {
             e.preventDefault();
             this.showSlotEditDialog([slotKey]);
+            return;
         }
-        // 移除所有選擇功能，改用純拖曳方式
+
+        // 左鍵開始拖拽選擇
+        if (e.button === 0) {
+            e.preventDefault();
+            this.isDragging = true;
+            this.dragStartSlot = slotKey;
+            
+            // 開始拖拽計時器
+            this.dragTimer = setTimeout(() => {
+                this.isDragging = true;
+            }, 150);
+            
+            // 選擇當前格子
+            if (this.selectedTimeSlots.has(slotKey)) {
+                this.selectedTimeSlots.delete(slotKey);
+            } else {
+                this.selectedTimeSlots.add(slotKey);
+            }
+            this.updateSlotSelection();
+        }
     }
 
     onSlotMouseEnter(e, slotKey) {
-        // 移除拖曳選擇功能
+        // 拖拽過程中選擇經過的格子
+        if (this.isDragging && e.buttons === 1) {
+            this.selectedTimeSlots.add(slotKey);
+            this.updateSlotSelection();
+        }
     }
 
     onSlotMouseUp(e, slotKey) {
-        // 移除選擇功能，改用純拖曳方式
+        // 拖拽結束
+        if (this.dragTimer) {
+            clearTimeout(this.dragTimer);
+            this.dragTimer = null;
+        }
     }
 
     // 手機觸控處理
