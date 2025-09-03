@@ -653,14 +653,14 @@ class TodosModuleV2 {
     // 載入資料
     async loadData(uuid) {
         if (this.syncManager) {
-            this.todos = await this.syncManager.getData(uuid, 'todos-v2') || {};
+            this.todos = await this.syncManager.load(uuid, 'todos-v2') || {};
         }
     }
 
     // 儲存資料
     async saveTodos() {
         if (this.syncManager) {
-            await this.syncManager.saveData(this.currentUser.uuid, 'todos-v2', this.todos);
+            await this.syncManager.save(this.currentUser.uuid, 'todos-v2', this.todos);
         }
     }
 
