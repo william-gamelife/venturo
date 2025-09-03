@@ -304,36 +304,51 @@ class TodosModule {
 
                 .task-actions {
                     display: flex;
-                    gap: 4px;
+                    gap: 6px;
+                    position: absolute;
+                    top: 12px;
+                    right: 12px;
                     opacity: 0;
-                    transition: opacity 0.2s;
+                    transform: translateY(-4px);
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 }
 
                 .task-card:hover .task-actions {
                     opacity: 1;
+                    transform: translateY(0);
                 }
 
                 .task-action-btn {
-                    width: 28px;
-                    height: 28px;
+                    width: 24px;
+                    height: 24px;
                     border: none;
-                    background: var(--bg);
-                    border-radius: 6px;
+                    background: rgba(255, 255, 255, 0.9);
+                    border-radius: 8px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     cursor: pointer;
-                    color: var(--text-light);
-                    transition: all 0.2s;
+                    color: #718096;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    font-size: 14px;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                    backdrop-filter: blur(10px);
                 }
 
                 .task-action-btn:hover {
-                    background: var(--border);
+                    transform: translateY(-1px) scale(1.05);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                }
+
+                .task-action-btn.edit:hover {
+                    background: linear-gradient(135deg, #e6f3ff 0%, #cce7ff 100%);
+                    color: #3182ce;
                 }
 
                 .task-action-btn.delete:hover {
-                    background: #fee2e2;
-                    color: #dc2626;
+                    background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+                    color: #e53e3e;
                 }
 
                 .kanban-column {
@@ -1130,16 +1145,11 @@ class TodosModule {
                 </div>
 
                 <div class="task-actions">
-                    <button class="task-action-btn" onclick="window.activeModule.editTask('${todo.id}')" title="編輯">
-                        <svg viewBox="0 0 24 24" width="12" height="12">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" fill="none"/>
-                            <path d="m18.5 2.5-1 1L22 8l1-1-1-4.5zM17 4l4 4L10 19H6v-4L17 4z" fill="currentColor"/>
-                        </svg>
+                    <button class="task-action-btn edit" onclick="window.activeModule.editTask('${todo.id}')" title="編輯">
+                        ✎
                     </button>
                     <button class="task-action-btn delete" onclick="window.activeModule.deleteTask('${todo.id}')" title="刪除">
-                        <svg viewBox="0 0 24 24" width="12" height="12">
-                            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="currentColor" stroke-width="2" fill="none"/>
-                        </svg>
+                        ×
                     </button>
                 </div>
             </div>
