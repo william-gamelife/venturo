@@ -20,14 +20,33 @@ window.getSupabaseClient = function() {
     return window._supabaseClient;
 };
 
-// 確保 Supabase 已載入
-if (typeof window.supabase === 'undefined' && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
-    // 動態載入 Supabase
-    const script = document.createElement('script');
-    script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-    script.onload = () => {
-        // 立即建立單例客戶端
+// 確保 Supabase 已載入並立即初始化
+function initSupabaseClient() {
+    if (typeof window.supabase !== 'undefined' && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        // Supabase 已載入，立即建立單例客戶端
         window.getSupabaseClient();
-    };
-    document.head.appendChild(script);
+        console.log('🚀 Config.js 已初始化 Supabase 客戶端');
+    } else if (window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        // 動態載入 Supabase
+        console.log('📦 正在載入 Supabase...');
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.onload = () => {
+            window.getSupabaseClient();
+            console.log('🚀 Supabase 動態載入完成並初始化客戶端');
+        };
+        document.head.appendChild(script);
+    }
+}
+
+// 立即嘗試初始化
+initSupabaseClient();
+
+// 如果頁面已載入完成但 Supabase 還沒初始化，再試一次
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(initSupabaseClient, 100);
+    });
+} else {
+    setTimeout(initSupabaseClient, 100);
 }
