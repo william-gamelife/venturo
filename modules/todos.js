@@ -99,12 +99,10 @@ class TodosModule {
         // 快速分類標籤
         this.quickTags = [
             { id: 'quote', name: '報價', color: '#007bff' },
-            { id: 'itinerary', name: '行程', color: '#28a745' },
+            { id: 'forming', name: '形成', color: '#28a745' },
             { id: 'presentation', name: '簡報', color: '#ffc107' },
             { id: 'contract', name: '合約', color: '#dc3545' },
-            { id: 'group-flight', name: '團務機票', color: '#6f42c1' },
-            { id: 'group-hotel', name: '團務訂房', color: '#fd7e14' },
-            { id: 'group-transport', name: '團務訂車', color: '#20c997' }
+            { id: 'team', name: '團務', color: '#6f42c1' }
         ];
     }
 
@@ -343,6 +341,41 @@ class TodosModule {
                     font-size: 10px;
                     font-weight: 600;
                     line-height: 1.2;
+                }
+
+                /* 對話框底部功能區塊 */
+                .form-bottom-section {
+                    margin-top: 20px;
+                    padding-top: 20px;
+                    border-top: 1px solid var(--border);
+                }
+
+                .form-actions-row {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: center;
+                    margin-top: 16px;
+                }
+
+                .action-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 16px;
+                    border: 2px solid var(--border);
+                    border-radius: 8px;
+                    background: white;
+                    color: var(--text);
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+
+                .action-btn:hover {
+                    border-color: var(--primary);
+                    background: var(--primary-light);
+                    transform: translateY(-1px);
                 }
 
                 .task-actions-elegant {
@@ -1722,45 +1755,39 @@ class TodosModule {
         return `${today} 新專案`;
     }
 
-    // 建立新專案
+    // 建立新專案 - 調用專案管理模組
     async createNewProject(name, tasks) {
-        const project = {
-            id: this.generateUUID(),
-            name: name,
-            createdAt: new Date().toISOString(),
-            tasks: {},
-            drawers: {
-                flight: [],
-                hotel: [],
-                restaurant: [],
-                contract: [],
-                other: []
-            }
-        };
-
-        // 按標籤分配到不同抽屜
-        for (const task of tasks) {
-            const drawer = this.decideDrawer(task.tags || []);
-            const projectTask = {
-                id: this.generateUUID(),
-                title: task.title,
-                description: task.description,
-                originalTaskId: task.id,
-                source: task.source,
-                completed: false,
-                createdAt: task.created_at,
-                addedToProjectAt: new Date().toISOString()
+        try {
+            // 動態載入專案管理模組
+            const projectsModule = await import('./projects.js');
+            const projectsManager = new projectsModule.ProjectsModule();
+            
+            // 初始化專案管理器
+            const syncModule = await import('./sync.js');
+            projectsManager.syncManager = new syncModule.SyncManager();
+            projectsManager.currentUser = this.currentUser;
+            
+            // 生成專案編號
+            const now = new Date();
+            const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+            const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+            const projectId = `P${dateStr}${sequence}`;
+            
+            // 準備專案資料
+            const projectData = {
+                name: name,
+                mergedTasks: tasks
             };
             
-            project.drawers[drawer].push(projectTask);
+            // 調用專案管理模組建立專案
+            const project = await projectsManager.createProjectFromPackaging(projectId, projectData);
+            
+            return project;
+            
+        } catch (error) {
+            console.error('調用專案管理模組失敗:', error);
+            throw error;
         }
-
-        // 儲存專案資料 (暫時存在 localStorage，之後整合到 projects.js)
-        const projects = JSON.parse(localStorage.getItem(`gamelife_projects_${this.currentUser}`) || '[]');
-        projects.push(project);
-        localStorage.setItem(`gamelife_projects_${this.currentUser}`, JSON.stringify(projects));
-
-        return project;
     }
 
     // UUID 生成器
@@ -2203,19 +2230,10 @@ class TodosModule {
                 </div>
                 
                 <div class="dialog-content">
+                    <!-- 第一排：快速分類標籤 -->
                     <div class="form-row">
                         <div class="form-group form-group-full">
-                            <label class="form-label">任務標題 <span class="required">*</span></label>
-                            <input type="text" class="form-input" id="taskTitle" 
-                                   placeholder="輸入任務標題"
-                                   value="${prefillData?.title || ''}"
-                                   maxlength="100">
-                        </div>
-                    </div>
-                    
-                    <div class="form-row">
-                        <div class="form-group form-group-full">
-                            <label class="form-label">快速分類標籤</label>
+                            <label class="form-label">快速標籤</label>
                             <div class="tag-selector">
                                 ${this.quickTags.map(tag => `
                                     <div class="tag-option ${prefillData?.tags?.includes(tag.id) ? 'selected' : ''}" 
@@ -2226,6 +2244,17 @@ class TodosModule {
                                     </div>
                                 `).join('')}
                             </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 第二排：任務標題 -->
+                    <div class="form-row">
+                        <div class="form-group form-group-full">
+                            <label class="form-label">任務標題 <span class="required">*</span></label>
+                            <input type="text" class="form-input" id="taskTitle" 
+                                   placeholder="輸入任務標題"
+                                   value="${prefillData?.title || ''}"
+                                   maxlength="100">
                         </div>
                     </div>
                     
@@ -2259,37 +2288,35 @@ class TodosModule {
                         </div>
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group form-group-full">
-                            <label class="form-label">專案識別標籤</label>
-                            <input type="text" class="form-input" id="projectTag" 
-                                   placeholder="例如：王小姐、ABC公司"
-                                   value="${prefillData?.projectTag || ''}">
-                        </div>
-                    </div>
-                    
-                    ${prefillData?.comments?.length > 0 ? `
+                    <!-- 底部功能區塊 -->
+                    <div class="form-bottom-section">
                         <div class="form-row">
                             <div class="form-group form-group-full">
-                                <label class="form-label">現有留言 (${prefillData.comments.length})</label>
-                                <div class="existing-comments">
-                                    ${prefillData.comments.map(comment => `
-                                        <div class="comment-item">
-                                            <div class="comment-time">${this.formatDateTime(comment.createdAt)}</div>
-                                            <div class="comment-text">${comment.text}</div>
-                                        </div>
-                                    `).join('')}
-                                </div>
+                                <label class="form-label">描述與備註</label>
+                                <textarea class="form-textarea" id="taskDesc" 
+                                          placeholder="添加任務描述、注意事項或相關資訊..."
+                                          rows="3">${prefillData?.description || ''}</textarea>
                             </div>
                         </div>
-                    ` : ''}
-                    
-                    <div class="form-row">
-                        <div class="form-group form-group-full">
-                            <label class="form-label">新增留言</label>
-                            <textarea class="form-textarea" id="newComment" 
-                                      placeholder="記錄想法、進度更新、注意事項等"
-                                      rows="2"></textarea>
+                        
+                        <div class="form-row form-actions-row">
+                            <div class="form-group">
+                                <button type="button" class="action-btn package-btn" onclick="window.activeModule.addToPackageFromDialog()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M20 6H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Z" stroke="currentColor" stroke-width="2"/>
+                                        <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    專案打包
+                                </button>
+                            </div>
+                            <div class="form-group">
+                                <button type="button" class="action-btn priority-btn" onclick="window.activeModule.showPrioritySelector()">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                                        <path d="M12 2L2 12h4v8h12v-8h4L12 2Z" stroke="currentColor" stroke-width="2"/>
+                                    </svg>
+                                    設定優先級
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2433,7 +2460,7 @@ class TodosModule {
                     description: document.getElementById('taskDesc').value.trim(),
                     priority: this.selectedPriority || 0,
                     tags: this.selectedTag ? [this.selectedTag] : [],
-                    projectTag: document.getElementById('projectTag').value.replace('#', '').trim(),
+                    projectTag: '',
                     dueDate: document.getElementById('dueDate').value,
                     updatedAt: new Date().toISOString()
                 };
@@ -2463,7 +2490,7 @@ class TodosModule {
                 description: document.getElementById('taskDesc').value.trim(),
                 priority: this.selectedPriority || 0,
                 tags: this.selectedTag ? [this.selectedTag] : [],
-                projectTag: document.getElementById('projectTag').value.replace('#', '').trim(),
+                projectTag: '',
                 dueDate: document.getElementById('dueDate').value,
                 status: this.getStatusFromColumnId(this.addDialogColumnId) || 'pending',
                 createdAt: new Date().toISOString(),

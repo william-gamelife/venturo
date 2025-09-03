@@ -12,18 +12,33 @@
  */
 
 class ProjectsModule {
-    // SignageHost 招牌資料
-    static signage = {
-        title: '專案管理',
-        subtitle: '市政廳｜容器、報表與總覽',
-        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/></svg>',
-        actions: [
-            { id: 'createProject', label: '建立專案', kind: 'primary', onClick: 'showCreateProjectDialog' },
-            { id: 'export', label: '匯出報告', kind: 'secondary', onClick: 'showExportDialog' }
-        ]
-    };
+    // SignageHost 招牌資料 - 新版招牌格式
+    static getSignage() {
+        return {
+            name: '專案管理',
+            tagline: 'Projects Management',
+            description: '專案追蹤、任務管理、進度監控',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><path d="M9 12l2 2 4-4" stroke-width="2.5"/></svg>',
+            primaryActions: [
+                { 
+                    id: 'createProject', 
+                    label: '建立專案', 
+                    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>',
+                    onclick: 'activeModule.showCreateProjectDialog()'
+                }
+            ],
+            secondaryActions: [
+                { 
+                    id: 'export', 
+                    label: '匯出報告',
+                    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>',
+                    onclick: 'activeModule.showExportDialog()'
+                }
+            ]
+        };
+    }
 
-    // 靜態資訊（必填）- 店家招牌
+    // 靜態資訊（必填）- 相容舊版招牌
     static moduleInfo = {
         name: '專案管理',
         subtitle: '智慧專案協作與進度追蹤',
@@ -913,7 +928,7 @@ class ProjectsModule {
         const modal = document.createElement('div');
         modal.className = 'modal-overlay';
         modal.innerHTML = `
-            <div class="modal-content">
+            <div class="modal-content" style="max-width: 600px;">
                 <div class="modal-header">
                     <h3>建立新專案</h3>
                     <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">
@@ -929,18 +944,45 @@ class ProjectsModule {
                         <input type="text" class="form-input" id="projectName" placeholder="例如：王小姐曼谷團">
                     </div>
                     
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">出發日期</label>
+                            <input type="date" class="form-input" id="departDate" min="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">回來日期</label>
+                            <input type="date" class="form-input" id="returnDate" min="${new Date().toISOString().split('T')[0]}">
+                        </div>
+                    </div>
+                    
                     <div class="form-group">
                         <label class="form-label">選擇模板</label>
                         <div class="template-options">
                             ${this.projectTemplates.map(template => `
                                 <label class="template-option">
-                                    <input type="radio" name="template" value="${template.id}" ${template.id === 'travel-basic' ? 'checked' : ''}>
+                                    <input type="radio" name="template" value="${template.id}" ${template.id === 'travel-basic' ? 'checked' : ''} 
+                                           onchange="activeModule.onTemplateChange('${template.id}')">
                                     <div>
                                         <div style="font-weight: 500;">${template.name}</div>
                                         <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 4px;">
                                             ${template.categories.length} 個類別，${template.categories.reduce((sum, cat) => sum + cat.tasks.length, 0)} 個預設任務
                                         </div>
                                     </div>
+                                </label>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
+                    <div id="categorySelection" class="form-group" style="display: none;">
+                        <label class="form-label">選擇要包含的類別</label>
+                        <div class="category-checkboxes">
+                            ${this.getAllCategories().map(category => `
+                                <label class="category-checkbox">
+                                    <input type="checkbox" value="${category.id}" ${category.id === 'contract' || category.id === 'flight' ? 'checked' : ''}>
+                                    <svg class="category-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="${category.icon}"/>
+                                    </svg>
+                                    <span>${category.name}</span>
                                 </label>
                             `).join('')}
                         </div>
@@ -952,6 +994,45 @@ class ProjectsModule {
                     <button class="btn btn-primary" onclick="activeModule.createProject()">建立專案</button>
                 </div>
             </div>
+            
+            <style>
+                .form-row {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 16px;
+                }
+                
+                .category-checkboxes {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                    gap: 12px;
+                    margin-top: 8px;
+                }
+                
+                .category-checkbox {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px 12px;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .category-checkbox:hover {
+                    background: var(--card);
+                }
+                
+                .category-checkbox input[type="checkbox"] {
+                    margin: 0;
+                }
+                
+                .category-checkbox .category-icon {
+                    width: 16px;
+                    height: 16px;
+                }
+            </style>
         `;
         
         document.body.appendChild(modal);
@@ -962,30 +1043,98 @@ class ProjectsModule {
         }, 100);
     }
 
+    // 模板變更處理
+    onTemplateChange(templateId) {
+        const categorySelection = document.getElementById('categorySelection');
+        if (templateId === 'blank') {
+            categorySelection.style.display = 'block';
+        } else {
+            categorySelection.style.display = 'none';
+        }
+    }
+
+    // 獲取所有可用類別
+    getAllCategories() {
+        const allCategories = [];
+        this.projectTemplates.forEach(template => {
+            template.categories.forEach(category => {
+                if (!allCategories.find(c => c.id === category.id)) {
+                    allCategories.push(category);
+                }
+            });
+        });
+        return allCategories;
+    }
+
+    // 生成旅行編號
+    generateTravelNumber(departDate) {
+        if (departDate) {
+            const date = new Date(departDate);
+            const dateStr = date.toISOString().slice(0, 10).replace(/-/g, '');
+            const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+            return `TR${dateStr}${sequence}`;
+        }
+        
+        const now = new Date();
+        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
+        const sequence = String(this.projects.length + 1).padStart(3, '0');
+        return `TR${dateStr}${sequence}`;
+    }
+
     async createProject() {
         const projectName = document.getElementById('projectName').value.trim();
         const selectedTemplate = document.querySelector('input[name="template"]:checked').value;
+        const departDate = document.getElementById('departDate').value;
+        const returnDate = document.getElementById('returnDate').value;
         
         if (!projectName) {
             this.showToast('請輸入專案名稱', 'error');
             return;
         }
         
-        // 生成專案編號
-        const now = new Date();
-        const dateStr = now.toISOString().slice(0, 10).replace(/-/g, '');
-        const sequence = String(this.projects.length + 1).padStart(3, '0');
-        const projectId = `P${dateStr}${sequence}`;
+        // 驗證日期
+        if (departDate && returnDate && new Date(departDate) > new Date(returnDate)) {
+            this.showToast('出發日期不能晚於回來日期', 'error');
+            return;
+        }
         
-        // 獲取模板
-        const template = this.projectTemplates.find(t => t.id === selectedTemplate);
+        // 生成旅行編號
+        const travelNumber = this.generateTravelNumber(departDate);
+        
+        // 獲取模板或自定義類別
+        let template = this.projectTemplates.find(t => t.id === selectedTemplate);
+        
+        if (selectedTemplate === 'blank') {
+            // 空白專案：根據用戶選擇的類別建立
+            const selectedCategories = Array.from(document.querySelectorAll('#categorySelection input[type="checkbox"]:checked'))
+                .map(cb => {
+                    const categoryId = cb.value;
+                    return this.getAllCategories().find(cat => cat.id === categoryId);
+                });
+                
+            if (selectedCategories.length === 0) {
+                this.showToast('請至少選擇一個類別', 'error');
+                return;
+            }
+            
+            template = {
+                id: 'blank',
+                name: '自訂專案',
+                categories: selectedCategories.map(cat => ({
+                    ...cat,
+                    tasks: [] // 空白專案不預設任務
+                }))
+            };
+        }
         
         // 創建專案
         const project = {
-            id: projectId,
+            id: travelNumber,
             name: projectName,
             template: selectedTemplate,
             status: 'active',
+            departDate: departDate || null,
+            returnDate: returnDate || null,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             categories: template.categories.map(category => ({
@@ -1008,7 +1157,7 @@ class ProjectsModule {
         // 關閉對話框
         document.querySelector('.modal-overlay').remove();
         
-        this.showToast(`專案「${projectName}」建立成功`, 'success');
+        this.showToast(`專案「${projectName}」建立成功 (${travelNumber})`, 'success');
         this.render(this.currentUser.uuid);
     }
 
@@ -1633,7 +1782,7 @@ class ProjectsModule {
         const project = {
             id: projectId,
             name: name,
-            template: template,
+            template: 'travel-basic',
             status: 'active',
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
