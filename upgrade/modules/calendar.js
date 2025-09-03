@@ -276,8 +276,17 @@ class CalendarModule {
                 }
                 
                 .calendar-day.today {
-                    background: linear-gradient(135deg, var(--primary-light), rgba(255,255,255,0.9));
+                    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 50%, rgba(255,255,255,0.95) 100%);
                     font-weight: bold;
+                    border: 2px solid var(--primary);
+                    box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
+                    transform: scale(1.02);
+                }
+                
+                .calendar-day.today .day-number {
+                    color: var(--primary);
+                    font-weight: 700;
+                    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
                 }
                 
                 .calendar-day.other-month {
@@ -299,26 +308,37 @@ class CalendarModule {
                     position: relative;
                 }
                 
+                .has-allday-event.today {
+                    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 30%, rgba(255,255,255,0.95) 100%);
+                }
+                
                 .allday-event-label {
                     position: absolute;
-                    bottom: 8px;
-                    left: 8px;
-                    right: 8px;
+                    bottom: 6px;
+                    left: 6px;
+                    right: 6px;
                     padding: 4px 8px;
-                    border-radius: 4px;
+                    border-radius: 6px;
                     font-size: 0.7rem;
-                    font-weight: 500;
+                    font-weight: 600;
                     text-align: center;
                     cursor: pointer;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     transition: all 0.2s;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
                 }
                 
                 .allday-event-label:hover {
                     opacity: 0.9;
-                    transform: translateY(-1px);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+                }
+                
+                .today .allday-event-label {
+                    border: 2px solid rgba(255,255,255,0.8);
+                    font-weight: 700;
                 }
                 
                 /* 定時活動樣式 */
@@ -692,7 +712,21 @@ class CalendarModule {
             }
         }
         
-        multiDayEvents.forEach((event, index) => {
+        // 對事件進行智能排序：長度優先（長的在下），然後按開始時間
+        const sortedEvents = multiDayEvents.sort((a, b) => {
+            const aDuration = new Date(a.endDate) - new Date(a.startDate);
+            const bDuration = new Date(b.endDate) - new Date(b.startDate);
+            
+            // 長度不同：長的在下（後處理）
+            if (aDuration !== bDuration) {
+                return bDuration - aDuration;
+            }
+            
+            // 長度相同：早開始的在上（先處理）
+            return new Date(a.startDate) - new Date(b.startDate);
+        });
+
+        sortedEvents.forEach((event, eventIndex) => {
             const eventStart = new Date(event.startDate);
             const eventEnd = new Date(event.endDate);
             
@@ -718,7 +752,8 @@ class CalendarModule {
                         event,
                         span,
                         isStart: currentDay === adjustedStart,
-                        isEnd: weekEnd === adjustedEnd
+                        isEnd: weekEnd === adjustedEnd,
+                        trackIndex: eventIndex // 用於分軌顯示
                     });
                 }
                 
@@ -726,18 +761,23 @@ class CalendarModule {
             }
         });
         
-        // 渲染事件條
+        // 渲染事件條 - 使用軌道分層概念
         weeks.forEach((week, weekIndex) => {
             week.forEach((dayEvents, dayIndex) => {
                 dayEvents.forEach((eventBar, barIndex) => {
-                    const { event, span, isStart, isEnd } = eventBar;
+                    const { event, span, isStart, isEnd, trackIndex } = eventBar;
+                    const trackOffset = trackIndex * 22; // 每個軌道高度 22px
+                    const opacity = 0.9 - (trackIndex * 0.1); // 層次透明度
+                    
                     html += `
-                        <div class="event-bar" 
+                        <div class="event-bar track-${trackIndex}" 
                              style="
                                 grid-row: ${weekIndex + 1}; 
                                 grid-column: ${dayIndex + 1} / span ${span};
                                 background: ${this.getPriorityColor(event.priority)};
-                                margin-bottom: ${barIndex * 20 + 2}px;
+                                top: ${trackOffset}px;
+                                opacity: ${Math.max(0.4, opacity)};
+                                z-index: ${10 - trackIndex};
                              "
                              onclick="window.activeModule.editEvent('${event.id}')"
                              title="${event.title}">
