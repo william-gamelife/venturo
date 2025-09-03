@@ -50,6 +50,17 @@ class TodosModule {
         this.dragStartSlot = null;
         this.editingTask = null;
         
+        // 標籤分類映射 - 按照用戶規格
+        this.drawerMap = {
+            '機票': 'flight',
+            '訂房': 'hotel',
+            '住宿': 'hotel', 
+            '飯店': 'hotel',
+            '餐廳': 'restaurant',
+            '餐飲': 'restaurant',
+            '合約': 'contract'
+        };
+        
         // 專案模板
         this.projectTemplates = [
             {
@@ -415,6 +426,37 @@ class TodosModule {
                     background: linear-gradient(135deg, #b8975a 0%, #a68650 100%);
                     transform: translateY(-2px) scale(1.05);
                     box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4);
+                }
+
+                /* 專案打包按鈕區域 */
+                .package-action {
+                    margin-bottom: 16px;
+                    display: flex;
+                    justify-content: center;
+                }
+
+                .package-btn {
+                    width: 100%;
+                    padding: 12px 16px;
+                    border: none;
+                    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                    color: white;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 8px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 700;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+                }
+
+                .package-btn:hover {
+                    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
                 }
 
                 .add-btn {
@@ -1093,6 +1135,8 @@ class TodosModule {
 
         return columns.map(column => {
             const tasks = this.getTasksByStatus(column.id);
+            const isProjectColumn = column.id === 'project';
+            const hasTasksToPackage = isProjectColumn && tasks.length > 0;
             
             return `
                 <div class="kanban-column" data-column="${column.id}">
@@ -1103,6 +1147,18 @@ class TodosModule {
                         </div>
                         <div class="column-count">${tasks.length}</div>
                     </div>
+                    
+                    ${hasTasksToPackage ? `
+                        <div class="package-action">
+                            <button class="package-btn" onclick="window.activeModule.packageProjectTasks()" title="建立專案">
+                                <svg viewBox="0 0 24 24" width="16" height="16">
+                                    <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                                建立專案
+                            </button>
+                        </div>
+                    ` : ''}
+                    
                     <div class="column-tasks" 
                          ondrop="window.activeModule.handleDrop(event, '${column.id}')"
                          ondragover="window.activeModule.handleDragOver(event)"
@@ -1115,7 +1171,246 @@ class TodosModule {
     }
 
     getTasksByStatus(status) {
-        return this.todos.filter(todo => todo.status === status);
+        const filtered = this.todos.filter(todo => todo.status === status);
+        
+        // 如果是「尚未整理」欄位，需要特殊排序：置頂指派任務
+        if (status === 'unorganized') {
+            return this.sortInboxTasks(filtered);
+        }
+        
+        // 其他欄位按建立時間排序
+        return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
+
+    // 尚未整理排序（置頂+一般）- 按照用戶規格
+    sortInboxTasks(cards) {
+        const pin = [];     // 指派來的
+        const normal = [];  // 我自己新加的
+
+        for (const c of cards) {
+            if (c.source === 'assigned') pin.push(c);
+            else normal.push(c);
+        }
+        
+        // 置頂（先來先上面：assigned_at ASC）
+        pin.sort((a, b) => new Date(a.assigned_at) - new Date(b.assigned_at));
+        
+        // 一般（建立時間 DESC，或直接用我拖的順序）
+        normal.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        return [...pin, ...normal];
+    }
+
+    // 標籤分類邏輯 - 按照用戶規格
+    decideDrawer(tags) {
+        for (const t of tags) {
+            if (this.drawerMap[t]) return this.drawerMap[t];
+        }
+        return 'other';
+    }
+
+    // 專案打包核心功能 - 按照用戶規格  
+    packageIntoProject(cards) {
+        if (!cards || cards.length === 0) {
+            this.showToast('請先選擇要打包的任務', 'error');
+            return;
+        }
+
+        const project = this.createProject({ 
+            name: this.suggestProjectName(cards) 
+        });
+        
+        for (const c of cards) {
+            const drawer = this.decideDrawer(c.tags || []);
+            this.createProjectTask(project.id, {
+                title: c.title,
+                notes: c.description,
+                drawer,            // flight/hotel/restaurant/contract/other
+                originalTaskId: c.id,
+                source: c.source,
+                createdAt: c.created_at
+            });
+        }
+        return project;
+    }
+
+    // 一鍵打包專案任務
+    async packageProjectTasks() {
+        const projectTasks = this.getTasksByStatus('project');
+        
+        if (projectTasks.length === 0) {
+            this.showToast('專案打包欄位沒有任務', 'error');
+            return;
+        }
+
+        try {
+            // 顯示專案名稱輸入對話框
+            const projectName = await this.showProjectNameDialog(projectTasks);
+            if (!projectName) return; // 用戶取消
+            
+            // 建立專案
+            const project = await this.createNewProject(projectName, projectTasks);
+            
+            // 移除已打包的任務
+            this.todos = this.todos.filter(todo => todo.status !== 'project');
+            
+            // 儲存變更
+            await this.saveData();
+            
+            // 重新渲染
+            this.render(this.currentUser.uuid);
+            
+            // 顯示成功訊息
+            this.showToast(`專案「${projectName}」建立成功，包含 ${projectTasks.length} 個任務`, 'success');
+            
+        } catch (error) {
+            console.error('打包失敗:', error);
+            this.showToast('打包失敗，請稍後再試', 'error');
+        }
+    }
+
+    // 建議專案名稱
+    suggestProjectName(tasks) {
+        const today = new Date().toISOString().split('T')[0];
+        const categories = [...new Set(tasks.flatMap(t => t.tags || []))];
+        
+        if (categories.length > 0) {
+            return `${today} ${categories[0]}專案`;
+        }
+        return `${today} 新專案`;
+    }
+
+    // 建立新專案
+    async createNewProject(name, tasks) {
+        const project = {
+            id: this.generateUUID(),
+            name: name,
+            createdAt: new Date().toISOString(),
+            tasks: {},
+            drawers: {
+                flight: [],
+                hotel: [],
+                restaurant: [],
+                contract: [],
+                other: []
+            }
+        };
+
+        // 按標籤分配到不同抽屜
+        for (const task of tasks) {
+            const drawer = this.decideDrawer(task.tags || []);
+            const projectTask = {
+                id: this.generateUUID(),
+                title: task.title,
+                description: task.description,
+                originalTaskId: task.id,
+                source: task.source,
+                completed: false,
+                createdAt: task.created_at,
+                addedToProjectAt: new Date().toISOString()
+            };
+            
+            project.drawers[drawer].push(projectTask);
+        }
+
+        // 儲存專案資料 (暫時存在 localStorage，之後整合到 projects.js)
+        const projects = JSON.parse(localStorage.getItem(`gamelife_projects_${this.currentUser}`) || '[]');
+        projects.push(project);
+        localStorage.setItem(`gamelife_projects_${this.currentUser}`, JSON.stringify(projects));
+
+        return project;
+    }
+
+    // UUID 生成器
+    generateUUID() {
+        if (crypto && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    // 顯示專案名稱輸入對話框
+    async showProjectNameDialog(tasks) {
+        return new Promise((resolve) => {
+            const suggestedName = this.suggestProjectName(tasks);
+            
+            // 預覽分類統計
+            const drawerStats = {};
+            tasks.forEach(task => {
+                const drawer = this.decideDrawer(task.tags || []);
+                drawerStats[drawer] = (drawerStats[drawer] || 0) + 1;
+            });
+
+            const drawerNames = {
+                'flight': '機票',
+                'hotel': '住宿', 
+                'restaurant': '餐飲',
+                'contract': '合約',
+                'other': '其他'
+            };
+
+            const dialog = document.createElement('div');
+            dialog.className = 'dialog-overlay';
+            dialog.innerHTML = `
+                <div class="project-name-dialog">
+                    <div class="dialog-header">
+                        <h3>建立專案</h3>
+                        <button class="dialog-close" onclick="this.closest('.dialog-overlay').remove()">×</button>
+                    </div>
+                    
+                    <div class="dialog-content">
+                        <div class="form-group">
+                            <label>專案名稱：</label>
+                            <input type="text" id="projectName" value="${suggestedName}" placeholder="輸入專案名稱">
+                        </div>
+                        
+                        <div class="preview-section">
+                            <h4>將建立的分類：</h4>
+                            <div class="drawer-preview">
+                                ${Object.entries(drawerStats).map(([drawer, count]) => `
+                                    <div class="drawer-item">
+                                        <span class="drawer-name">${drawerNames[drawer]}</span>
+                                        <span class="drawer-count">${count} 個任務</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="dialog-actions">
+                            <button class="btn secondary" onclick="this.closest('.dialog-overlay').remove()">取消</button>
+                            <button class="btn primary" onclick="window.activeModule.confirmCreateProject()">建立專案</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(dialog);
+            
+            // 儲存 resolve 函數供按鈕使用
+            window.tempProjectDialogResolve = resolve;
+        });
+    }
+
+    // 確認建立專案
+    confirmCreateProject() {
+        const projectName = document.getElementById('projectName').value.trim();
+        if (!projectName) {
+            this.showToast('請輸入專案名稱', 'error');
+            return;
+        }
+        
+        // 關閉對話框
+        document.querySelector('.dialog-overlay').remove();
+        
+        // 回傳專案名稱
+        if (window.tempProjectDialogResolve) {
+            window.tempProjectDialogResolve(projectName);
+            delete window.tempProjectDialogResolve;
+        }
     }
 
     getTaskCard(todo) {
