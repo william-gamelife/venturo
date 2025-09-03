@@ -949,20 +949,43 @@
         
         // 招牌渲染函式
         function renderSignage(ModuleClass, instance){
-            const meta = ModuleClass.signage || ModuleClass.moduleInfo || {};
+            // 支援新版 getSignage() 方法和舊版格式
+            let meta = {};
+            if (typeof ModuleClass.getSignage === 'function') {
+                meta = ModuleClass.getSignage();
+            } else {
+                meta = ModuleClass.signage || ModuleClass.moduleInfo || {};
+            }
+            
             const el = document.getElementById('signageHost');
-            const actions = (meta.actions||[])
-              .map(a=>`<button class="sg-btn ${a.kind||'secondary'}" data-action="${a.onClick||''}">${a.label}</button>`)
-              .join('');
-            const badges = (meta.badges||[])
-              .map(b=>`<span class="sg-badge">${b.label}：${b.value}</span>`).join('');
+            
+            // 新版格式處理 primaryActions 和 secondaryActions
+            let actions = '';
+            if (meta.primaryActions || meta.secondaryActions) {
+                const primaryBtns = (meta.primaryActions || [])
+                    .map(a => `<button class="sg-btn primary" onclick="${a.onclick || ''}">${a.icon || ''}${a.label}</button>`)
+                    .join('');
+                const secondaryBtns = (meta.secondaryActions || [])
+                    .map(a => `<button class="sg-btn secondary" onclick="${a.onclick || ''}">${a.icon || ''}${a.label}</button>`)
+                    .join('');
+                actions = primaryBtns + secondaryBtns;
+            } else {
+                // 舊版格式相容
+                actions = (meta.actions || [])
+                    .map(a => `<button class="sg-btn ${a.kind || 'secondary'}" data-action="${a.onClick || ''}">${a.label}</button>`)
+                    .join('');
+            }
+            
+            const badges = (meta.badges || [])
+                .map(b => `<span class="sg-badge">${b.label}：${b.value}</span>`).join('');
+            
             el.innerHTML = `
               <div class="signage-card">
                 <div class="signage-left">
-                  <div class="signage-icon">${meta.iconSVG||''}</div>
+                  <div class="signage-icon">${meta.icon || meta.iconSVG || ''}</div>
                   <div>
-                    <h2 class="signage-title">${meta.title||'模組'}</h2>
-                    <p class="signage-sub">${meta.subtitle||''}</p>
+                    <h2 class="signage-title">${meta.name || meta.title || '模組'}</h2>
+                    <p class="signage-sub">${meta.description || meta.subtitle || ''}</p>
                   </div>
                 </div>
                 <div class="signage-right">
@@ -971,10 +994,11 @@
                 </div>
               </div>
             `;
-            // 綁定右側按鈕
-            el.querySelectorAll('[data-action]').forEach(btn=>{
-              const fn = btn.getAttribute('data-action');
-              if (fn && typeof instance?.[fn] === 'function') btn.onclick = ()=>instance[fn]();
+            
+            // 綁定舊版按鈕
+            el.querySelectorAll('[data-action]').forEach(btn => {
+                const fn = btn.getAttribute('data-action');
+                if (fn && typeof instance?.[fn] === 'function') btn.onclick = () => instance[fn]();
             });
         }
 
