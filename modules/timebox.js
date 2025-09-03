@@ -18,10 +18,7 @@ class TimeboxModule {
         actions: [
             { id:'prevWeek', label:'←', kind:'secondary', onClick:'prevWeek' },
             { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' },
-            { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' },
-            { id:'clearSelection', label:'清除選取', kind:'secondary', onClick:'clearSelection' },
-            { id:'deleteSelected', label:'刪除選取', kind:'danger', onClick:'deleteSelectedSlots' },
-            { id:'timer', label:'🍅 番茄鐘', kind:'primary', onClick:'toggleTimer' }
+            { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' }
         ]
     };
 
@@ -151,9 +148,8 @@ class TimeboxModule {
         return `
             <div class="timebox-container">
 
-                <!-- 工具列 -->
-                <div class="timebox-tools">
-                    <!-- 時間單位切換 -->
+                <!-- 時間單位選擇器 -->
+                <div class="time-unit-selector-wrapper">
                     <div class="time-unit-selector">
                         <button class="unit-btn ${this.timeUnit === 15 ? 'active' : ''}" 
                                 onclick="window.activeModule.setTimeUnit(15)">15分</button>
@@ -162,31 +158,6 @@ class TimeboxModule {
                         <button class="unit-btn ${this.timeUnit === 60 ? 'active' : ''}" 
                                 onclick="window.activeModule.setTimeUnit(60)">60分</button>
                     </div>
-                    
-                    <!-- 番茄鐘按鈕 -->
-                    <button class="pomodoro-btn" onclick="window.activeModule.togglePomodoroPanel()">
-                        <svg width="20" height="20" viewBox="0 0 20 20">
-                            <circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="2"/>
-                            <path d="M10 6v4l3 3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                        <span>番茄鐘</span>
-                    </button>
-                    
-                    <!-- 活動類型管理 -->
-                    <button class="activity-btn" onclick="window.activeModule.showActivityManager()">
-                        <svg width="20" height="20" viewBox="0 0 20 20">
-                            <rect x="3" y="3" width="6" height="6" fill="currentColor" opacity="0.3"/>
-                            <rect x="11" y="3" width="6" height="6" fill="currentColor" opacity="0.5"/>
-                            <rect x="3" y="11" width="6" height="6" fill="currentColor" opacity="0.7"/>
-                            <rect x="11" y="11" width="6" height="6" fill="currentColor"/>
-                        </svg>
-                        <span>活動類型</span>
-                    </button>
-                </div>
-
-                <!-- 番茄鐘面板（初始隱藏）-->
-                <div class="pomodoro-panel" id="pomodoroPanel" style="display: none;">
-                    ${this.getPomodoroHTML()}
                 </div>
 
                 <!-- 主要時間格子區 -->
@@ -215,24 +186,20 @@ class TimeboxModule {
                     -ms-user-select: none;
                 }
 
-                /* 工具列 */
-                .timebox-tools {
+                /* 時間單位選擇器 */
+                .time-unit-selector-wrapper {
                     display: flex;
-                    align-items: center;
-                    gap: 16px;
-                    padding: 16px 20px;
-                    background: var(--card);
-                    border-radius: 16px;
-                    border: 1px solid var(--border);
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                    justify-content: center;
+                    margin-bottom: 16px;
                 }
 
                 .time-unit-selector {
                     display: flex;
-                    background: var(--bg);
-                    border-radius: 8px;
-                    padding: 2px;
+                    background: var(--card);
+                    border-radius: 12px;
+                    padding: 4px;
                     border: 1px solid var(--border);
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
                 }
 
                 .unit-btn {
@@ -253,24 +220,6 @@ class TimeboxModule {
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 }
 
-                .pomodoro-btn, .activity-btn {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    padding: 8px 14px;
-                    background: white;
-                    border: 1px solid var(--border);
-                    border-radius: 8px;
-                    color: var(--text);
-                    cursor: pointer;
-                    transition: all 0.2s;
-                    font-size: 0.9rem;
-                }
-
-                .pomodoro-btn:hover, .activity-btn:hover {
-                    background: var(--primary-light);
-                    transform: translateY(-1px);
-                }
 
                 /* 時間格子網格 */
                 .timebox-grid-wrapper {
