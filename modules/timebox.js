@@ -180,14 +180,6 @@ class TimeboxModule {
                             `).join('')}
                         </div>
                     </div>
-                    
-                    <div class="selection-info" id="selectionInfo" style="display: none;">
-                        <span class="selected-count">已選擇 0 個時段</span>
-                        <div class="selection-buttons">
-                            <button class="edit-selection-btn" onclick="window.activeModule.editSelection()">編輯</button>
-                            <button class="clear-selection-btn" onclick="window.activeModule.clearSelection()">清除</button>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- 番茄鐘面板 -->
@@ -1570,49 +1562,22 @@ class TimeboxModule {
         }
     }
 
-    // 滑鼠拖曳選取
+    // 滑鼠事件處理（僅用於已佔用格子的右鍵編輯）
     onSlotMouseDown(e, slotKey) {
-        e.preventDefault();
-        this.isDragging = false;
-        this.dragStartSlot = slotKey;
-        
-        // 檢查是否為拖曳開始
-        this.dragTimer = setTimeout(() => {
-            this.isDragging = true;
-            this.clearSelection();
-            this.selectedTimeSlots.add(slotKey);
-            this.updateSlotSelection();
-        }, 150); // 150ms 延遲判斷是否為拖曳
+        // 只允許右鍵點擊已佔用的格子來編輯
+        if (e.button === 2 && this.timeboxData[slotKey]) {
+            e.preventDefault();
+            this.showSlotEditDialog([slotKey]);
+        }
+        // 移除所有選擇功能，改用純拖曳方式
     }
 
     onSlotMouseEnter(e, slotKey) {
-        if (this.isDragging) {
-            this.selectedTimeSlots.add(slotKey);
-            this.updateSlotSelection();
-        }
+        // 移除拖曳選擇功能
     }
 
     onSlotMouseUp(e, slotKey) {
-        e.stopPropagation();
-        
-        if (this.dragTimer) {
-            clearTimeout(this.dragTimer);
-            this.dragTimer = null;
-        }
-        
-        if (this.isDragging) {
-            this.isDragging = false;
-            // 拖拽結束後直接彈出編輯對話框（移除重複邏輯）
-            if (this.selectedTimeSlots.size > 0) {
-                this.updateSlotSelection();
-            }
-        } else {
-            // 單擊事件 - 直接顯示編輯對話框
-            this.selectedTimeSlots.clear();
-            this.selectedTimeSlots.add(slotKey);
-            this.updateSlotSelection();
-            this.showSlotEditDialog();
-        }
+        // 移除選擇功能，改用純拖曳方式
     }
 
     // 手機觸控處理

@@ -787,7 +787,10 @@ class SettingsModule {
     // 檢查是否為管理員
     isAdmin() {
         const adminUsers = ['william', 'carson'];
-        return adminUsers.some(adminId => this.userId && this.userId.toLowerCase().includes(adminId.toLowerCase()));
+        console.log('權限檢查 - userId:', this.userId); // 調試用
+        const isUserAdmin = adminUsers.some(adminId => this.userId && this.userId.toLowerCase().includes(adminId.toLowerCase()));
+        console.log('是否為管理員:', isUserAdmin); // 調試用
+        return isUserAdmin;
     }
 
     // 載入用戶清單
