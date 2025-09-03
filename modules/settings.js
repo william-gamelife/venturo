@@ -767,9 +767,8 @@ class SettingsModule {
 
     // 取得部署時間（系統建置時間）
     getDeploymentTime() {
-        // 這裡可以設定為實際的部署時間
-        // 目前使用檔案載入時間作為參考
-        const buildTime = new Date('2025-01-03T10:36:00+08:00'); // 可以替換為實際部署時間
+        // 設定為當前時間（每次部署都會更新）
+        const buildTime = new Date('2025-09-03T23:30:00+08:00'); // 最新部署時間
         const now = new Date();
         const diffMinutes = Math.floor((now - buildTime) / (1000 * 60));
         
@@ -786,9 +785,14 @@ class SettingsModule {
 
     // 檢查是否為管理員
     isAdmin() {
-        const adminUsers = ['william', 'carson'];
+        // William的UUID和其他已知管理員UUID
+        const adminUUIDs = [
+            '550e8400-e29b-41d4-a716-446655440001', // William
+            // 可以在這裡加入Carson的UUID
+        ];
+        
         console.log('權限檢查 - userId:', this.userId); // 調試用
-        const isUserAdmin = adminUsers.some(adminId => this.userId && this.userId.toLowerCase().includes(adminId.toLowerCase()));
+        const isUserAdmin = adminUUIDs.includes(this.userId);
         console.log('是否為管理員:', isUserAdmin); // 調試用
         return isUserAdmin;
     }

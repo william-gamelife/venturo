@@ -982,26 +982,46 @@ class LifeSimulatorModule {
         // 更新所有顯示的數值
         const char = this.gameState.character;
         
+        // 檢查DOM元素是否存在
+        const levelBadge = document.querySelector('.level-badge');
+        const expFill = document.querySelector('.exp-fill');
+        const expText = document.querySelector('.exp-text');
+        
+        if (!levelBadge || !expFill || !expText) {
+            console.log('DOM元素尚未載入，跳過統計更新');
+            return;
+        }
+        
         // 更新等級和經驗
-        document.querySelector('.level-badge').textContent = `Lv.${char.level}`;
-        document.querySelector('.exp-fill').style.width = `${(char.exp / this.getNextLevelExp()) * 100}%`;
-        document.querySelector('.exp-text').textContent = `${char.exp}/${this.getNextLevelExp()} EXP`;
+        levelBadge.textContent = `Lv.${char.level}`;
+        expFill.style.width = `${(char.exp / this.getNextLevelExp()) * 100}%`;
+        expText.textContent = `${char.exp}/${this.getNextLevelExp()} EXP`;
         
         // 更新資源
-        document.querySelector('.gold').innerHTML = `💰 ${char.gold}`;
-        document.querySelector('.gems').innerHTML = `💎 ${char.gems}`;
+        const goldEl = document.querySelector('.gold');
+        const gemsEl = document.querySelector('.gems');
+        if (goldEl) goldEl.innerHTML = `💰 ${char.gold}`;
+        if (gemsEl) gemsEl.innerHTML = `💎 ${char.gems}`;
         
         // 更新狀態條
-        document.querySelector('.health-fill').style.width = `${char.stats.health}%`;
-        document.querySelector('.mood-fill').style.width = `${char.stats.mood}%`;
-        document.querySelector('.energy-fill').style.width = `${char.stats.energy}%`;
-        document.querySelector('.hunger-fill').style.width = `${char.stats.hunger}%`;
+        const healthFill = document.querySelector('.health-fill');
+        const moodFill = document.querySelector('.mood-fill');
+        const energyFill = document.querySelector('.energy-fill');
+        const hungerFill = document.querySelector('.hunger-fill');
+        
+        if (healthFill) healthFill.style.width = `${char.stats.health}%`;
+        if (moodFill) moodFill.style.width = `${char.stats.mood}%`;
+        if (energyFill) energyFill.style.width = `${char.stats.energy}%`;
+        if (hungerFill) hungerFill.style.width = `${char.stats.hunger}%`;
         
         // 更新狀態文字
-        document.querySelectorAll('.stat-text').forEach((el, i) => {
-            const stats = ['health', 'mood', 'energy', 'hunger'];
-            el.textContent = `${char.stats[stats[i]]}/100`;
-        });
+        const statTextElements = document.querySelectorAll('.stat-text');
+        if (statTextElements.length > 0) {
+            statTextElements.forEach((el, i) => {
+                const stats = ['health', 'mood', 'energy', 'hunger'];
+                if (el) el.textContent = `${char.stats[stats[i]]}/100`;
+            });
+        }
         
         // 更新角色表情
         const roomDiv = document.getElementById('gameRoom');
