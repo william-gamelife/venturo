@@ -1095,6 +1095,237 @@ class TodosModule {
                     }
 
                 }
+
+                /* 任務展開對話框樣式 */
+                .task-expand-modal {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    z-index: 1000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .expand-backdrop {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.5);
+                    cursor: pointer;
+                }
+
+                .expand-container {
+                    position: relative;
+                    width: 90%;
+                    max-width: 600px;
+                    max-height: 80vh;
+                    background: white;
+                    border-radius: 16px;
+                    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
+                    overflow: hidden;
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .expand-header {
+                    padding: 24px;
+                    border-bottom: 1px solid var(--border);
+                    background: var(--bg);
+                }
+
+                .header-main {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 16px;
+                }
+
+                .expand-title {
+                    flex: 1;
+                    font-size: 18px;
+                    font-weight: 600;
+                    border: none;
+                    background: transparent;
+                    color: var(--text);
+                    margin-right: 16px;
+                }
+
+                .close-btn {
+                    width: 32px;
+                    height: 32px;
+                    border: none;
+                    background: var(--border);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 18px;
+                    color: var(--text);
+                }
+
+                .header-meta {
+                    margin-bottom: 16px;
+                }
+
+                .tag-editor {
+                    margin-top: 12px;
+                }
+
+                .tag-editor label {
+                    display: inline-block;
+                    margin-right: 8px;
+                    color: var(--text-light);
+                    font-size: 14px;
+                }
+
+                .task-tags-input {
+                    flex: 1;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    font-size: 14px;
+                }
+
+                .header-actions {
+                    display: flex;
+                    gap: 12px;
+                }
+
+                .quick-btn {
+                    padding: 8px 16px;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    background: white;
+                    cursor: pointer;
+                    font-size: 13px;
+                    transition: all 0.2s;
+                }
+
+                .quick-btn:hover {
+                    background: var(--bg);
+                }
+
+                .expand-content {
+                    flex: 1;
+                    padding: 24px;
+                    overflow-y: auto;
+                }
+
+                .content-section {
+                    margin-bottom: 24px;
+                }
+
+                .content-section label {
+                    display: block;
+                    margin-bottom: 8px;
+                    color: var(--text);
+                    font-weight: 500;
+                }
+
+                .task-notes {
+                    width: 100%;
+                    min-height: 100px;
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    padding: 12px;
+                    font-size: 14px;
+                    resize: vertical;
+                }
+
+                .comments-section label {
+                    display: block;
+                    margin-bottom: 8px;
+                    color: var(--text);
+                    font-weight: 500;
+                }
+
+                .comments-timeline {
+                    background: var(--bg);
+                    border-radius: 8px;
+                    padding: 16px;
+                    margin-bottom: 12px;
+                    min-height: 80px;
+                }
+
+                .comment-item {
+                    margin-bottom: 12px;
+                }
+
+                .comment-time {
+                    font-size: 12px;
+                    color: var(--text-light);
+                    margin-bottom: 4px;
+                }
+
+                .comment-text {
+                    font-size: 14px;
+                    color: var(--text);
+                }
+
+                .no-comments {
+                    color: var(--text-light);
+                    font-style: italic;
+                    text-align: center;
+                }
+
+                .add-comment {
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                }
+
+                .comment-input {
+                    flex: 1;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                    padding: 8px 12px;
+                    font-size: 14px;
+                }
+
+                .add-comment button {
+                    padding: 8px 16px;
+                    border: none;
+                    background: var(--primary);
+                    color: white;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 14px;
+                }
+
+                .expand-extension {
+                    padding: 16px 24px;
+                    border-top: 1px solid var(--border);
+                    background: var(--bg);
+                }
+
+                .expand-footer {
+                    padding: 16px 24px;
+                    border-top: 1px solid var(--border);
+                    background: var(--bg);
+                    display: flex;
+                    justify-content: flex-end;
+                }
+
+                .save-btn {
+                    padding: 12px 24px;
+                    border: none;
+                    background: var(--primary);
+                    color: white;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 14px;
+                    font-weight: 500;
+                }
+
+                .save-btn:hover {
+                    opacity: 0.9;
+                }
             </style>
         `;
     }
@@ -1623,12 +1854,6 @@ class TodosModule {
                     <button class="task-action-btn expand" onclick="window.activeModule.expandTask('${todo.id}')" title="展開">
                         ↗
                     </button>
-                    <button class="task-action-btn edit" onclick="window.activeModule.editTask('${todo.id}')" title="編輯">
-                        ✎
-                    </button>
-                    <button class="task-action-btn delete" onclick="window.activeModule.deleteTask('${todo.id}')" title="刪除">
-                        ×
-                    </button>
                 </div>
             </div>
         `;
@@ -1748,33 +1973,6 @@ class TodosModule {
                     </div>
                 </div>
                 
-                <div class="task-actions">
-                    <button class="task-btn" onclick="window.activeModule.editTask('${task.id}'); event.stopPropagation();" title="編輯">
-                        <svg width="14" height="14" viewBox="0 0 14 14">
-                            <path d="M10 2l2 2-7 7-3 1 1-3z" fill="none" stroke="currentColor"/>
-                        </svg>
-                    </button>
-                    
-                    ${task.status === 'pending' ? `
-                        <button class="task-btn task-btn-complete" onclick="window.activeModule.completeTask('${task.id}'); event.stopPropagation();" title="完成任務">
-                            <svg width="14" height="14" viewBox="0 0 14 14">
-                                <path d="M2 7l3 3 7-7" fill="none" stroke="currentColor" stroke-width="2"/>
-                            </svg>
-                        </button>
-                    ` : `
-                        <button class="task-btn task-btn-reopen" onclick="window.activeModule.reopenTask('${task.id}'); event.stopPropagation();" title="重新開啟">
-                            <svg width="14" height="14" viewBox="0 0 14 14">
-                                <path d="M1 7l2-2m0 0l2 2m-2-2v6a2 2 0 002 2h6" stroke="currentColor" fill="none" stroke-width="1.5"/>
-                            </svg>
-                        </button>
-                    `}
-                    
-                    <button class="task-btn task-btn-delete" onclick="window.activeModule.deleteTask('${task.id}'); event.stopPropagation();" title="刪除">
-                        <svg width="14" height="14" viewBox="0 0 14 14">
-                            <path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                    </button>
-                </div>
                 
                 <!-- 手機版展開內容 -->
                 <div class="task-expanded-content">
