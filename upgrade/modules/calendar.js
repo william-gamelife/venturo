@@ -648,8 +648,16 @@ class CalendarModule {
                     <div class="day-events">
                         ${timedEvents.slice(0, 3).map(event => {
                             const eventColor = this.getPriorityColor(event.priority);
-                            const timeDisplay = event.startDateTime ? 
-                                new Date(event.startDateTime).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) : '';
+                            let timeDisplay = '';
+                            if (event.startDateTime) {
+                                const startTime = new Date(event.startDateTime).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                                if (event.endDateTime) {
+                                    const endTime = new Date(event.endDateTime).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                                    timeDisplay = `${startTime}-${endTime}`;
+                                } else {
+                                    timeDisplay = startTime;
+                                }
+                            }
                             return `
                                 <div class="timed-event-bar" 
                                      style="border-left: 4px solid ${eventColor}; background: ${eventColor}08; color: ${eventColor};"
