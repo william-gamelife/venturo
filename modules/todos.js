@@ -208,12 +208,11 @@ class TodosModule {
                     background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
                     border: none;
                     border-radius: 16px;
-                    padding: 20px;
+                    padding: 16px;
                     display: flex;
-                    flex-direction: column;
+                    align-items: center;
                     gap: 12px;
                     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                    cursor: grab;
                     position: relative;
                     box-shadow: 0 4px 20px rgba(45, 55, 72, 0.06);
                     border: 1px solid rgba(255, 255, 255, 0.4);
@@ -222,6 +221,99 @@ class TodosModule {
                 .task-card:hover {
                     box-shadow: 0 12px 32px rgba(45, 55, 72, 0.15);
                     border-color: rgba(201, 169, 97, 0.4);
+                    transform: translateY(-2px);
+                }
+
+                .task-checkbox-area {
+                    opacity: 0;
+                    transform: translateX(-4px);
+                    transition: all 0.3s ease;
+                    flex-shrink: 0;
+                }
+
+                .task-card:hover .task-checkbox-area {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+
+                .task-checkbox {
+                    width: 18px;
+                    height: 18px;
+                    border: 2px solid #e2e8f0;
+                    border-radius: 4px;
+                    appearance: none;
+                    background: white;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    position: relative;
+                }
+
+                .task-checkbox:checked {
+                    background: #c9a961;
+                    border-color: #c9a961;
+                }
+
+                .task-checkbox:checked::after {
+                    content: '';
+                    position: absolute;
+                    left: 5px;
+                    top: 2px;
+                    width: 4px;
+                    height: 8px;
+                    border: solid white;
+                    border-width: 0 2px 2px 0;
+                    transform: rotate(45deg);
+                }
+
+                .task-card-content {
+                    flex: 1;
+                    cursor: pointer;
+                    padding: 4px 0;
+                }
+
+                .task-actions-elegant {
+                    display: flex;
+                    gap: 6px;
+                    opacity: 0;
+                    transform: translateX(4px);
+                    transition: all 0.3s ease;
+                }
+
+                .task-card:hover .task-actions-elegant {
+                    opacity: 1;
+                    transform: translateX(0);
+                }
+
+                .elegant-btn {
+                    width: 32px;
+                    height: 32px;
+                    border: none;
+                    background: rgba(255, 255, 255, 0.8);
+                    backdrop-filter: blur(8px);
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                    color: #64748b;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                }
+
+                .elegant-btn:hover {
+                    background: rgba(255, 255, 255, 0.95);
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+                }
+
+                .elegant-btn.edit-btn:hover {
+                    color: #c9a961;
+                    background: rgba(201, 169, 97, 0.1);
+                }
+
+                .elegant-btn.complete-btn:hover {
+                    color: #10b981;
+                    background: rgba(16, 185, 129, 0.1);
                 }
 
                 .task-card.completed {
@@ -1905,13 +1997,31 @@ class TodosModule {
 
     getTaskCard(todo) {
         return `
-            <div class="task-card" data-task-id="${todo.id}" onclick="window.activeModule.expandTask('${todo.id}')">
-                <div class="task-card-content">
+            <div class="task-card" data-task-id="${todo.id}">
+                <div class="task-checkbox-area">
+                    <input type="checkbox" class="task-checkbox" data-task-id="${todo.id}" onclick="event.stopPropagation(); window.activeModule.toggleTaskSelection('${todo.id}')">
+                </div>
+                
+                <div class="task-card-content" onclick="window.activeModule.expandTask('${todo.id}')">
                     <div class="task-title">${todo.title}</div>
                     ${todo.tags && todo.tags.length > 0 ? `<div class="task-tags-simple">
                         ${todo.tags.slice(0, 3).map(tag => `<span class="task-tag-simple">${tag}</span>`).join('')}
                         ${todo.tags.length > 3 ? `<span class="task-tag-more">+${todo.tags.length - 3}</span>` : ''}
                     </div>` : ''}
+                </div>
+                
+                <div class="task-actions-elegant">
+                    <button class="elegant-btn edit-btn" onclick="event.stopPropagation(); window.activeModule.editTask('${todo.id}')" title="編輯">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button class="elegant-btn complete-btn" onclick="event.stopPropagation(); window.activeModule.completeTask('${todo.id}')" title="完成">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 11l3 3L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         `;
