@@ -758,7 +758,7 @@
         if (e.target.checked) {
             if (confirm('即將進入系統升級模式，這會開啟獨立的測試環境。確定要繼續嗎？')) {
                 localStorage.setItem('upgrade_mode', 'true');
-                window.location.href = '/WEB/upgrade/index.html';
+                window.location.href = './upgrade/index.html';
             } else {
                 e.target.checked = false;
             }
