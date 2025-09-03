@@ -1031,7 +1031,6 @@ class TodosModule {
         `;
     }
 
-    getKanbanColumns() {
     getTodosList() {
         if (this.todos.length === 0) {
             return `
