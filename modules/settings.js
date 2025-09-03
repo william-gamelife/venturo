@@ -880,9 +880,7 @@ class SettingsModule {
             </div>
         `;
     }
-}
-
-export { SettingsModule 
+    
     // 模組清理方法 - 符合規範要求
     destroy() {
         // 清理事件監聽器

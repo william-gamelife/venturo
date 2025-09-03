@@ -912,9 +912,7 @@ class UsersModule {
         // 暫時顯示提示
         this.showToast('人事異動功能開發中...', 'info');
     }
-}
-
-export { UsersModule 
+    
     // 模組清理方法 - 符合規範要求
     destroy() {
         // 清理事件監聽器

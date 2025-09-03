@@ -324,6 +324,78 @@
                 </li>
                 
                 <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('timebox', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12,6 12,12 16,14"/>
+                        </svg>
+                        <span>箱型時間</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('life-simulator', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="9" cy="9" r="1.5"/>
+                            <circle cx="15" cy="9" r="1.5"/>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"/>
+                        </svg>
+                        <span>人生模擬器</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('pixel-life', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="3" y="3" width="3" height="3"/>
+                            <rect x="9" y="3" width="3" height="3"/>
+                            <rect x="15" y="3" width="3" height="3"/>
+                            <rect x="6" y="9" width="3" height="3"/>
+                            <rect x="12" y="9" width="3" height="3"/>
+                        </svg>
+                        <span>像素人生</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('travel-pdf', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14,2 14,8 20,8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                            <polyline points="10,9 9,9 8,9"/>
+                        </svg>
+                        <span>旅行 PDF</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('themes', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="12" r="5"/>
+                            <line x1="12" y1="1" x2="12" y2="3"/>
+                            <line x1="12" y1="21" x2="12" y2="23"/>
+                            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                        </svg>
+                        <span>主題設定</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
+                    <a href="#" class="nav-link" onclick="loadModule('sync', this)">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <polyline points="23 4 23 10 17 10"/>
+                            <polyline points="1 20 1 14 7 14"/>
+                            <path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                        <span>同步管理</span>
+                    </a>
+                </li>
+                
+                <li class="nav-item">
                     <a href="#" class="nav-link" onclick="loadModule('settings', this)">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="12" cy="12" r="3"/>
@@ -455,8 +527,9 @@
             try {
                 await waitForAuthBridge();
                 
-                // 權限檢查
-                if (!window.authBridge.canAccessModule(moduleName)) {
+                // 權限檢查 (處理 dashboard -> overview 映射)
+                const actualModule = moduleName === 'dashboard' ? 'overview' : moduleName;
+                if (!window.authBridge.canAccessModule(actualModule)) {
                     showAccessDenied(moduleName);
                     return;
                 }
@@ -497,7 +570,14 @@
                 'calendar': './modules/calendar.js',
                 'projects': './modules/projects.js',
                 'finance': './modules/finance.js',
-                'settings': './modules/settings.js'
+                'timebox': './modules/timebox.js',
+                'life-simulator': './modules/life-simulator.js',
+                'pixel-life': './modules/pixel-life.js',
+                'travel-pdf': './modules/travel-pdf.js',
+                'themes': './modules/themes.js',
+                'sync': './modules/sync.js',
+                'settings': './modules/settings.js',
+                'permissions': './modules/permissions.js'
             };
             
             const moduleUrl = moduleMap[moduleName];
