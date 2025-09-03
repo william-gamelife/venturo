@@ -1,20 +1,19 @@
 /**
- * 待辦事項管理系統 - 遊戲人生 3.0 簡化版
+ * 待辦事項管理系統 - 看板式管理
  * 符合 building-manual 規範
  * 
  * 核心功能：
- * 1. 簡潔清單系統
- * 2. 快速分類標籤
- * 3. 拖曳重新排序
- * 4. 搜尋與篩選
- * 5. 任務完成標記
+ * 1. 五欄看板系統（尚未整理、進行中、等待確認、專案打包、完成）
+ * 2. 自由拖曳任務卡片
+ * 3. 快速分類標籤
+ * 4. 任務卡片管理
  */
 
 class TodosModule {
     // SignageHost 招牌資料
     static signage = {
         title: '待辦事項',
-        subtitle: '任務清單管理',
+        subtitle: '看板式任務管理',
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 11l3 3L20 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         actions: [
             { id: 'addTask', label: '新增任務', kind: 'primary', onClick: 'showAddDialog' }
@@ -145,15 +144,9 @@ class TodosModule {
     getHTML() {
         return `
             <div class="todos-container">
-                <!-- 搜尋欄 -->
-                <div class="search-container">
-                    <input type="text" class="search-input" placeholder="搜尋任務..." 
-                           oninput="window.activeModule.handleSearch(this.value)">
-                </div>
-
-                <!-- 任務清單 -->
-                <div class="todos-list" id="todosList">
-                    ${this.getTodosList()}
+                <!-- 看板欄位 -->
+                <div class="kanban-board">
+                    ${this.getKanbanColumns()}
                 </div>
             </div>
 
@@ -162,39 +155,18 @@ class TodosModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    gap: 20px;
                     padding: 0;
                 }
 
-                /* 搜尋欄 */
-                .search-container {
-                    padding: 20px 20px 0;
-                }
-
-                .search-input {
-                    width: 100%;
-                    padding: 12px 16px;
-                    border: 1px solid var(--border);
-                    border-radius: 12px;
-                    font-size: 14px;
-                    background: white;
-                    transition: all 0.2s;
-                }
-
-                .search-input:focus {
-                    outline: none;
-                    border-color: var(--primary);
-                    box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
-                }
-
-                /* 任務清單 */
-                .todos-list {
+                /* 看板佈局 */
+                .kanban-board {
                     flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                    overflow-y: auto;
-                    padding: 0 20px 20px;
+                    display: grid;
+                    grid-template-columns: repeat(5, 1fr);
+                    gap: 16px;
+                    overflow-x: auto;
+                    padding: 20px;
+                    min-height: 500px;
                 }
 
                 /* 空狀態 */
@@ -283,31 +255,43 @@ class TodosModule {
                 }
 
                 .task-title {
-                    font-weight: 500;
+                    font-weight: 600;
                     color: var(--text);
                     line-height: 1.4;
-                    margin-bottom: 4px;
+                    margin-bottom: 6px;
+                    font-size: 14px;
                 }
 
                 .task-description {
-                    font-size: 14px;
+                    font-size: 13px;
                     color: var(--text-light);
                     line-height: 1.4;
                     margin-bottom: 8px;
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
                 }
 
                 .task-tags {
                     display: flex;
                     gap: 4px;
                     flex-wrap: wrap;
+                    margin-bottom: 8px;
                 }
 
                 .task-tag {
-                    font-size: 11px;
+                    font-size: 10px;
                     color: white;
                     padding: 2px 6px;
                     border-radius: 4px;
                     font-weight: 500;
+                }
+
+                .task-due-date {
+                    font-size: 11px;
+                    color: var(--text-light);
+                    margin-top: 4px;
                 }
 
                 .task-actions {
@@ -1031,27 +1015,44 @@ class TodosModule {
         `;
     }
 
-    getTodosList() {
-        if (this.todos.length === 0) {
+    getKanbanColumns() {
+        const columns = [
+            { id: 'unorganized', title: '尚未整理', icon: '📋' },
+            { id: 'in-progress', title: '進行中', icon: '🔄' },
+            { id: 'waiting', title: '等待確認', icon: '⏳' },
+            { id: 'project', title: '專案打包', icon: '📦' },
+            { id: 'completed', title: '完成', icon: '✅' }
+        ];
+
+        return columns.map(column => {
+            const tasks = this.getTasksByStatus(column.id);
+            
             return `
-                <div class="empty-state">
-                    <div class="empty-icon">
-                        <svg viewBox="0 0 24 24" width="48" height="48">
-                            <circle cx="12" cy="12" r="10" fill="none" stroke="var(--text-light)" stroke-width="2" stroke-dasharray="4,4" opacity="0.5"/>
-                            <path d="M8 12h8M12 8v8" stroke="var(--text-light)" stroke-width="2" opacity="0.5"/>
-                        </svg>
+                <div class="kanban-column" data-column="${column.id}">
+                    <div class="column-header">
+                        <div class="column-title">
+                            <span class="column-icon">${column.icon}</span>
+                            ${column.title}
+                            <button class="add-task-btn" onclick="window.activeModule.showAddDialog('${column.id}')" title="新增任務">+</button>
+                        </div>
+                        <div class="column-count">${tasks.length}</div>
                     </div>
-                    <p class="empty-text">還沒有任務</p>
-                    <p class="empty-hint">點擊右上角新增按鈕建立第一個任務</p>
+                    <div class="column-tasks" 
+                         ondrop="window.activeModule.handleDrop(event, '${column.id}')"
+                         ondragover="window.activeModule.handleDragOver(event)"
+                         ondragleave="window.activeModule.handleDragLeave(event)">
+                        ${tasks.map(task => this.getTaskCard(task)).join('')}
+                    </div>
                 </div>
             `;
-        }
-
-        return this.todos.map(todo => this.getSimpleTaskCard(todo)).join('');
+        }).join('');
     }
 
-    getSimpleTaskCard(todo) {
-        const isCompleted = todo.status === 'completed';
+    getTasksByStatus(status) {
+        return this.todos.filter(todo => todo.status === status);
+    }
+
+    getTaskCard(todo) {
         const tagColors = {
             '報價': '#3b82f6',
             '行程': '#10b981', 
@@ -1063,34 +1064,29 @@ class TodosModule {
         };
 
         return `
-            <div class="task-card ${isCompleted ? 'completed' : ''}" 
+            <div class="task-card" 
                  data-task-id="${todo.id}"
                  draggable="true"
                  ondragstart="window.activeModule.handleDragStart(event, '${todo.id}')">
                 
-                <div class="task-main">
-                    <div class="task-checkbox" onclick="window.activeModule.toggleTaskComplete('${todo.id}')">
-                        ${isCompleted ? '<svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 12l2 2 4-4" stroke="white" stroke-width="3" fill="none"/></svg>' : ''}
-                    </div>
-                    
-                    <div class="task-content">
-                        <div class="task-title">${todo.title}</div>
-                        ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
-                        ${todo.category ? `<div class="task-tags">
-                            <span class="task-tag" style="background: ${tagColors[todo.category] || '#6b7280'}">${todo.category}</span>
-                        </div>` : ''}
-                    </div>
+                <div class="task-content">
+                    <div class="task-title">${todo.title}</div>
+                    ${todo.description ? `<div class="task-description">${todo.description}</div>` : ''}
+                    ${todo.category ? `<div class="task-tags">
+                        <span class="task-tag" style="background: ${tagColors[todo.category] || '#6b7280'}">${todo.category}</span>
+                    </div>` : ''}
+                    ${todo.dueDate ? `<div class="task-due-date">📅 ${new Date(todo.dueDate).toLocaleDateString('zh-TW')}</div>` : ''}
                 </div>
 
                 <div class="task-actions">
                     <button class="task-action-btn" onclick="window.activeModule.editTask('${todo.id}')" title="編輯">
-                        <svg viewBox="0 0 24 24" width="14" height="14">
+                        <svg viewBox="0 0 24 24" width="12" height="12">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" fill="none"/>
                             <path d="m18.5 2.5-1 1L22 8l1-1-1-4.5zM17 4l4 4L10 19H6v-4L17 4z" fill="currentColor"/>
                         </svg>
                     </button>
                     <button class="task-action-btn delete" onclick="window.activeModule.deleteTask('${todo.id}')" title="刪除">
-                        <svg viewBox="0 0 24 24" width="14" height="14">
+                        <svg viewBox="0 0 24 24" width="12" height="12">
                             <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="currentColor" stroke-width="2" fill="none"/>
                         </svg>
                     </button>
@@ -1569,14 +1565,8 @@ class TodosModule {
 
     // 儲存任務
     getStatusFromColumnId(columnId) {
-        const statusMap = {
-            'pending': 'pending',
-            'today': 'pending',
-            'week': 'pending',
-            'completed': 'completed',
-            'project': 'pending'
-        };
-        return statusMap[columnId] || 'pending';
+        // 直接返回欄位ID作為狀態，因為新設計中狀態名稱與欄位ID一致
+        return columnId || 'unorganized';
     }
 
     async saveTask() {
@@ -1718,32 +1708,14 @@ class TodosModule {
         if (!task) return;
         
         // 根據目標欄位更新任務狀態
-        switch (columnId) {
-            case 'pending':
-                task.status = 'pending';
-                task.dueDate = '';
-                break;
-            
-            case 'today':
-                task.status = 'pending';
-                task.dueDate = new Date().toISOString().split('T')[0];
-                break;
-            
-            case 'week':
-                task.status = 'pending';
-                const weekLater = new Date();
-                weekLater.setDate(weekLater.getDate() + 3);
-                task.dueDate = weekLater.toISOString().split('T')[0];
-                break;
-            
-            case 'completed':
-                task.status = 'completed';
-                task.completedAt = new Date().toISOString();
-                break;
-            
-            case 'project':
-                task.status = 'project';
-                break;
+        task.status = columnId;
+        task.updatedAt = new Date().toISOString();
+        
+        // 特殊處理完成狀態
+        if (columnId === 'completed') {
+            task.completedAt = new Date().toISOString();
+        } else {
+            delete task.completedAt;
         }
         
         await this.saveData();
