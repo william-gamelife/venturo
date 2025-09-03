@@ -18,7 +18,8 @@ class TimeboxModule {
         actions: [
             { id:'prevWeek', label:'←', kind:'secondary', onClick:'prevWeek' },
             { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' },
-            { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' }
+            { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' },
+            { id:'timer', label:'🍅 番茄鐘', kind:'primary', onClick:'toggleTimer' }
         ]
     };
 
@@ -148,8 +149,8 @@ class TimeboxModule {
         return `
             <div class="timebox-container">
 
-                <!-- 時間單位選擇器 -->
-                <div class="time-unit-selector-wrapper">
+                <!-- 控制工具列 -->
+                <div class="timebox-controls">
                     <div class="time-unit-selector">
                         <button class="unit-btn ${this.timeUnit === 15 ? 'active' : ''}" 
                                 onclick="window.activeModule.setTimeUnit(15)">15分</button>
@@ -157,6 +158,14 @@ class TimeboxModule {
                                 onclick="window.activeModule.setTimeUnit(30)">30分</button>
                         <button class="unit-btn ${this.timeUnit === 60 ? 'active' : ''}" 
                                 onclick="window.activeModule.setTimeUnit(60)">60分</button>
+                    </div>
+                    
+                    <div class="selection-info" id="selectionInfo" style="display: none;">
+                        <span class="selected-count">已選擇 0 個時段</span>
+                        <div class="selection-buttons">
+                            <button class="edit-selection-btn" onclick="window.activeModule.editSelection()">編輯</button>
+                            <button class="clear-selection-btn" onclick="window.activeModule.clearSelection()">清除</button>
+                        </div>
                     </div>
                 </div>
 
@@ -186,20 +195,68 @@ class TimeboxModule {
                     -ms-user-select: none;
                 }
 
-                /* 時間單位選擇器 */
-                .time-unit-selector-wrapper {
+                /* 控制工具列 */
+                .timebox-controls {
                     display: flex;
-                    justify-content: center;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 16px 20px;
+                    background: var(--card);
+                    border-radius: 16px;
+                    border: 1px solid var(--border);
                     margin-bottom: 16px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
                 }
 
                 .time-unit-selector {
                     display: flex;
-                    background: var(--card);
-                    border-radius: 12px;
-                    padding: 4px;
+                    background: var(--bg);
+                    border-radius: 8px;
+                    padding: 2px;
                     border: 1px solid var(--border);
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                }
+                
+                .selection-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    color: var(--text-muted);
+                    font-size: 0.9rem;
+                }
+                
+                .selection-buttons {
+                    display: flex;
+                    gap: 8px;
+                }
+                
+                .edit-selection-btn {
+                    padding: 4px 12px;
+                    background: var(--primary);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .edit-selection-btn:hover {
+                    background: var(--primary-dark);
+                }
+                
+                .clear-selection-btn {
+                    padding: 4px 12px;
+                    background: var(--danger);
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 0.8rem;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .clear-selection-btn:hover {
+                    background: var(--danger-dark);
                 }
 
                 .unit-btn {
@@ -1331,13 +1388,11 @@ class TimeboxModule {
             grid.addEventListener('selectstart', (e) => e.preventDefault());
             grid.addEventListener('dragstart', (e) => e.preventDefault());
             
-            // 全域鼠標事件
+            // 全域鼠標事件（清理拖拽狀態）
             document.addEventListener('mouseup', () => {
                 if (this.isDragging) {
                     this.isDragging = false;
-                    if (this.selectedTimeSlots.size > 0) {
-                        this.showSlotEditDialog();
-                    }
+                    // 移除自動彈出對話框，避免衝突
                 }
                 if (this.dragTimer) {
                     clearTimeout(this.dragTimer);
@@ -1386,6 +1441,8 @@ class TimeboxModule {
     }
 
     onSlotMouseUp(e, slotKey) {
+        e.stopPropagation();
+        
         if (this.dragTimer) {
             clearTimeout(this.dragTimer);
             this.dragTimer = null;
@@ -1393,8 +1450,9 @@ class TimeboxModule {
         
         if (this.isDragging) {
             this.isDragging = false;
+            // 拖拽結束後顯示選擇數量，不自動彈出對話框
             if (this.selectedTimeSlots.size > 0) {
-                this.showSlotEditDialog();
+                this.updateSlotSelection();
             }
         } else {
             // 單擊事件 - 直接顯示編輯對話框
@@ -1446,11 +1504,29 @@ class TimeboxModule {
                 slot.classList.remove('selected');
             }
         });
+        
+        // 更新選擇信息
+        const selectionInfo = document.getElementById('selectionInfo');
+        if (selectionInfo) {
+            const count = this.selectedTimeSlots.size;
+            if (count > 0) {
+                selectionInfo.style.display = 'flex';
+                selectionInfo.querySelector('.selected-count').textContent = `已選擇 ${count} 個時段`;
+            } else {
+                selectionInfo.style.display = 'none';
+            }
+        }
     }
 
     clearSelection() {
         this.selectedTimeSlots.clear();
         this.updateSlotSelection();
+    }
+
+    editSelection() {
+        if (this.selectedTimeSlots.size > 0) {
+            this.showSlotEditDialog();
+        }
     }
 
     // 顯示時段編輯對話框
