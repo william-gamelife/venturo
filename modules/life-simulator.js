@@ -46,7 +46,7 @@ class LifeSimulatorModule {
 
     getHTML() {
         const g = this.gameState;
-        // const room = this.getRoomConfig(); // 暫時移除不存在的函數
+        const room = this.getRoomConfig();
         
         return `
             <style>
