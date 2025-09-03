@@ -12,12 +12,15 @@ const USERS_STORAGE_UUID = '550e8400-e29b-41d4-a716-446655440001';
 
 class AuthManagerV2 {
     constructor() {
-        if (typeof window.supabase === 'undefined') {
-            console.error('Supabase 未載入');
-            this.supabase = null;
+        // 使用全域單例 Supabase 客戶端
+        this.supabase = window.getSupabaseClient ? window.getSupabaseClient() : null;
+        
+        if (!this.supabase) {
+            console.warn('☁️ AuthManager: 全域 Supabase 客戶端未找到');
         } else {
-            this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            console.log('☁️ AuthManager 已連接到全域 Supabase 客戶端');
         }
+        
         this.cachedUsers = null;
     }
 
