@@ -156,6 +156,7 @@ class TodosModule {
                     display: flex;
                     flex-direction: column;
                     padding: 0;
+                    background: linear-gradient(135deg, #faf9f6 0%, #f5f3ee 100%);
                 }
 
                 /* 看板佈局 */
@@ -163,9 +164,9 @@ class TodosModule {
                     flex: 1;
                     display: grid;
                     grid-template-columns: repeat(5, 1fr);
-                    gap: 16px;
+                    gap: 24px;
                     overflow-x: auto;
-                    padding: 20px;
+                    padding: 32px;
                     min-height: 500px;
                 }
 
@@ -193,22 +194,25 @@ class TodosModule {
 
                 /* 任務卡片 */
                 .task-card {
-                    background: white;
-                    border: 1px solid var(--border);
-                    border-radius: 12px;
-                    padding: 16px;
+                    background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
+                    border: none;
+                    border-radius: 16px;
+                    padding: 20px;
                     display: flex;
-                    align-items: flex-start;
+                    flex-direction: column;
                     gap: 12px;
-                    transition: all 0.2s ease;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                     cursor: grab;
                     position: relative;
+                    box-shadow: 0 4px 20px rgba(45, 55, 72, 0.06);
+                    border: 1px solid rgba(255, 255, 255, 0.4);
                 }
 
                 .task-card:hover {
-                    border-color: var(--primary);
-                    transform: translateY(-1px);
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                    transform: translateY(-4px) scale(1.02);
+                    box-shadow: 0 12px 32px rgba(45, 55, 72, 0.15);
+                    border-color: rgba(201, 169, 97, 0.4);
+                    background: linear-gradient(145deg, #ffffff 0%, #fffefe 100%);
                 }
 
                 .task-card.completed {
@@ -255,22 +259,24 @@ class TodosModule {
                 }
 
                 .task-title {
-                    font-weight: 600;
-                    color: var(--text);
-                    line-height: 1.4;
-                    margin-bottom: 6px;
-                    font-size: 14px;
+                    font-weight: 700;
+                    color: #2d3748;
+                    line-height: 1.3;
+                    margin-bottom: 8px;
+                    font-size: 15px;
+                    letter-spacing: -0.2px;
                 }
 
                 .task-description {
                     font-size: 13px;
-                    color: var(--text-light);
-                    line-height: 1.4;
-                    margin-bottom: 8px;
+                    color: #718096;
+                    line-height: 1.5;
+                    margin-bottom: 12px;
                     display: -webkit-box;
-                    -webkit-line-clamp: 2;
+                    -webkit-line-clamp: 3;
                     -webkit-box-orient: vertical;
                     overflow: hidden;
+                    font-weight: 400;
                 }
 
                 .task-tags {
@@ -281,11 +287,13 @@ class TodosModule {
                 }
 
                 .task-tag {
-                    font-size: 10px;
+                    font-size: 11px;
                     color: white;
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-weight: 500;
+                    padding: 4px 10px;
+                    border-radius: 20px;
+                    font-weight: 600;
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                    letter-spacing: 0.2px;
                 }
 
                 .task-due-date {
@@ -329,30 +337,73 @@ class TodosModule {
                 }
 
                 .kanban-column {
-                    background: var(--bg);
-                    border-radius: 12px;
-                    padding: 16px;
+                    background: rgba(255, 255, 255, 0.9);
+                    backdrop-filter: blur(20px);
+                    border-radius: 24px;
+                    padding: 24px;
                     display: flex;
                     flex-direction: column;
-                    min-width: 250px;
+                    min-width: 280px;
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    box-shadow: 0 16px 40px rgba(45, 55, 72, 0.08);
+                    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+                }
+
+                .kanban-column:hover {
+                    transform: translateY(-8px);
+                    box-shadow: 0 24px 60px rgba(45, 55, 72, 0.12);
+                    border-color: rgba(201, 169, 97, 0.3);
                 }
 
                 .column-header {
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    margin-bottom: 16px;
-                    padding-bottom: 12px;
-                    border-bottom: 2px solid var(--border);
+                    margin-bottom: 24px;
+                    padding-bottom: 20px;
+                    border-bottom: 3px solid rgba(201, 169, 97, 0.15);
+                    background: linear-gradient(90deg, transparent 0%, rgba(201, 169, 97, 0.03) 50%, transparent 100%);
+                    border-radius: 8px;
+                    padding: 0 8px 20px 8px;
                 }
 
                 .column-title {
-                    font-weight: 600;
-                    color: var(--text);
+                    font-weight: 800;
+                    color: #2d3748;
                     display: flex;
                     align-items: center;
                     justify-content: space-between;
-                    gap: 8px;
+                    gap: 12px;
+                    font-size: 17px;
+                    letter-spacing: -0.3px;
+                }
+
+                .column-icon {
+                    font-size: 20px;
+                    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+                }
+
+                .add-task-btn {
+                    width: 32px;
+                    height: 32px;
+                    border: none;
+                    background: linear-gradient(135deg, #c9a961 0%, #b8975a 100%);
+                    color: white;
+                    border-radius: 12px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    font-size: 18px;
+                    font-weight: 700;
+                    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+                }
+
+                .add-task-btn:hover {
+                    background: linear-gradient(135deg, #b8975a 0%, #a68650 100%);
+                    transform: translateY(-2px) scale(1.05);
+                    box-shadow: 0 8px 24px rgba(201, 169, 97, 0.4);
                 }
 
                 .add-btn {
@@ -376,12 +427,17 @@ class TodosModule {
                 }
 
                 .column-count {
-                    background: var(--primary-light);
-                    color: var(--primary-dark);
-                    padding: 2px 8px;
-                    border-radius: 12px;
-                    font-size: 0.8rem;
-                    font-weight: 600;
+                    background: linear-gradient(135deg, rgba(201, 169, 97, 0.15) 0%, rgba(201, 169, 97, 0.2) 100%);
+                    color: #c9a961;
+                    padding: 6px 12px;
+                    border-radius: 20px;
+                    font-size: 13px;
+                    font-weight: 800;
+                    border: 2px solid rgba(201, 169, 97, 0.1);
+                    min-width: 28px;
+                    text-align: center;
+                    box-shadow: 0 2px 8px rgba(201, 169, 97, 0.2);
+                    letter-spacing: 0.5px;
                 }
 
                 .column-tasks {
