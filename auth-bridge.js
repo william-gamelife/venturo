@@ -8,8 +8,10 @@ class AuthBridge {
         this.permissionHelper = null;
         this.currentUser = null;
         this.legacyMode = false;
+        this.initialized = false;
         
-        this.initializeSystem();
+        // 延遲初始化，避免阻塞頁面載入
+        setTimeout(() => this.initializeSystem(), 0);
     }
 
     async initializeSystem() {
@@ -20,31 +22,24 @@ class AuthBridge {
                 this.permissionHelper = getPermissionHelper();
                 console.log('🔗 AuthBridge: 新權限系統已連接');
             } else {
-                // 瀏覽器環境，檢查是否有權限資料
-                await this.loadPermissionDataForBrowser();
+                // 瀏覽器環境，直接使用 permission-helper-browser.js
+                if (window.permissionHelper) {
+                    this.permissionHelper = window.permissionHelper;
+                    console.log('🔗 AuthBridge: 瀏覽器權限系統已連接');
+                } else {
+                    throw new Error('瀏覽器權限系統未載入');
+                }
             }
         } catch (error) {
             console.warn('⚠️ AuthBridge: 回退到舊版認證系統', error.message);
             this.legacyMode = true;
             this.initializeLegacyMode();
         }
+        
+        this.initialized = true;
+        console.log('🌉 AuthBridge 初始化完成');
     }
 
-    async loadPermissionDataForBrowser() {
-        try {
-            // 在瀏覽器中載入種子資料
-            const responses = await Promise.all([
-                fetch('./seed-data/users.json').then(r => r.json()),
-                fetch('./seed-data/roles.json').then(r => r.json())
-            ]);
-            
-            this.users = responses[0];
-            this.roles = responses[1];
-            console.log('🌐 AuthBridge: 瀏覽器權限資料已載入');
-        } catch (error) {
-            throw new Error('無法載入權限資料: ' + error.message);
-        }
-    }
 
     initializeLegacyMode() {
         // 回退到原有的使用者資料
@@ -74,9 +69,17 @@ class AuthBridge {
         console.log('🔄 AuthBridge: 舊版模式已啟用');
     }
 
+    // 等待初始化完成
+    async waitForInitialization() {
+        while (!this.initialized) {
+            await new Promise(resolve => setTimeout(resolve, 10));
+        }
+    }
+
     // =============  認證方法 =============
 
     async validateLogin(username, password) {
+        await this.waitForInitialization();
         if (this.permissionHelper && !this.legacyMode) {
             // 使用新權限系統
             return this.permissionHelper.validateUser(username, password);
@@ -122,6 +125,7 @@ class AuthBridge {
     // =============  權限檢查方法 =============
 
     canAccessModule(moduleName) {
+        if (!this.initialized) return false; // 未初始化時禁止存取
         const user = this.getCurrentUser();
         if (!user) return false;
 
@@ -156,6 +160,7 @@ class AuthBridge {
     }
 
     getVisibleModules() {
+        if (!this.initialized) return []; // 未初始化時返回空陣列
         const user = this.getCurrentUser();
         if (!user) return [];
 
