@@ -175,9 +175,9 @@ class TodosModule {
                     flex: 1;
                     display: grid;
                     grid-template-columns: repeat(5, 1fr);
-                    gap: 24px;
+                    gap: 16px;
                     overflow-x: auto;
-                    padding: 0 0 32px 0;
+                    padding: 0 0 24px 0;
                     min-height: 500px;
                 }
 
@@ -208,7 +208,7 @@ class TodosModule {
                     background: linear-gradient(145deg, #ffffff 0%, #fefefe 100%);
                     border: none;
                     border-radius: 16px;
-                    padding: 16px;
+                    padding: 12px;
                     display: flex;
                     align-items: center;
                     gap: 12px;
@@ -216,6 +216,8 @@ class TodosModule {
                     position: relative;
                     box-shadow: 0 4px 20px rgba(45, 55, 72, 0.06);
                     border: 1px solid rgba(255, 255, 255, 0.4);
+                    min-height: 60px;
+                    max-height: 80px;
                 }
 
                 .task-card:hover {
@@ -290,6 +292,57 @@ class TodosModule {
                     flex: 1;
                     cursor: pointer;
                     padding: 4px 0;
+                }
+
+                .task-content-wrapper {
+                    width: 100%;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    overflow: hidden;
+                }
+
+                .task-title {
+                    flex-shrink: 1;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    font-weight: 500;
+                    color: var(--text);
+                    line-height: 1.4;
+                }
+
+                .task-tags-inline {
+                    display: flex;
+                    gap: 4px;
+                    flex-shrink: 0;
+                    align-items: center;
+                }
+
+                .task-tag-mini {
+                    display: inline-block;
+                    background: rgba(201, 169, 97, 0.1);
+                    color: var(--primary-dark);
+                    padding: 2px 6px;
+                    border-radius: 12px;
+                    font-size: 11px;
+                    font-weight: 500;
+                    line-height: 1.2;
+                    max-width: 60px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+
+                .task-tag-more {
+                    display: inline-block;
+                    background: rgba(201, 169, 97, 0.2);
+                    color: var(--primary-dark);
+                    padding: 2px 6px;
+                    border-radius: 12px;
+                    font-size: 10px;
+                    font-weight: 600;
+                    line-height: 1.2;
                 }
 
                 .task-actions-elegant {
@@ -429,11 +482,11 @@ class TodosModule {
                 .kanban-column {
                     background: rgba(255, 255, 255, 0.9);
                     backdrop-filter: blur(20px);
-                    border-radius: 24px;
-                    padding: 24px;
+                    border-radius: 20px;
+                    padding: 18px;
                     display: flex;
                     flex-direction: column;
-                    min-width: 280px;
+                    min-width: 200px;
                     border: 1px solid rgba(255, 255, 255, 0.2);
                     box-shadow: 0 16px 40px rgba(45, 55, 72, 0.08);
                     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -2077,11 +2130,13 @@ class TodosModule {
                 </div>
                 
                 <div class="task-card-content" onclick="window.activeModule.expandTask('${task.id}')">
-                    <div class="task-title">${task.title}</div>
-                    ${task.tags && task.tags.length > 0 ? `<div class="task-tags-simple">
-                        ${task.tags.slice(0, 3).map(tag => `<span class="task-tag-simple">${tag}</span>`).join('')}
-                        ${task.tags.length > 3 ? `<span class="task-tag-more">+${task.tags.length - 3}</span>` : ''}
-                    </div>` : ''}
+                    <div class="task-content-wrapper">
+                        <div class="task-title">${task.title}</div>
+                        ${task.tags && task.tags.length > 0 ? `<div class="task-tags-inline">
+                            ${task.tags.slice(0, 2).map(tag => `<span class="task-tag-mini">${tag}</span>`).join('')}
+                            ${task.tags.length > 2 ? `<span class="task-tag-more">+${task.tags.length - 2}</span>` : ''}
+                        </div>` : ''}
+                    </div>
                 </div>
                 
                 <div class="task-actions-elegant">
