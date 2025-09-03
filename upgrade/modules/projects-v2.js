@@ -432,7 +432,7 @@ class ProjectsModuleV2 {
     }
 
     renderTaskTree(tasks, level = 0) {
-        if (!tasks || tasks.length === 0) return '';
+        if (!tasks || tasks.length === 0) return '<p style="color: #999; padding: 10px;">沒有子任務</p>';
         
         return tasks.map(task => {
             const isGroup = task.subtasks && task.subtasks.length > 0;
@@ -441,7 +441,7 @@ class ProjectsModuleV2 {
             if (isGroup) {
                 return `
                     <div class="task-group">
-                        <div class="task-group-header">${task.name}</div>
+                        <div class="task-group-header">${task.name || '未命名群組'}</div>
                         ${this.renderTaskTree(task.subtasks, level + 1)}
                     </div>
                 `;
@@ -454,8 +454,12 @@ class ProjectsModuleV2 {
                                ${task.completed ? 'checked' : ''}
                                ${canEdit ? '' : 'disabled'}
                                onchange="window.activeModule.toggleTask('${task.id}')">
-                        <span class="task-name">${task.name}</span>
-                        ${task.assignee ? `<span class="task-assignee">${task.assignee}</span>` : ''}
+                        <span class="task-name">${task.name || task.title || '未命名任務'}</span>
+                        ${task.assignee ? `
+                            <span class="task-assignee" onclick="window.activeModule.reassignTask('${task.id}')">${task.assignee}</span>
+                        ` : `
+                            <button class="assign-btn" onclick="window.activeModule.assignTask('${task.id}')">指派</button>
+                        `}
                         ${task.completed_at ? `<span class="task-date">✓ ${new Date(task.completed_at).toLocaleDateString()}</span>` : ''}
                     </div>
                 `;
@@ -777,6 +781,50 @@ class ProjectsModuleV2 {
         await this.saveData();
         await this.render(this.currentUser.uuid);
         this.showToast('專案已刪除', 'success');
+    }
+
+    assignTask(taskId) {
+        const users = ['william', 'carson', 'jess', 'kai'];
+        const dialog = document.createElement('div');
+        dialog.className = 'modal-overlay';
+        dialog.innerHTML = `
+            <div class="modal" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); z-index: 10000;">
+                <h3>指派任務給：</h3>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin: 20px 0;">
+                    ${users.map(user => `
+                        <button onclick="window.activeModule.doAssign('${taskId}', '${user}')" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px; cursor: pointer; hover: background: #f0f0f0;">
+                            ${user}
+                        </button>
+                    `).join('')}
+                </div>
+                <button onclick="this.closest('.modal-overlay').remove()" style="padding: 8px 16px; background: #e5e7eb; border: none; border-radius: 6px; cursor: pointer;">取消</button>
+            </div>
+            <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;" onclick="this.parentElement.remove()"></div>
+        `;
+        document.body.appendChild(dialog);
+    }
+
+    async doAssign(taskId, userName) {
+        // 更新任務
+        for (const project of this.projects) {
+            const task = this.findTaskInTree(project.tasks, taskId);
+            if (task) {
+                task.assignee = userName;
+                break;
+            }
+        }
+        
+        // 儲存並重新渲染
+        await this.saveData();
+        await this.render(this.currentUser.uuid);
+        
+        // 關閉對話框
+        document.querySelector('.modal-overlay').remove();
+        this.showToast(`任務已指派給 ${userName}`, 'success');
+    }
+
+    reassignTask(taskId) {
+        this.assignTask(taskId);
     }
 
     destroy() {

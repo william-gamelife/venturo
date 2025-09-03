@@ -327,6 +327,40 @@ class TodosModuleV2 {
                     transform: rotate(5deg);
                 }
 
+                .project-task {
+                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+                    border-left: 3px solid #667eea;
+                    opacity: 0.8;
+                }
+
+                .project-task:hover {
+                    opacity: 1;
+                }
+
+                .project-indicator {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 4px 8px;
+                    background: rgba(102, 126, 234, 0.1);
+                    margin: -12px -12px 8px -12px;
+                    border-radius: 8px 8px 0 0;
+                }
+
+                .project-badge {
+                    font-size: 11px;
+                    font-weight: bold;
+                    color: #667eea;
+                }
+
+                .project-lock {
+                    font-size: 12px;
+                }
+
+                .project-task .todo-checkbox {
+                    display: none;
+                }
+
                 .todo-content {
                     display: flex;
                     align-items: flex-start;
@@ -484,7 +518,7 @@ class TodosModuleV2 {
                     </button>
                 </div>
                 <div class="column-items" ondrop="window.activeModule.handleDrop(event)" ondragover="window.activeModule.handleDragOver(event)">
-                    ${items.map(item => this.renderTodoItem(item)).join('')}
+                    ${items.map(item => this.renderTodoItem(item, column.id)).join('')}
                     <div class="add-todo-btn" onclick="window.activeModule.addTodo('${column.id}')">
                         + 新增任務
                     </div>
@@ -494,27 +528,42 @@ class TodosModuleV2 {
     }
 
     // 渲染待辦事項
-    renderTodoItem(item) {
-        const tags = (item.tags || []).map(tag => {
-            const tagInfo = this.getTagInfo(tag);
-            return `<span class="todo-tag" style="background: ${tagInfo.color}">${tagInfo.icon} ${tag}</span>`;
-        }).join('');
-
+    renderTodoItem(item, columnId) {
+        const tags = item.tags || [];
+        const isInProject = item.projectId ? true : false;
+        
         return `
-            <div class="todo-item" 
-                 data-id="${item.id}"
-                 draggable="true"
+            <div class="todo-item ${isInProject ? 'project-task' : ''}" 
+                 data-id="${item.id}" 
+                 data-column="${columnId}"
+                 data-project="${item.projectId || ''}"
+                 draggable="${!isInProject}"
                  onclick="window.activeModule.selectItem(this, event)"
                  ondragstart="window.activeModule.handleDragStart(event)">
-                <div class="todo-content">
+                ${isInProject ? `
+                    <div class="project-indicator">
+                        <span class="project-badge">📁 ${item.projectName || '專案'}</span>
+                        <span class="project-lock">🔒</span>
+                    </div>
+                ` : `
                     <input type="checkbox" class="todo-checkbox" ${item.completed ? 'checked' : ''} 
                            onchange="window.activeModule.toggleComplete('${item.id}')">
-                    <div class="todo-text">${item.text}</div>
-                </div>
-                ${tags ? `<div class="todo-tags">${tags}</div>` : ''}
-                <div class="todo-meta">
-                    <span>${new Date(item.created).toLocaleDateString()}</span>
-                    <span>${item.priority || 'normal'}</span>
+                `}
+                <div class="todo-content">
+                    <div class="todo-title">${item.title || item.text}</div>
+                    ${tags.length > 0 ? `
+                        <div class="todo-tags">
+                            ${tags.map(tag => {
+                                const tagInfo = this.getTagInfo(tag);
+                                return `<span class="todo-tag" style="background: ${tagInfo.color}">${tagInfo.icon || ''} ${tag}</span>`;
+                            }).join('')}
+                        </div>
+                    ` : ''}
+                    <div class="todo-meta">
+                        <span>${new Date(item.created || item.created_at || Date.now()).toLocaleDateString()}</span>
+                        ${item.due_date ? `<span>📅 ${new Date(item.due_date).toLocaleDateString()}</span>` : ''}
+                        ${item.assignee ? `<span class="assignee">👤 ${item.assignee}</span>` : ''}
+                        <span>${item.priority || 'normal'}</span>
                 </div>
             </div>
         `;
@@ -861,11 +910,67 @@ class TodosModuleV2 {
         }
     }
 
-    batchProject() {
-        // 轉為專案功能 - 需要與 projects-v2 模組整合
-        if (confirm(`將選中的 ${this.selectedItems.size} 個任務轉為專案？`)) {
-            // TODO: 整合專案模組
-            alert('專案轉換功能將在專案模組中實現');
+    async batchProject() {
+        const selected = document.querySelectorAll('.todo-item.selected');
+        if (selected.length === 0) {
+            this.showToast('請先選擇任務', 'warning');
+            return;
+        }
+        
+        // 檢查是否有專案任務
+        const hasProjectTasks = Array.from(selected).some(el => el.dataset.project);
+        if (hasProjectTasks) {
+            this.showToast('已在專案中的任務無法重複轉換', 'warning');
+            return;
+        }
+        
+        const projectName = prompt('輸入專案名稱：');
+        if (!projectName) return;
+        
+        // 收集選中的任務
+        const tasks = [];
+        selected.forEach(item => {
+            const columnId = item.dataset.column;
+            const todo = this.todos[columnId] && this.todos[columnId].find(t => t.id === item.dataset.id);
+            if (todo) {
+                tasks.push(todo);
+            }
+        });
+        
+        if (tasks.length === 0) {
+            this.showToast('找不到有效任務', 'error');
+            return;
+        }
+        
+        // 呼叫橋接器建立專案
+        try {
+            const bridgeModule = await import('./task-bridge-v2.js');
+            const bridge = new bridgeModule.TaskBridgeV2();
+            await bridge.initSyncManager();
+            
+            const project = await bridge.createProjectFromTodos(tasks, projectName, this.currentUser.uuid);
+            
+            // 標記任務為專案任務
+            for (const task of tasks) {
+                const column = Object.keys(this.todos).find(col => 
+                    this.todos[col] && this.todos[col].some(t => t.id === task.id)
+                );
+                if (column) {
+                    const todoItem = this.todos[column].find(t => t.id === task.id);
+                    if (todoItem) {
+                        todoItem.projectId = project.id;
+                        todoItem.projectName = projectName;
+                    }
+                }
+            }
+            
+            await this.saveTodos();
+            await this.render(this.currentUser.uuid);
+            this.clearSelection();
+            this.showToast(`已建立專案「${projectName}」`, 'success');
+        } catch (error) {
+            console.error('建立專案失敗:', error);
+            this.showToast('建立專案失敗', 'error');
         }
     }
 
