@@ -4,17 +4,37 @@
  */
 
 class CalendarModule {
-    // SignageHost 招牌資料
-    static signage = {
-        title: '行事曆',
-        subtitle: '時間管理與行程安排',
-        iconSVG: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="16" r="2" fill="currentColor"/></svg>',
-        actions: [
-            { id:'prev',  label:'〈',    kind:'secondary', onClick:'previousMonth' },
-            { id:'today', label:'今天',  kind:'secondary', onClick:'goToToday' },
-            { id:'next',  label:'〉',    kind:'secondary', onClick:'nextMonth' }
-        ]
-    };
+    // SignageHost 招牌資料 - 新版招牌格式
+    static getSignage() {
+        return {
+            name: '行事曆',
+            tagline: 'Calendar',
+            description: '時間管理與行程安排',
+            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="12" cy="16" r="2" fill="currentColor"/></svg>',
+            primaryActions: [
+                { 
+                    id: 'today', 
+                    label: '今天',
+                    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+                    onclick: 'activeModule.goToToday()'
+                }
+            ],
+            secondaryActions: [
+                { 
+                    id: 'prev', 
+                    label: '上月',
+                    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>',
+                    onclick: 'activeModule.previousMonth()'
+                },
+                { 
+                    id: 'next', 
+                    label: '下月',
+                    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>',
+                    onclick: 'activeModule.nextMonth()'
+                }
+            ]
+        };
+    }
 
     static moduleInfo = {
         name: '行事曆',

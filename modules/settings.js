@@ -5,12 +5,16 @@
  */
 
 class SettingsModule {
-    // SignageHost 招牌資料 - 新版招牌格式
+    // SignageHost 招牌資料 - 新版招牌格式（支援主題）
     static getSignage() {
         return {
             name: '系統設定',
             tagline: 'System Settings',
             description: '個人化設定與偏好管理',
+            version: '3.0.0',
+            author: 'william',
+            themeSupport: true,
+            mobileSupport: true,
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>',
             primaryActions: [
                 { 
@@ -26,24 +30,17 @@ class SettingsModule {
                     label: '重置設定',
                     icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1,4 1,10 7,10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>',
                     onclick: 'activeModule.resetSettings()'
+                },
+                { 
+                    id: 'permissions', 
+                    label: '權限管理',
+                    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+                    onclick: 'activeModule.showPermissionManager()'
                 }
             ]
         };
     }
 
-    // 靜態資訊（必填）- 相容舊版招牌
-    static moduleInfo = {
-        name: '系統設定',
-        subtitle: '個人化設定與偏好管理',
-        icon: `<svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="currentColor" stroke-width="2"/>
-                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" stroke="currentColor" stroke-width="2"/>
-               </svg>`,
-        version: '3.0.0',
-        author: 'william',
-        themeSupport: true,
-        mobileSupport: true
-    };
     constructor() {
         this.syncManager = null;
         this.userId = null;
@@ -140,76 +137,7 @@ class SettingsModule {
                         </div>
                     </div>
 
-                    <!-- 同步設定 -->
-                    <div class="setting-section" style="background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow);">
-                        <h3 style="margin: 0 0 16px 0; color: var(--accent); font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="23 4 23 10 17 10"></polyline>
-                                <polyline points="1 20 1 14 7 14"></polyline>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                            同步設定
-                        </h3>
-                        
-                        <div class="setting-item" style="margin-bottom: 20px;">
-                            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: var(--text); font-size: 14px;">同步間隔</label>
-                            <select id="syncIntervalSelect" onchange="window.activeModule.updateSetting('sync_interval', parseInt(this.value))"
-                                    style="width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; background: white;">
-                                <option value="15">15秒（快速）</option>
-                                <option value="30">30秒（預設）</option>
-                                <option value="60">1分鐘</option>
-                                <option value="300">5分鐘</option>
-                            </select>
-                            <p style="margin: 8px 0 0 0; font-size: 12px; color: var(--text-light);">設定資料與雲端同步的頻率</p>
-                        </div>
 
-                        <div class="setting-item">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <input type="checkbox" id="autoSave" onchange="window.activeModule.updatePreference('auto_save', this.checked)"
-                                       style="width: 16px; height: 16px; accent-color: var(--primary);" checked>
-                                <label for="autoSave" style="font-weight: 500; color: var(--text); font-size: 14px; cursor: pointer;">自動儲存</label>
-                            </div>
-                            <p style="margin: 8px 0 0 28px; font-size: 12px; color: var(--text-light);">變更時立即儲存到雲端</p>
-                        </div>
-                    </div>
-
-                    <!-- 通知設定 -->
-                    <div class="setting-section" style="background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow);">
-                        <h3 style="margin: 0 0 16px 0; color: var(--text); font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                            </svg>
-                            通知設定
-                        </h3>
-                        
-                        <div class="setting-item" style="margin-bottom: 16px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <input type="checkbox" id="browserNotifications" onchange="window.activeModule.updateNotification('browser', this.checked)"
-                                       style="width: 16px; height: 16px; accent-color: var(--primary);" checked>
-                                <label for="browserNotifications" style="font-weight: 500; color: var(--text); font-size: 14px; cursor: pointer;">瀏覽器通知</label>
-                            </div>
-                            <p style="margin: 8px 0 0 28px; font-size: 12px; color: var(--text-light);">在瀏覽器中顯示通知訊息</p>
-                        </div>
-
-                        <div class="setting-item" style="margin-bottom: 16px;">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <input type="checkbox" id="soundNotifications" onchange="window.activeModule.updateNotification('sound', this.checked)"
-                                       style="width: 16px; height: 16px; accent-color: var(--primary);" checked>
-                                <label for="soundNotifications" style="font-weight: 500; color: var(--text); font-size: 14px; cursor: pointer;">音效提醒</label>
-                            </div>
-                            <p style="margin: 8px 0 0 28px; font-size: 12px; color: var(--text-light);">操作時播放提示音效</p>
-                        </div>
-
-                        <div class="setting-item">
-                            <div style="display: flex; align-items: center; gap: 12px;">
-                                <input type="checkbox" id="desktopNotifications" onchange="window.activeModule.updateNotification('desktop', this.checked)"
-                                       style="width: 16px; height: 16px; accent-color: var(--primary);">
-                                <label for="desktopNotifications" style="font-weight: 500; color: var(--text); font-size: 14px; cursor: pointer;">桌面通知</label>
-                            </div>
-                            <p style="margin: 8px 0 0 28px; font-size: 12px; color: var(--text-light);">即使在其他應用程式中也顯示通知</p>
-                        </div>
-                    </div>
 
                     <!-- 模組排序 -->
                     <div class="setting-section" style="background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow);">
@@ -254,9 +182,9 @@ class SettingsModule {
                             <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px;">
                                 <span>版本：</span><span style="font-weight: 600; color: var(--text);">遊戲人生 3.0</span>
                                 <span>架構：</span><span>純雲端 + UUID隔離</span>
-                                <span>同步：</span><span id="currentSyncInterval">30秒</span>
+                                <span>部署時間：</span><span id="deploymentTime">${this.getDeploymentTime()}</span>
                                 <span>使用者ID：</span><span style="font-family: monospace; font-size: 11px;" id="userUUID">${this.userId}</span>
-                                <span>最後同步：</span><span id="lastSyncTime">尚未同步</span>
+                                <span>資料同步：</span><span id="lastSyncTime">尚未同步</span>
                                 <span>儲存狀態：</span><span style="color: var(--accent); font-weight: 600;">雲端已同步</span>
                             </div>
                         </div>
@@ -429,7 +357,7 @@ class SettingsModule {
                         compact_mode: false,
                         dark_sidebar: false
                     },
-                    module_order: ['overview', 'todos', 'calendar', 'finance', 'projects', 'travel-pdf', 'timebox', 'settings'],
+                    module_order: ['overview', 'todos', 'calendar', 'finance', 'projects', 'life-simulator', 'timebox', 'settings'],
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 };
@@ -648,12 +576,12 @@ class SettingsModule {
             { id: 'calendar', name: '行事曆', subtitle: '時間管理｜日程安排與提醒', icon: 'M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z' },
             { id: 'finance', name: '金流', subtitle: '財務管理｜收支記錄與分析', icon: 'M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6' },
             { id: 'projects', name: '專案管理', subtitle: '市政廳｜容器、報表與總覽', icon: 'M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z' },
-            { id: 'travel-pdf', name: '旅遊PDF', subtitle: '行程規劃｜PDF產生與管理', icon: 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z' },
+            { id: 'life-simulator', name: '人生模擬器', subtitle: '遊戲化任務｜經營你的虛擬人生', icon: 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM9 11.25c0-.69.56-1.25 1.25-1.25S11.5 10.56 11.5 11.25 10.94 12.5 10.25 12.5 9 11.94 9 11.25zM15 11.25c0-.69.56-1.25 1.25-1.25S17.5 10.56 17.5 11.25 16.94 12.5 16.25 12.5 15 11.94 15 11.25zM8 14s1.5 2 4 2 4-2 4-2' },
             { id: 'timebox', name: '時間盒', subtitle: '時間區塊｜專注力管理工具', icon: 'M12 2v20m8-8H4' },
             { id: 'settings', name: '系統設定', subtitle: '控制中心｜個人化設定與偏好管理', icon: 'M12 15a3 3 0 100-6 3 3 0 000 6z' }
         ];
 
-        const currentOrder = this.settings.module_order || ['overview', 'todos', 'calendar', 'finance', 'projects', 'travel-pdf', 'timebox', 'settings'];
+        const currentOrder = this.settings.module_order || ['overview', 'todos', 'calendar', 'finance', 'projects', 'life-simulator', 'timebox', 'settings'];
         const container = document.getElementById('moduleOrderList');
         
         if (!container) return;
@@ -772,7 +700,7 @@ class SettingsModule {
     async resetModuleOrder() {
         if (!confirm('確定要重置模組順序為預設值嗎？')) return;
         
-        const defaultOrder = ['overview', 'todos', 'calendar', 'finance', 'projects', 'travel-pdf', 'timebox', 'settings'];
+        const defaultOrder = ['overview', 'todos', 'calendar', 'finance', 'projects', 'life-simulator', 'timebox', 'settings'];
         this.settings.module_order = defaultOrder;
         this.settings.updated_at = new Date().toISOString();
         
@@ -793,6 +721,25 @@ class SettingsModule {
             const v = c == 'x' ? r : (r & 0x3 | 0x8);
             return v.toString(16);
         });
+    }
+
+    // 取得部署時間（系統建置時間）
+    getDeploymentTime() {
+        // 這裡可以設定為實際的部署時間
+        // 目前使用檔案載入時間作為參考
+        const buildTime = new Date('2025-01-03T10:36:00+08:00'); // 可以替換為實際部署時間
+        const now = new Date();
+        const diffMinutes = Math.floor((now - buildTime) / (1000 * 60));
+        
+        if (diffMinutes < 60) {
+            return `${diffMinutes} 分鐘前`;
+        } else if (diffMinutes < 1440) { // 24小時
+            const hours = Math.floor(diffMinutes / 60);
+            return `${hours} 小時前`;
+        } else {
+            const days = Math.floor(diffMinutes / 1440);
+            return `${days} 天前`;
+        }
     }
 }
 

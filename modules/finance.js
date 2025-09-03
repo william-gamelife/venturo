@@ -17,7 +17,6 @@ class FinanceModule {
         subtitle: '個人財務規劃與記錄',
         iconSVG: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
         actions: [
-            { id: 'addTransaction', label: '新增交易', kind: 'primary', onClick: 'showAddDialog' },
             { id: 'overview', label: '總覽', kind: 'secondary', onClick: 'switchToOverview' },
             { id: 'company', label: '公司代墊款', kind: 'secondary', onClick: 'switchToCompany' },
             { id: 'transactions', label: '交易記錄', kind: 'secondary', onClick: 'switchToTransactions' },
@@ -49,6 +48,8 @@ class FinanceModule {
         this.goals = [];
         this.currentView = 'overview';
         this.currentMonth = new Date();
+        this.currentPeriod = 'month';  // 新增：用於總覽的時間週期切換
+        this.currentAdvanceStatus = 'all';  // 新增：用於公司代墊款的狀態切換
         this.categories = {
             income: [
                 { id: 'salary', name: '薪資', color: '#22c55e', icon: '$' },
@@ -219,10 +220,28 @@ class FinanceModule {
 
     getOverviewContent() {
         return `
+            <!-- 控制工具列 -->
+            <div class="finance-controls">
+                <div class="period-selector">
+                    <button class="period-btn ${this.currentPeriod === 'week' ? 'active' : ''}" 
+                            onclick="window.activeModule.setPeriod('week')">週</button>
+                    <button class="period-btn ${this.currentPeriod === 'month' ? 'active' : ''}" 
+                            onclick="window.activeModule.setPeriod('month')">月</button>
+                    <button class="period-btn ${this.currentPeriod === 'quarter' ? 'active' : ''}" 
+                            onclick="window.activeModule.setPeriod('quarter')">季</button>
+                    <button class="period-btn ${this.currentPeriod === 'year' ? 'active' : ''}" 
+                            onclick="window.activeModule.setPeriod('year')">年</button>
+                </div>
+                
+                <button class="btn-add-transaction" onclick="window.activeModule.showAddDialog()">
+                    <span>+</span> 新增交易
+                </button>
+            </div>
+
             <div class="overview-grid">
                 <!-- 收支圖表 -->
                 <div class="chart-card">
-                    <h3>本月收支分析</h3>
+                    <h3>本${this.getPeriodLabel()}收支分析</h3>
                     <canvas id="monthlyChart"></canvas>
                 </div>
                 
@@ -234,7 +253,7 @@ class FinanceModule {
                 
                 <!-- 趨勢圖 -->
                 <div class="chart-card full-width">
-                    <h3>收支趨勢（近6個月）</h3>
+                    <h3>收支趨勢（近${this.currentPeriod === 'week' ? '12週' : this.currentPeriod === 'month' ? '6個月' : this.currentPeriod === 'quarter' ? '4季' : '3年'}）</h3>
                     <canvas id="trendChart"></canvas>
                 </div>
                 
@@ -316,6 +335,24 @@ class FinanceModule {
         const totalAdvance = companyAdvances.reduce((sum, t) => sum + t.amount, 0);
         
         return `
+            <!-- 控制工具列 -->
+            <div class="finance-controls">
+                <div class="status-selector">
+                    <button class="period-btn ${this.currentAdvanceStatus === 'all' ? 'active' : ''}" 
+                            onclick="window.activeModule.setAdvanceStatus('all')">全部</button>
+                    <button class="period-btn ${this.currentAdvanceStatus === 'pending' ? 'active' : ''}" 
+                            onclick="window.activeModule.setAdvanceStatus('pending')">待請款</button>
+                    <button class="period-btn ${this.currentAdvanceStatus === 'claimed' ? 'active' : ''}" 
+                            onclick="window.activeModule.setAdvanceStatus('claimed')">已請款</button>
+                    <button class="period-btn ${this.currentAdvanceStatus === 'completed' ? 'active' : ''}" 
+                            onclick="window.activeModule.setAdvanceStatus('completed')">已入帳</button>
+                </div>
+                
+                <button class="btn-add-transaction" onclick="window.activeModule.showAddDialog()">
+                    <span>+</span> 新增交易
+                </button>
+            </div>
+
             <div class="company-container">
                 <div class="company-summary">
                     <div class="summary-card">
@@ -721,6 +758,29 @@ class FinanceModule {
         this.switchView('assets');
     }
 
+    // 新增方法：設定時間週期
+    setPeriod(period) {
+        this.currentPeriod = period;
+        this.refresh();
+    }
+
+    // 新增方法：設定代墊款狀態篩選
+    setAdvanceStatus(status) {
+        this.currentAdvanceStatus = status;
+        this.refresh();
+    }
+
+    // 新增方法：取得週期標籤
+    getPeriodLabel() {
+        switch(this.currentPeriod) {
+            case 'week': return '週';
+            case 'month': return '月';
+            case 'quarter': return '季';
+            case 'year': return '年';
+            default: return '月';
+        }
+    }
+
     // 獲取代墊款狀態文字
     getAdvanceStatusText(status) {
         const statusMap = {
@@ -767,6 +827,46 @@ class FinanceModule {
                     flex-direction: column;
                     padding: 20px;
                     gap: 20px;
+                }
+
+                /* 控制工具列樣式（參考 timebox 美化樣式） */
+                .finance-controls {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 16px 20px;
+                    background: var(--card);
+                    border-radius: 16px;
+                    border: 1px solid var(--border);
+                    margin-bottom: 16px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+                }
+
+                .period-selector, .status-selector {
+                    display: flex;
+                    background: var(--bg);
+                    border-radius: 8px;
+                    padding: 2px;
+                    border: 1px solid var(--border);
+                }
+
+                .period-btn {
+                    padding: 6px 12px;
+                    background: transparent;
+                    border: none;
+                    color: var(--text-light);
+                    cursor: pointer;
+                    border-radius: 6px;
+                    font-size: 0.85rem;
+                    transition: all 0.2s;
+                    white-space: nowrap;
+                }
+
+                .period-btn.active {
+                    background: white;
+                    color: var(--primary);
+                    font-weight: 600;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
                 }
 
                 /* 工具列樣式 */
