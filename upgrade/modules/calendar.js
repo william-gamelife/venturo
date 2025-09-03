@@ -194,6 +194,7 @@ class CalendarModule {
                     border-radius: 16px;
                     padding: 20px;
                     border: 1px solid var(--border);
+                    position: relative;
                 }
                 
                 .calendar-grid {
@@ -223,29 +224,42 @@ class CalendarModule {
                 }
 
                 .calendar-event-bars {
-                    position: relative;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
                     display: grid;
                     grid-template-columns: repeat(7, 1fr);
+                    grid-template-rows: repeat(6, 1fr);
                     gap: 1px;
-                    margin-top: 10px;
-                    min-height: 20px;
+                    pointer-events: none;
+                    z-index: 10;
                 }
 
                 .event-bar {
-                    background: var(--primary);
                     color: white;
                     padding: 2px 6px;
                     border-radius: 4px;
                     font-size: 11px;
                     font-weight: 500;
                     cursor: pointer;
-                    margin: 1px 0;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                     height: 18px;
                     display: flex;
                     align-items: center;
+                    pointer-events: auto;
+                    transition: all 0.2s;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                    opacity: 0.95;
+                }
+                
+                .event-bar:hover {
+                    opacity: 1;
+                    transform: translateY(-1px);
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
                 }
                 
                 .calendar-day {
@@ -278,6 +292,81 @@ class CalendarModule {
                 .day-events {
                     margin-top: 4px;
                     font-size: 0.75rem;
+                }
+                
+                /* 全日活動樣式 */
+                .has-allday-event {
+                    position: relative;
+                }
+                
+                .allday-event-label {
+                    position: absolute;
+                    bottom: 8px;
+                    left: 8px;
+                    right: 8px;
+                    padding: 4px 8px;
+                    border-radius: 4px;
+                    font-size: 0.7rem;
+                    font-weight: 500;
+                    text-align: center;
+                    cursor: pointer;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    transition: all 0.2s;
+                }
+                
+                .allday-event-label:hover {
+                    opacity: 0.9;
+                    transform: translateY(-1px);
+                }
+                
+                /* 定時活動樣式 */
+                .timed-event-bar {
+                    margin-bottom: 2px;
+                    padding: 2px 6px;
+                    border-radius: 2px;
+                    cursor: pointer;
+                    font-size: 0.7rem;
+                    line-height: 1.2;
+                    transition: all 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                }
+                
+                .timed-event-bar:hover {
+                    transform: translateX(2px);
+                    opacity: 0.9;
+                }
+                
+                .event-time {
+                    font-weight: 600;
+                    font-size: 0.65rem;
+                    opacity: 0.9;
+                }
+                
+                .event-title-short {
+                    flex: 1;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    font-weight: 500;
+                }
+                
+                .more-events {
+                    margin-top: 2px;
+                    font-size: 0.65rem;
+                    color: var(--text-muted);
+                    font-weight: 500;
+                    padding: 2px 4px;
+                    border-radius: 2px;
+                    transition: all 0.2s;
+                }
+                
+                .more-events:hover {
+                    background: var(--bg-hover);
+                    color: var(--text);
                 }
                 
                 .event-dot {
@@ -535,20 +624,43 @@ class CalendarModule {
             const isToday = date.getTime() === today.getTime();
             const isCurrentMonth = date.getMonth() === currentMonth;
             const dayEvents = this.getEventsForDate(date).filter(e => !e.multiDay && !e.startDate);
+            const allDayEvents = dayEvents.filter(e => e.allDay);
+            const timedEvents = dayEvents.filter(e => !e.allDay);
+            
+            // 判斷是否有全日活動來決定背景樣式
+            const hasAllDayEvent = allDayEvents.length > 0;
+            const allDayColor = hasAllDayEvent ? this.getPriorityColor(allDayEvents[0].priority) : '';
             
             html += `
-                <div class="calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}"
+                <div class="calendar-day ${isToday ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''} ${hasAllDayEvent ? 'has-allday-event' : ''}"
+                     style="${hasAllDayEvent ? `background: ${allDayColor}15; border: 2px solid ${allDayColor}` : ''}"
                      onclick="window.activeModule.selectDate('${date.toISOString()}')">
-                    <div class="day-number">${date.getDate()}</div>
+                    <div class="day-number" style="${hasAllDayEvent ? `color: ${allDayColor}; font-weight: bold;` : ''}">${date.getDate()}</div>
+                    ${hasAllDayEvent ? `
+                        <div class="allday-event-label" 
+                             style="background: ${allDayColor}; color: white;"
+                             onclick="event.stopPropagation(); window.activeModule.editEvent('${allDayEvents[0].id}')"
+                             title="${allDayEvents[0].title}">
+                            ${allDayEvents[0].title}
+                            ${allDayEvents.length > 1 ? ` +${allDayEvents.length - 1}` : ''}
+                        </div>
+                    ` : ''}
                     <div class="day-events">
-                        ${dayEvents.slice(0, 3).map(event => `
-                            <div class="event-dot" 
-                                 style="background: ${this.getPriorityColor(event.priority)}" 
-                                 onclick="event.stopPropagation(); window.activeModule.editEvent('${event.id}')" 
-                                 title="${event.title}">
-                            </div>
-                        `).join('')}
-                        ${dayEvents.length > 3 ? `<span onclick="event.stopPropagation(); window.activeModule.showDayEvents('${date.toISOString().split('T')[0]}')" style="cursor: pointer;">+${dayEvents.length - 3}</span>` : ''}
+                        ${timedEvents.slice(0, 3).map(event => {
+                            const eventColor = this.getPriorityColor(event.priority);
+                            const timeDisplay = event.startDateTime ? 
+                                new Date(event.startDateTime).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' }) : '';
+                            return `
+                                <div class="timed-event-bar" 
+                                     style="border-left: 4px solid ${eventColor}; background: ${eventColor}08; color: ${eventColor};"
+                                     onclick="event.stopPropagation(); window.activeModule.editEvent('${event.id}')" 
+                                     title="${event.title}">
+                                    <span class="event-time">${timeDisplay}</span>
+                                    <span class="event-title-short">${event.title}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                        ${timedEvents.length > 3 ? `<div class="more-events" onclick="event.stopPropagation(); window.activeModule.showDayEvents('${date.toISOString().split('T')[0]}')" style="cursor: pointer;">+${timedEvents.length - 3} 更多</div>` : ''}
                     </div>
                 </div>
             `;

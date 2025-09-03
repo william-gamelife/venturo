@@ -1171,6 +1171,7 @@ class TimeboxModule {
     calculateWeekStats() {
         const tasks = new Map();  // 以taskId為鍵的任務集合
         let todaySlots = 0;
+        let todayCompletedTasks = 0;
         const activityHours = {};
         const today = this.formatDate(new Date());
         
@@ -1195,9 +1196,13 @@ class TimeboxModule {
                     });
                 }
                 
-                // 今日待辦
-                if (key.startsWith(today) && !slot.completed) {
-                    todaySlots++;
+                // 今日統計
+                if (key.startsWith(today)) {
+                    if (slot.completed) {
+                        todayCompletedTasks++;
+                    } else {
+                        todaySlots++;
+                    }
                 }
             }
         }
@@ -1237,7 +1242,8 @@ class TimeboxModule {
         }
         
         // 計算今日和本週完成率
-        const dailyCompletionRate = todayPlannedTasks > 0 ? Math.round(todayCompletedTasks / todayPlannedTasks * 100) : 0;
+        const todayTotalTasks = todayCompletedTasks + todaySlots;
+        const dailyCompletionRate = todayTotalTasks > 0 ? Math.round(todayCompletedTasks / todayTotalTasks * 100) : 0;
         const weeklyCompletionRate = plannedTasks > 0 ? Math.round(completedTasks / plannedTasks * 100) : 0;
         
         return {
