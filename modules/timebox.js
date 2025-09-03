@@ -19,7 +19,7 @@ class TimeboxModule {
             { id:'prevWeek', label:'←', kind:'secondary', onClick:'prevWeek' },
             { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' },
             { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' },
-            { id:'activities', label:'📝 活動管理', kind:'secondary', onClick:'openActivityTypes' },
+            { id:'activities', label:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> 活動管理', kind:'secondary', onClick:'openActivityTypes' },
             { id:'timer', label:'🍅 番茄鐘', kind:'primary', onClick:'toggleTimer' }
         ]
     };
@@ -2470,12 +2470,12 @@ class TimeboxModule {
     }
 
     async deleteActivity(index) {
-        if (confirm('確定要刪除此活動類型嗎？')) {
+        this.showConfirm('確定要刪除此活動類型嗎？', async () => {
             this.activityTypes.splice(index, 1);
             await this.saveData();
             this.closeDialog();
             this.showActivityManager(); // 重新開啟顯示更新
-        }
+        });
     }
 
     // 週導航

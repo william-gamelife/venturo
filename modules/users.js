@@ -39,7 +39,7 @@ class UsersModule {
     }
 
     async render(userId) {
-        // ⭐ 必須：第一行設定 activeModule
+        // <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg> 必須：第一行設定 activeModule
         window.activeModule = this;
         
         this.userId = userId;
@@ -262,7 +262,7 @@ class UsersModule {
                 return;
             }
 
-            console.log('☁️ 正在從雲端載入人員資料...');
+            console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 正在從雲端載入人員資料...');
             
             // 使用系統管理員UUID來存取使用者資料（統一管理）
             const SYSTEM_ADMIN_UUID = '550e8400-e29b-41d4-a716-446655440000';
@@ -276,21 +276,21 @@ class UsersModule {
             if (error) {
                 if (error.code === 'PGRST116') {
                     // 資料不存在，初始化預設資料
-                    console.log('🆕 雲端無資料，初始化預設使用者');
+                    console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm0-4h-2V7h2v8z"/></svg> 雲端無資料，初始化預設使用者');
                     this.initDefaultUsers();
                     await this.saveUsersToCloud();
                 } else {
-                    console.error('☁️ 載入失敗:', error);
+                    console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 載入失敗:', error);
                     this.initDefaultUsers();
                 }
             } else if (data && data.data) {
                 this.users = data.data;
-                console.log('✅ 從雲端載入使用者資料:', this.users.length, '筆');
+                console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 從雲端載入使用者資料:', this.users.length, '筆');
                 console.log('使用者列表:', this.users.map(u => u.username));
                 
                 // 檢查是否缺少使用者，如果少於4個就重新初始化
                 if (this.users.length < 4) {
-                    console.log('⚠️ 使用者數量不足，強制重新初始化');
+                    console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 使用者數量不足，強制重新初始化');
                     await this.forceReinitUsers();
                 } else {
                     // 檢查是否缺少特定使用者
@@ -299,7 +299,7 @@ class UsersModule {
                     const missingUsers = expectedUsers.filter(u => !existingUsers.includes(u.toLowerCase()));
                     
                     if (missingUsers.length > 0) {
-                        console.log('⚠️ 缺少使用者:', missingUsers);
+                        console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 缺少使用者:', missingUsers);
                         await this.forceReinitUsers();
                     }
                 }
@@ -307,7 +307,7 @@ class UsersModule {
                 // 清除本地快取（如果存在）
                 this.clearLocalCache();
             } else {
-                console.log('🆕 雲端資料為空，初始化預設使用者');
+                console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm0-4h-2V7h2v8z"/></svg> 雲端資料為空，初始化預設使用者');
                 this.initDefaultUsers();
                 await this.saveUsersToCloud();
             }
@@ -367,7 +367,7 @@ class UsersModule {
                 return;
             }
 
-            console.log('☁️ 正在儲存人員資料到雲端...');
+            console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 正在儲存人員資料到雲端...');
             
             const SYSTEM_ADMIN_UUID = '550e8400-e29b-41d4-a716-446655440000';
             const saveData = {
@@ -386,9 +386,9 @@ class UsersModule {
                 .select();
 
             if (error) {
-                console.error('☁️ 儲存失敗:', error);
+                console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 儲存失敗:', error);
             } else {
-                console.log('✅ 人員資料已儲存到雲端');
+                console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 人員資料已儲存到雲端');
                 // 清除本地快取
                 this.clearLocalCache();
             }
@@ -415,7 +415,7 @@ class UsersModule {
 
     // 強制重新初始化使用者資料
     async forceReinitUsers() {
-        console.log('🔄 強制重新初始化使用者資料...');
+        console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4v6h-6"/><polyline points="1 20v-6h6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> 強制重新初始化使用者資料...');
         
         // 清除所有快取
         this.clearLocalCache();
@@ -426,7 +426,7 @@ class UsersModule {
         // 強制儲存到雲端
         await this.saveUsersToCloud();
         
-        console.log('✅ 使用者資料已重新初始化');
+        console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 使用者資料已重新初始化');
         return true;
     }
 
@@ -564,7 +564,7 @@ class UsersModule {
             
             // 儲存到雲端（不使用本地快取）
             await this.saveUsersToCloud();
-            console.log('✅ 使用者已新增並儲存到雲端');
+            console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 使用者已新增並儲存到雲端');
             
             this.renderUsers();
             this.hideAddDialog();
@@ -880,7 +880,7 @@ class UsersModule {
                     try {
                         // 儲存到雲端（不使用本地快取）
                         await this.saveUsersToCloud();
-                        console.log('✅ 已儲存到 Supabase');
+                        console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 已儲存到 Supabase');
                         
                         // 重新渲染列表
                         this.renderUsers();
@@ -910,8 +910,40 @@ class UsersModule {
         // 4. 更新權限和狀態
         
         // 暫時顯示提示
-        alert('人事異動功能開發中...');
+        this.showToast('人事異動功能開發中...', 'info');
     }
 }
 
-export { UsersModule };
+export { UsersModule 
+    // 模組清理方法 - 符合規範要求
+    destroy() {
+        // 清理事件監聽器
+        if (this.eventListeners) {
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.eventListeners = [];
+        }
+        
+        // 清理定時器
+        if (this.intervals) {
+            this.intervals.forEach(id => clearInterval(id));
+            this.intervals = [];
+        }
+        if (this.timeouts) {
+            this.timeouts.forEach(id => clearTimeout(id));
+            this.timeouts = [];
+        }
+        
+        // 清理資料
+        this.data = null;
+        this.currentUser = null;
+        
+        // 重置 activeModule
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        console.log(`${this.constructor.name} destroyed`);
+    }
+}

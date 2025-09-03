@@ -31,6 +31,7 @@ class TravelPdfModule {
         this.currentUser = null;
         this.pdfFiles = [];
         this.categories = ['機票', '住宿', '行程', '簽證', '保險', '其他'];
+        window.activeModule = this;
     }
 
     async render(uuid) {
@@ -315,7 +316,7 @@ class TravelPdfModule {
 
     // SignageHost 按鈕方法：設定
     showSettings() {
-        alert('設定功能開發中...');
+        this.showToast('設定功能開發中...', 'info');
     }
 
     closeDialog() {
@@ -328,12 +329,12 @@ class TravelPdfModule {
         const category = document.getElementById('pdfCategory').value;
 
         if (!fileInput.files[0]) {
-            alert('請選擇PDF檔案');
+            this.showToast('請選擇PDF檔案', 'info');
             return;
         }
 
         if (!fileName) {
-            alert('請輸入檔案名稱');
+            this.showToast('請輸入檔案名稱', 'info');
             return;
         }
 
@@ -367,4 +368,36 @@ class TravelPdfModule {
 }
 
 // 導出模組
-export { TravelPdfModule };
+export { TravelPdfModule 
+    // 模組清理方法 - 符合規範要求
+    destroy() {
+        // 清理事件監聽器
+        if (this.eventListeners) {
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.eventListeners = [];
+        }
+        
+        // 清理定時器
+        if (this.intervals) {
+            this.intervals.forEach(id => clearInterval(id));
+            this.intervals = [];
+        }
+        if (this.timeouts) {
+            this.timeouts.forEach(id => clearTimeout(id));
+            this.timeouts = [];
+        }
+        
+        // 清理資料
+        this.data = null;
+        this.currentUser = null;
+        
+        // 重置 activeModule
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        console.log(`${this.constructor.name} destroyed`);
+    }
+}

@@ -11,6 +11,28 @@
  */
 
 class FinanceModule {
+    // 符合規範的設施資訊
+    static facilityInfo = {
+        code: 'finance',
+        name: '財務管理',
+        subtitle: '個人財務規劃與記錄',
+        description: '完整的財務管理系統，記錄收支、分析消費習慣、預算規劃一應俱全。',
+        version: '3.0.0',
+        author: 'GameLife Team',
+        icon: '<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>',
+        theme: 'finance',
+        color: '#8B7E9B',
+        support: {
+            theme: true,
+            mobile: true,
+            offline: true
+        },
+        permissions: {
+            public: false,
+            allowedUsers: [],
+            requireAuth: true
+        }
+    };
     // SignageHost 招牌資料
     static signage = {
         title: '財務管理',
@@ -72,6 +94,7 @@ class FinanceModule {
     }
 
     async render(uuid) {
+        // 第一行必須設定 activeModule
         window.activeModule = this;
         this.currentUser = { uuid };
         
@@ -587,7 +610,7 @@ class FinanceModule {
             return `
                 <div class="transaction-item ${t.type}">
                     <div class="transaction-icon" style="background: ${category?.color};">
-                        ${category?.icon || '💰'}
+                        ${category?.icon || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5"/></svg>'}
                     </div>
                     <div class="transaction-info">
                         <div class="transaction-desc">${t.description || category?.name}</div>
@@ -619,7 +642,7 @@ class FinanceModule {
             return `
                 <div class="transaction-item ${t.type}">
                     <div class="transaction-icon" style="background: ${category?.color};">
-                        ${category?.icon || '💰'}
+                        ${category?.icon || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5"/></svg>'}
                     </div>
                     <div class="transaction-info">
                         <div class="transaction-desc">${t.description || category?.name}</div>
@@ -733,8 +756,32 @@ class FinanceModule {
         // 這裡先留空，實際使用時需要引入 Chart.js
     }
 
+    // 清理方法（符合規範）
     destroy() {
+        // 儲存狀態
+        if (this.transactions && this.transactions.length > 0) {
+            this.saveData();
+        }
+        
+        // 清理對話框
         this.closeDialog();
+        
+        // 清理資源
+        this.transactions = null;
+        this.budgets = null;
+        this.investments = null;
+        this.goals = null;
+        this.syncManager = null;
+        this.currentUser = null;
+        
+        // 清除全域參考
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        // 清理所有彈出視窗
+        document.querySelectorAll('.finance-dialog-overlay').forEach(d => d.remove());
+        document.querySelectorAll('.toast').forEach(t => t.remove());
     }
 
     // SignageHost 方法
@@ -825,7 +872,7 @@ class FinanceModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    padding: 20px;
+                    padding: 20px 0;
                     gap: 20px;
                 }
 
@@ -1342,7 +1389,7 @@ class FinanceModule {
                 <div class="company-transaction-item">
                     <div class="transaction-main">
                         <div class="transaction-icon" style="background: ${category?.color};">
-                            ${category?.icon || '💰'}
+                            ${category?.icon || '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5"/></svg>'}
                         </div>
                         <div class="transaction-details">
                             <div class="transaction-desc">${t.description || category?.name}</div>

@@ -15,6 +15,118 @@ class LifeSimulatorModule {
         author: 'william'
     };
 
+    
+    // Toast 通知系統
+    showToast(message, type = 'info', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">
+                    ${type === 'success' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>' : type === 'error' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : 'ⓘ'}
+                </span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+        
+        // 添加樣式（如果尚未存在）
+        if (!document.getElementById('toast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'toast-styles';
+            style.textContent = `
+                .toast {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    min-width: 300px;
+                    padding: 12px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10000;
+                    animation: toastSlideIn 0.3s ease;
+                }
+                .toast-info { background: #e3f2fd; border-left: 4px solid #2196f3; color: #1976d2; }
+                .toast-success { background: #e8f5e8; border-left: 4px solid #4caf50; color: #2e7d32; }
+                .toast-error { background: #ffebee; border-left: 4px solid #f44336; color: #c62828; }
+                .toast-content { display: flex; align-items: center; gap: 8px; }
+                .toast-close { background: none; border: none; font-size: 18px; cursor: pointer; margin-left: auto; }
+                @keyframes toastSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(toast);
+        
+        // 自動移除
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, duration);
+        
+        return toast;
+    }
+
+    // Toast 確認對話框
+    showConfirm(message, onConfirm, onCancel = null) {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <div class="confirm-content">
+                    <h3>確認操作</h3>
+                    <p>${message}</p>
+                    <div class="confirm-actions">
+                        <button class="btn btn-secondary cancel-btn">取消</button>
+                        <button class="btn btn-primary confirm-btn">確定</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 添加樣式
+        if (!document.getElementById('confirm-styles')) {
+            const style = document.createElement('style');
+            style.id = 'confirm-styles';
+            style.textContent = `
+                .confirm-overlay {
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.5); z-index: 10001;
+                    display: flex; align-items: center; justify-content: center;
+                }
+                .confirm-dialog {
+                    background: white; border-radius: 12px; padding: 24px;
+                    min-width: 320px; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                }
+                .confirm-content h3 { margin: 0 0 16px; color: #333; }
+                .confirm-content p { margin: 0 0 24px; color: #666; line-height: 1.5; }
+                .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(overlay);
+        
+        // 事件處理
+        overlay.querySelector('.cancel-btn').onclick = () => {
+            overlay.remove();
+            if (onCancel) onCancel();
+        };
+        
+        overlay.querySelector('.confirm-btn').onclick = () => {
+            overlay.remove();
+            if (onConfirm) onConfirm();
+        };
+        
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                if (onCancel) onCancel();
+            }
+        };
+    }
+
     constructor() {
         this.syncManager = null;
         this.currentUser = null;
@@ -485,15 +597,15 @@ class LifeSimulatorModule {
                             </div>
                         </div>
                         <div class="resources">
-                            <div class="money">💰 $${g.money}</div>
-                            <div class="energy">⚡ ${g.energy}/100</div>
-                            <div class="happiness">😊 ${g.happiness}/100</div>
+                            <div class="money"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5"/></svg> $${g.money}</div>
+                            <div class="energy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg> ${g.energy}/100</div>
+                            <div class="happiness"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> ${g.happiness}/100</div>
                         </div>
                     </div>
 
                     <!-- 遊戲房間 -->
                     <div class="room-container">
-                        <div class="room-name">🏠 ${room.name}</div>
+                        <div class="room-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9L12 2l9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg> ${room.name}</div>
                         <div class="game-canvas" id="gameCanvas">
                             ${this.renderRoom()}
                         </div>
@@ -507,13 +619,13 @@ class LifeSimulatorModule {
                 <div class="side-panel">
                     <!-- 當前目標 -->
                     <div class="quest-panel">
-                        <div class="quest-title">🎯 當前目標</div>
+                        <div class="quest-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> 當前目標</div>
                         ${this.renderQuests()}
                     </div>
 
                     <!-- 可購買項目 -->
                     <div class="shop-panel">
-                        <div class="quest-title">🛍️ 商店</div>
+                        <div class="quest-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1ZM10 6a2 2 0 0 1 4 0v1h-4V6Zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2v10Z"/></svg> 商店</div>
                         ${this.renderShop()}
                     </div>
 
@@ -605,9 +717,9 @@ class LifeSimulatorModule {
                     '#','#','#','D','D','#','#','#'
                 ].join(''),
                 furniture: {
-                    'B': { icon: '🛏️', name: '破舊的床', interactive: true, action: 'sleep' },
-                    'T': { icon: '📺', name: '老電視', interactive: true, action: 'watch' },
-                    'C': { icon: '💻', name: '舊電腦', interactive: true, action: 'work' }
+                    'B': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/></svg>', name: '破舊的床', interactive: true, action: 'sleep' },
+                    'T': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', name: '老電視', interactive: true, action: 'watch' },
+                    'C': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', name: '舊電腦', interactive: true, action: 'work' }
                 },
                 items: {
                     '$': { icon: '💵', name: '錢包', value: 50 }
@@ -628,15 +740,15 @@ class LifeSimulatorModule {
                     '#','#','#','#','D','D','#','#','#','#'
                 ].join(''),
                 furniture: {
-                    'B': { icon: '🛏️', name: '雙人床', interactive: true, action: 'sleep' },
-                    'T': { icon: '📺', name: '大電視', interactive: true, action: 'watch' },
-                    'C': { icon: '💻', name: '工作站', interactive: true, action: 'work' },
-                    'S': { icon: '🛋️', name: '沙發', interactive: true, action: 'relax' },
-                    'K': { icon: '🍳', name: '廚房', interactive: true, action: 'cook' },
-                    'G': { icon: '🎮', name: '遊戲機', interactive: true, action: 'play' }
+                    'B': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/></svg>', name: '雙人床', interactive: true, action: 'sleep' },
+                    'T': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', name: '大電視', interactive: true, action: 'watch' },
+                    'C': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', name: '工作站', interactive: true, action: 'work' },
+                    'S': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M4 18v2"/><path d="M20 18v2"/><path d="M12 4v9"/></svg>', name: '沙發', interactive: true, action: 'relax' },
+                    'K': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>', name: '廚房', interactive: true, action: 'cook' },
+                    'G': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="12" r="1"/><circle cx="17" cy="10" r="1"/><circle cx="17" cy="14" r="1"/></svg>', name: '遊戲機', interactive: true, action: 'play' }
                 },
                 items: {
-                    '$': { icon: '💰', name: '金幣', value: 100 }
+                    '$': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5"/></svg>', name: '金幣', value: 100 }
                 }
             },
             10: {
@@ -658,9 +770,9 @@ class LifeSimulatorModule {
                 furniture: {
                     'B': { icon: '👑', name: '國王床', interactive: true, action: 'sleep' },
                     'T': { icon: '🖥️', name: '家庭影院', interactive: true, action: 'watch' },
-                    'C': { icon: '💻', name: '辦公室', interactive: true, action: 'work' },
-                    'S': { icon: '🛋️', name: '豪華沙發', interactive: true, action: 'relax' },
-                    'K': { icon: '👨‍🍳', name: '專業廚房', interactive: true, action: 'cook' },
+                    'C': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>', name: '辦公室', interactive: true, action: 'work' },
+                    'S': { icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M4 18v2"/><path d="M20 18v2"/><path d="M12 4v9"/></svg>', name: '豪華沙發', interactive: true, action: 'relax' },
+                    'K': { icon: '👨‍<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>', name: '專業廚房', interactive: true, action: 'cook' },
                     'G': { icon: '🕹️', name: '遊戲室', interactive: true, action: 'play' }
                 },
                 items: {
@@ -678,7 +790,7 @@ class LifeSimulatorModule {
     getCharacterSprite() {
         const happiness = this.gameState.happiness;
         if (happiness > 80) return '😎';  // 超開心
-        if (happiness > 60) return '😊';  // 開心
+        if (happiness > 60) return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>';  // 開心
         if (happiness > 40) return '🙂';  // 普通
         if (happiness > 20) return '😐';  // 無聊
         return '😢';  // 難過
@@ -924,7 +1036,7 @@ class LifeSimulatorModule {
             'watch': () => {
                 this.gameState.happiness = Math.min(100, this.gameState.happiness + 20);
                 this.showMessage('看電視放鬆，心情變好了');
-                this.addParticle('📺');
+                this.addParticle('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>');
             },
             'relax': () => {
                 this.gameState.energy += 10;
@@ -941,14 +1053,14 @@ class LifeSimulatorModule {
                 this.gameState.energy += 25;
                 this.gameState.happiness += 10;
                 this.showMessage('做了一頓美食');
-                this.addParticle('🍳');
+                this.addParticle('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="6"/><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>');
             },
             'play': () => {
                 this.gameState.happiness = Math.min(100, this.gameState.happiness + 30);
                 this.gameState.energy -= 10;
                 this.gainExp(10);
                 this.showMessage('玩遊戲好開心！');
-                this.addParticle('🎮');
+                this.addParticle('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="7" cy="12" r="1"/><circle cx="17" cy="10" r="1"/><circle cx="17" cy="14" r="1"/></svg>');
             }
         };
         
@@ -1068,15 +1180,15 @@ class LifeSimulatorModule {
         overlay.className = 'level-up-overlay';
         overlay.innerHTML = `
             <div class="level-up-content">
-                <div class="level-up-title">🎉 LEVEL UP! 🎉</div>
+                <div class="level-up-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="14.77 6.23L14.77 6.23L11.19 9.81 9.55 8.17L5.97 11.75L5.97 11.75L8.4 14.18L12.61 9.97L18.18 15.54 18.18 15.54 15.77 18.1L13.17 15.5 11.53 17.14L14.13 19.74 16.74 17.13 19.35 19.74 21.96 17.13 19.35 14.52 21.96 11.91 19.35 9.3 16.74 11.91 14.13 9.3 11.52 11.91 14.13 14.52 14.77 6.23L14.77 6.23Z"/></svg> LEVEL UP! <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="14.77 6.23L14.77 6.23L11.19 9.81 9.55 8.17L5.97 11.75L5.97 11.75L8.4 14.18L12.61 9.97L18.18 15.54 18.18 15.54 15.77 18.1L13.17 15.5 11.53 17.14L14.13 19.74 16.74 17.13 19.35 19.74 21.96 17.13 19.35 14.52 21.96 11.91 19.35 9.3 16.74 11.91 14.13 9.3 11.52 11.91 14.13 14.52 14.77 6.23L14.77 6.23Z"/></svg></div>
                 <div style="font-size: 48px; margin: 20px 0;">
                     Level ${this.gameState.level}
                 </div>
                 <div class="level-up-rewards">
                     <div>獎勵：</div>
-                    <div>💰 +$${100 * this.gameState.level}</div>
-                    <div>⚡ 能量全滿</div>
-                    <div>😊 快樂全滿</div>
+                    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5"/></svg> +$${100 * this.gameState.level}</div>
+                    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg> 能量全滿</div>
+                    <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> 快樂全滿</div>
                 </div>
                 <button class="level-up-close" onclick="this.parentElement.parentElement.remove()">
                     太棒了！
@@ -1123,14 +1235,14 @@ class LifeSimulatorModule {
         document.querySelector('.level-circle').textContent = this.gameState.level;
         document.querySelector('.exp-fill').style.width = 
             `${(this.gameState.exp / this.getNextLevelExp()) * 100}%`;
-        document.querySelector('.money').textContent = `💰 $${this.gameState.money}`;
-        document.querySelector('.energy').textContent = `⚡ ${this.gameState.energy}/100`;
-        document.querySelector('.happiness').textContent = `😊 ${this.gameState.happiness}/100`;
+        document.querySelector('.money').textContent = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M15 9.5c0-1.5-1.5-2.5-3-2.5s-3 1-3 2.5c0 3 6 1.5 6 4.5 0 1.5-1.5 2.5-3 2.5s-3-1-3-2.5"/></svg> $${this.gameState.money}`;
+        document.querySelector('.energy').textContent = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg> ${this.gameState.energy}/100`;
+        document.querySelector('.happiness').textContent = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg> ${this.gameState.happiness}/100`;
         
         // 更新任務
         const questPanel = document.querySelector('.quest-panel');
         questPanel.innerHTML = `
-            <div class="quest-title">🎯 當前目標</div>
+            <div class="quest-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg> 當前目標</div>
             ${this.renderQuests()}
         `;
     }
@@ -1138,7 +1250,7 @@ class LifeSimulatorModule {
     updateShop() {
         const shopPanel = document.querySelector('.shop-panel');
         shopPanel.innerHTML = `
-            <div class="quest-title">🛍️ 商店</div>
+            <div class="quest-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1ZM10 6a2 2 0 0 1 4 0v1h-4V6Zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2v10Z"/></svg> 商店</div>
             ${this.renderShop()}
         `;
     }

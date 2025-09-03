@@ -4,14 +4,127 @@
  */
 
 class SyncManager {
+    
+    // Toast 通知系統
+    showToast(message, type = 'info', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">
+                    ${type === 'success' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>' : type === 'error' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : 'ⓘ'}
+                </span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+        
+        // 添加樣式（如果尚未存在）
+        if (!document.getElementById('toast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'toast-styles';
+            style.textContent = `
+                .toast {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    min-width: 300px;
+                    padding: 12px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10000;
+                    animation: toastSlideIn 0.3s ease;
+                }
+                .toast-info { background: #e3f2fd; border-left: 4px solid #2196f3; color: #1976d2; }
+                .toast-success { background: #e8f5e8; border-left: 4px solid #4caf50; color: #2e7d32; }
+                .toast-error { background: #ffebee; border-left: 4px solid #f44336; color: #c62828; }
+                .toast-content { display: flex; align-items: center; gap: 8px; }
+                .toast-close { background: none; border: none; font-size: 18px; cursor: pointer; margin-left: auto; }
+                @keyframes toastSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(toast);
+        
+        // 自動移除
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, duration);
+        
+        return toast;
+    }
+
+    // Toast 確認對話框
+    showConfirm(message, onConfirm, onCancel = null) {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <div class="confirm-content">
+                    <h3>確認操作</h3>
+                    <p>${message}</p>
+                    <div class="confirm-actions">
+                        <button class="btn btn-secondary cancel-btn">取消</button>
+                        <button class="btn btn-primary confirm-btn">確定</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 添加樣式
+        if (!document.getElementById('confirm-styles')) {
+            const style = document.createElement('style');
+            style.id = 'confirm-styles';
+            style.textContent = `
+                .confirm-overlay {
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.5); z-index: 10001;
+                    display: flex; align-items: center; justify-content: center;
+                }
+                .confirm-dialog {
+                    background: white; border-radius: 12px; padding: 24px;
+                    min-width: 320px; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                }
+                .confirm-content h3 { margin: 0 0 16px; color: #333; }
+                .confirm-content p { margin: 0 0 24px; color: #666; line-height: 1.5; }
+                .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(overlay);
+        
+        // 事件處理
+        overlay.querySelector('.cancel-btn').onclick = () => {
+            overlay.remove();
+            if (onCancel) onCancel();
+        };
+        
+        overlay.querySelector('.confirm-btn').onclick = () => {
+            overlay.remove();
+            if (onConfirm) onConfirm();
+        };
+        
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                if (onCancel) onCancel();
+            }
+        };
+    }
+
     constructor() {
         // 使用全域單例 Supabase 客戶端
         this.supabase = window.getSupabaseClient ? window.getSupabaseClient() : null;
         
         if (!this.supabase) {
-            console.warn('☁️ 全域 Supabase 客戶端未找到，將僅使用本地儲存');
+            console.warn('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 全域 Supabase 客戶端未找到，將僅使用本地儲存');
+        window.activeModule = this;
         } else {
-            console.log('☁️ SyncManager 已連接到全域 Supabase 客戶端');
+            console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> SyncManager 已連接到全域 Supabase 客戶端');
         }
         
         // localStorage 作為快取
@@ -31,7 +144,7 @@ class SyncManager {
                 return this.saveToLocalStorage(userId, module, data);
             }
 
-            console.log(`☁️ 正在儲存到雲端: ${module} (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 正在儲存到雲端: ${module} (${userId.substring(0, 8)}...)`);
 
             // 準備要儲存的資料
             const saveData = {
@@ -50,13 +163,13 @@ class SyncManager {
                 .select();
 
             if (error) {
-                console.error('☁️ Supabase 儲存失敗:', error);
+                console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Supabase 儲存失敗:', error);
                 // 如果雲端失敗，至少儲存到本地快取
                 this.saveToLocalStorage(userId, module, data);
                 return { success: false, error: error.message };
             }
 
-            console.log(`✅ 雲端儲存成功: ${module} (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 雲端儲存成功: ${module} (${userId.substring(0, 8)}...)`);
             
             // 同時儲存到本地快取
             this.saveToLocalStorage(userId, module, data);
@@ -64,7 +177,7 @@ class SyncManager {
             return { success: true, data: result };
             
         } catch (error) {
-            console.error('☁️ 儲存過程發生錯誤:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 儲存過程發生錯誤:', error);
             // 錯誤時至少儲存到本地快取
             this.saveToLocalStorage(userId, module, data);
             return { success: false, error: error.message };
@@ -84,7 +197,7 @@ class SyncManager {
                 return this.loadFromLocalStorage(userId, module);
             }
 
-            console.log(`☁️ 正在從雲端載入: ${module} (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 正在從雲端載入: ${module} (${userId.substring(0, 8)}...)`);
 
             const { data, error } = await this.supabase
                 .from('user_data')
@@ -100,14 +213,14 @@ class SyncManager {
                     return null;
                 }
                 
-                console.error('☁️ Supabase 讀取失敗:', error);
+                console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Supabase 讀取失敗:', error);
                 // 如果雲端失敗，嘗試從本地快取讀取
-                console.log('🔄 嘗試從本地快取讀取...');
+                console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4v6h-6"/><polyline points="1 20v-6h6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> 嘗試從本地快取讀取...');
                 return this.loadFromLocalStorage(userId, module);
             }
 
             if (data && data.data) {
-                console.log(`✅ 雲端載入成功: ${module} (${userId.substring(0, 8)}...)`);
+                console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 雲端載入成功: ${module} (${userId.substring(0, 8)}...)`);
                 
                 // 同時更新本地快取
                 this.saveToLocalStorage(userId, module, data.data);
@@ -118,9 +231,9 @@ class SyncManager {
             return null;
             
         } catch (error) {
-            console.error('☁️ 載入過程發生錯誤:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 載入過程發生錯誤:', error);
             // 錯誤時嘗試從本地快取讀取
-            console.log('🔄 嘗試從本地快取讀取...');
+            console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4v6h-6"/><polyline points="1 20v-6h6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg> 嘗試從本地快取讀取...');
             return this.loadFromLocalStorage(userId, module);
         }
     }
@@ -146,11 +259,11 @@ class SyncManager {
                 .eq('module', module);
 
             if (error) {
-                console.error('☁️ Supabase 刪除失敗:', error);
+                console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Supabase 刪除失敗:', error);
                 return { success: false, error: error.message };
             }
 
-            console.log(`✅ 雲端刪除成功: ${module} (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 雲端刪除成功: ${module} (${userId.substring(0, 8)}...)`);
             
             // 同時從本地快取刪除
             this.deleteFromLocalStorage(userId, module);
@@ -158,7 +271,7 @@ class SyncManager {
             return { success: true };
             
         } catch (error) {
-            console.error('☁️ 刪除過程發生錯誤:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 刪除過程發生錯誤:', error);
             return { success: false, error: error.message };
         }
     }
@@ -183,12 +296,12 @@ class SyncManager {
                 .select();
 
             if (error) {
-                console.error('☁️ 清除雲端資料失敗:', error);
+                console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 清除雲端資料失敗:', error);
                 return { success: false, error: error.message };
             }
 
             const deletedCount = data ? data.length : 0;
-            console.log(`✅ 已清除 ${deletedCount} 項雲端資料 (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 已清除 ${deletedCount} 項雲端資料 (${userId.substring(0, 8)}...)`);
             
             // 同時清除本地快取
             this.clearUserDataFromLocalStorage(userId);
@@ -196,7 +309,7 @@ class SyncManager {
             return { success: true, deletedItems: deletedCount };
             
         } catch (error) {
-            console.error('☁️ 清除資料過程發生錯誤:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 清除資料過程發生錯誤:', error);
             return { success: false, error: error.message };
         }
     }
@@ -219,14 +332,14 @@ class SyncManager {
                 .eq('user_id', userId);
 
             if (error) {
-                console.error('☁️ 列出模組失敗:', error);
+                console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 列出模組失敗:', error);
                 return this.listModulesFromLocalStorage(userId);
             }
 
             return data ? data.map(row => row.module) : [];
             
         } catch (error) {
-            console.error('☁️ 列出模組過程發生錯誤:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> 列出模組過程發生錯誤:', error);
             return this.listModulesFromLocalStorage(userId);
         }
     }
@@ -272,11 +385,11 @@ class SyncManager {
             });
             
             this.localStorage.setItem(key, serializedData);
-            console.log(`💾 本地快取已儲存: ${module} (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 本地快取已儲存: ${module} (${userId.substring(0, 8)}...)`);
             
             return { success: true };
         } catch (error) {
-            console.error('💾 本地快取儲存失敗:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 本地快取儲存失敗:', error);
             return { success: false, error: error.message };
         }
     }
@@ -295,11 +408,11 @@ class SyncManager {
             }
             
             const parsed = JSON.parse(serializedData);
-            console.log(`💾 本地快取已載入: ${module} (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 本地快取已載入: ${module} (${userId.substring(0, 8)}...)`);
             
             return parsed.data;
         } catch (error) {
-            console.error('💾 本地快取載入失敗:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 本地快取載入失敗:', error);
             return null;
         }
     }
@@ -311,11 +424,11 @@ class SyncManager {
         try {
             const key = `gamelife_${userId}_${module}`;
             this.localStorage.removeItem(key);
-            console.log(`💾 本地快取已刪除: ${module} (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 本地快取已刪除: ${module} (${userId.substring(0, 8)}...)`);
             
             return { success: true };
         } catch (error) {
-            console.error('💾 本地快取刪除失敗:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 本地快取刪除失敗:', error);
             return { success: false, error: error.message };
         }
     }
@@ -339,11 +452,11 @@ class SyncManager {
                 this.localStorage.removeItem(key);
             });
             
-            console.log(`💾 已清除本地快取: ${keysToRemove.length} 項目 (${userId.substring(0, 8)}...)`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 已清除本地快取: ${keysToRemove.length} 項目 (${userId.substring(0, 8)}...)`);
             
             return { success: true, deletedItems: keysToRemove.length };
         } catch (error) {
-            console.error('💾 清除本地快取失敗:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 清除本地快取失敗:', error);
             return { success: false, error: error.message };
         }
     }
@@ -366,7 +479,7 @@ class SyncManager {
             
             return modules;
         } catch (error) {
-            console.error('💾 列出本地模組失敗:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 列出本地模組失敗:', error);
             return [];
         }
     }
@@ -381,10 +494,42 @@ class SyncManager {
             this.localStorage.removeItem(testKey);
             return true;
         } catch (error) {
-            console.error('💾 本地儲存不可用:', error);
+            console.error('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17,21 17,13 7,13 7,21"/><polyline points="7,3 7,8 15,8"/></svg> 本地儲存不可用:', error);
             return false;
         }
     }
 }
 
-export { SyncManager };
+export { SyncManager 
+    // 模組清理方法 - 符合規範要求
+    destroy() {
+        // 清理事件監聽器
+        if (this.eventListeners) {
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.eventListeners = [];
+        }
+        
+        // 清理定時器
+        if (this.intervals) {
+            this.intervals.forEach(id => clearInterval(id));
+            this.intervals = [];
+        }
+        if (this.timeouts) {
+            this.timeouts.forEach(id => clearTimeout(id));
+            this.timeouts = [];
+        }
+        
+        // 清理資料
+        this.data = null;
+        this.currentUser = null;
+        
+        // 重置 activeModule
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        console.log(`${this.constructor.name} destroyed`);
+    }
+}

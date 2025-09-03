@@ -65,7 +65,7 @@ class SettingsModule {
     }
 
     async render(userId) {
-        // ⭐ 必須：第一行設定 activeModule
+        // <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg> 必須：第一行設定 activeModule
         window.activeModule = this;
         
         this.userId = userId;
@@ -571,7 +571,7 @@ class SettingsModule {
     }
 
     async resetSettings() {
-        if (!confirm('確定要重置所有設定為預設值嗎？此操作無法復原。')) {
+        if (!this.showConfirm('確定要重置所有設定為預設值嗎？此操作無法復原。', () => {})) {
             return;
         }
 
@@ -598,7 +598,7 @@ class SettingsModule {
         this.renderSettings();
         
         console.log('設定已重置為預設值');
-        alert('設定已重置為預設值！');
+        this.showToast('設定已重置為預設值！', 'info');
     }
 
     attachEventListeners() {
@@ -740,7 +740,7 @@ class SettingsModule {
 
     // 重置模組順序
     async resetModuleOrder() {
-        if (!confirm('確定要重置模組順序為預設值嗎？')) return;
+        if (!this.showConfirm('確定要重置模組順序為預設值嗎？', () => {})) return;
         
         const defaultOrder = ['overview', 'todos', 'calendar', 'finance', 'projects', 'life-simulator', 'timebox', 'settings'];
         this.settings.module_order = defaultOrder;
@@ -861,7 +861,7 @@ class SettingsModule {
                         </div>
                         
                         <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid var(--border);">
-                            <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">👤 一般用戶</div>
+                            <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 一般用戶</div>
                             <div style="font-size: 12px; color: var(--text-light);">基本功能，不包含專案管理</div>
                             <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">模組：${modules.filter(m => m.basic && !m.advanced).map(m => m.name).join('、')}</div>
                         </div>
@@ -869,7 +869,7 @@ class SettingsModule {
                 </div>
                 
                 <div style="padding: 12px; background: rgba(139, 115, 85, 0.1); border-radius: 6px; border: 1px solid rgba(139, 115, 85, 0.2);">
-                    <div style="font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 8px;">💡 實作建議：</div>
+                    <div style="font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6M12 3c4.97 0 9 4.03 9 9 0 2.5-1 4.5-3 6l-2 2H8l-2-2c-2-1.5-3-3.5-3-6 0-4.97 4.03-9 9-9z"/></svg> 實作建議：</div>
                     <div style="font-size: 12px; color: var(--text-light); line-height: 1.5;">
                         • 在 settings.js 中為每個用戶設定 available_modules 陣列<br>
                         • 一般用戶移除 'projects' 模組，直接看不到專案功能<br>
@@ -882,4 +882,36 @@ class SettingsModule {
     }
 }
 
-export { SettingsModule };
+export { SettingsModule 
+    // 模組清理方法 - 符合規範要求
+    destroy() {
+        // 清理事件監聽器
+        if (this.eventListeners) {
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.eventListeners = [];
+        }
+        
+        // 清理定時器
+        if (this.intervals) {
+            this.intervals.forEach(id => clearInterval(id));
+            this.intervals = [];
+        }
+        if (this.timeouts) {
+            this.timeouts.forEach(id => clearTimeout(id));
+            this.timeouts = [];
+        }
+        
+        // 清理資料
+        this.data = null;
+        this.currentUser = null;
+        
+        // 重置 activeModule
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        console.log(`${this.constructor.name} destroyed`);
+    }
+}

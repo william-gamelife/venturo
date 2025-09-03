@@ -967,7 +967,7 @@ class CalendarModule {
     }
 
     async deleteEvent(eventId) {
-        if (confirm('確定要刪除此事件嗎？')) {
+        this.showConfirm('確定要刪除此事件嗎？', async () => {
             const eventIndex = this.events.findIndex(e => e.id === eventId);
             if (eventIndex !== -1) {
                 this.events.splice(eventIndex, 1);
@@ -976,7 +976,7 @@ class CalendarModule {
                 this.refreshView();
                 this.showToast('事件已刪除', 'success');
             }
-        }
+        });
     }
     
     closeDialog() {

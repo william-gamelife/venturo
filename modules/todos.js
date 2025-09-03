@@ -11,6 +11,28 @@
  */
 
 class TodosModule {
+    // 符合規範的設施資訊
+    static facilityInfo = {
+        code: 'todos',
+        name: '待辦事項',
+        subtitle: '智慧任務管理與專案追蹤',
+        description: '強大的看板式任務管理系統，支援拖曳、標籤、優先級等功能。',
+        version: '3.0.0',
+        author: 'GameLife Team',
+        icon: '<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 11l3 3L20 5" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+        theme: 'productivity',
+        color: '#9B8B7E',
+        support: {
+            theme: true,
+            mobile: true,
+            offline: true
+        },
+        permissions: {
+            public: false,
+            allowedUsers: [],
+            requireAuth: true
+        }
+    };
     // SignageHost 招牌資料
     static signage = {
         title: '待辦事項',
@@ -107,6 +129,8 @@ class TodosModule {
     }
 
     async render(uuid) {
+        // 第一行必須設定 activeModule
+        window.activeModule = this;
         this.currentUser = { uuid };
         
         // 動態載入管委會
@@ -120,9 +144,6 @@ class TodosModule {
         // 渲染介面
         const moduleContainer = document.getElementById('moduleContainer');
         moduleContainer.innerHTML = await this.getHTML();
-        
-        // 設定全域模組參考
-        window.activeModule = this;
         
         // 綁定事件
         this.attachEventListeners();
@@ -169,7 +190,7 @@ class TodosModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    padding: 0;
+                    padding: 20px 0;  /* 修正：只有上下內距 */
                 }
 
                 /* 看板佈局 */
@@ -2542,12 +2563,12 @@ class TodosModule {
 
     // 刪除任務
     async deleteTask(taskId) {
-        if (confirm('確定要刪除此任務嗎？')) {
+        this.showConfirm('確定要刪除此任務嗎？', async () => {
             this.todos = this.todos.filter(t => t.id !== taskId);
             await this.saveData();
             this.render(this.currentUser.uuid);
             this.showToast('任務已刪除', 'success');
-        }
+        });
     }
 
     // 任務選取
@@ -2838,6 +2859,35 @@ class TodosModule {
             toast.style.animation = 'slideDown 0.3s ease reverse';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+
+    // 清理方法（符合規範）
+    destroy() {
+        // 儲存狀態
+        if (this.todos && this.todos.length > 0) {
+            this.saveData();
+        }
+        
+        // 清理選取狀態
+        this.selectedTodos?.clear();
+        
+        // 清理資源
+        this.todos = null;
+        this.filteredTodos = null;
+        this.selectedTodos = null;
+        this.draggedItem = null;
+        this.editingTask = null;
+        this.syncManager = null;
+        this.currentUser = null;
+        
+        // 清除全域參考
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        // 清理對話框
+        document.querySelectorAll('.dialog-overlay').forEach(d => d.remove());
+        document.querySelectorAll('.toast').forEach(t => t.remove());
     }
 
     // 新增方法：處理任務卡片點擊
@@ -3164,7 +3214,7 @@ class TodosModule {
         // 4. 將選取的任務標記為屬於該專案
         
         // 暫時顯示提示
-        alert('轉為專案功能開發中...');
+        this.showToast('轉為專案功能開發中...', 'info');
     }
 
     // 新增的簡化方法
@@ -3220,7 +3270,7 @@ class TodosModule {
 
     // 刪除任務
     async deleteTask(taskId) {
-        if (!confirm('確定要刪除這個任務嗎？')) return;
+        if (!this.showConfirm('確定要刪除這個任務嗎？', () => {})) return;
 
         this.todos = this.todos.filter(t => t.id !== taskId);
         await this.saveData();

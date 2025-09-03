@@ -24,6 +24,118 @@ class OverviewModule {
         mobileSupport: true
     };
 
+    
+    // Toast 通知系統
+    showToast(message, type = 'info', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">
+                    ${type === 'success' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>' : type === 'error' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : 'ⓘ'}
+                </span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+        
+        // 添加樣式（如果尚未存在）
+        if (!document.getElementById('toast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'toast-styles';
+            style.textContent = `
+                .toast {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    min-width: 300px;
+                    padding: 12px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10000;
+                    animation: toastSlideIn 0.3s ease;
+                }
+                .toast-info { background: #e3f2fd; border-left: 4px solid #2196f3; color: #1976d2; }
+                .toast-success { background: #e8f5e8; border-left: 4px solid #4caf50; color: #2e7d32; }
+                .toast-error { background: #ffebee; border-left: 4px solid #f44336; color: #c62828; }
+                .toast-content { display: flex; align-items: center; gap: 8px; }
+                .toast-close { background: none; border: none; font-size: 18px; cursor: pointer; margin-left: auto; }
+                @keyframes toastSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(toast);
+        
+        // 自動移除
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, duration);
+        
+        return toast;
+    }
+
+    // Toast 確認對話框
+    showConfirm(message, onConfirm, onCancel = null) {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <div class="confirm-content">
+                    <h3>確認操作</h3>
+                    <p>${message}</p>
+                    <div class="confirm-actions">
+                        <button class="btn btn-secondary cancel-btn">取消</button>
+                        <button class="btn btn-primary confirm-btn">確定</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 添加樣式
+        if (!document.getElementById('confirm-styles')) {
+            const style = document.createElement('style');
+            style.id = 'confirm-styles';
+            style.textContent = `
+                .confirm-overlay {
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.5); z-index: 10001;
+                    display: flex; align-items: center; justify-content: center;
+                }
+                .confirm-dialog {
+                    background: white; border-radius: 12px; padding: 24px;
+                    min-width: 320px; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                }
+                .confirm-content h3 { margin: 0 0 16px; color: #333; }
+                .confirm-content p { margin: 0 0 24px; color: #666; line-height: 1.5; }
+                .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(overlay);
+        
+        // 事件處理
+        overlay.querySelector('.cancel-btn').onclick = () => {
+            overlay.remove();
+            if (onCancel) onCancel();
+        };
+        
+        overlay.querySelector('.confirm-btn').onclick = () => {
+            overlay.remove();
+            if (onConfirm) onConfirm();
+        };
+        
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                if (onCancel) onCancel();
+            }
+        };
+    }
+
     constructor() {
         this.syncManager = null;
         this.currentUser = null;
@@ -599,19 +711,19 @@ class OverviewModule {
                     <div class="tag-options">
                         <label class="tag-option">
                             <input type="radio" name="noteType" value="general" checked>
-                            <span class="tag-label">📝 一般</span>
+                            <span class="tag-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> 一般</span>
                         </label>
                         <label class="tag-option">
                             <input type="radio" name="noteType" value="idea">
-                            <span class="tag-label">💡 靈感</span>
+                            <span class="tag-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6M12 3c4.97 0 9 4.03 9 9 0 2.5-1 4.5-3 6l-2 2H8l-2-2c-2-1.5-3-3.5-3-6 0-4.97 4.03-9 9-9z"/></svg> 靈感</span>
                         </label>
                         <label class="tag-option">
                             <input type="radio" name="noteType" value="urgent">
-                            <span class="tag-label">⚡ 重要</span>
+                            <span class="tag-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg> 重要</span>
                         </label>
                         <label class="tag-option">
                             <input type="radio" name="noteType" value="reminder">
-                            <span class="tag-label">🔔 提醒</span>
+                            <span class="tag-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> 提醒</span>
                         </label>
                     </div>
                 </div>
@@ -768,10 +880,10 @@ class OverviewModule {
         
         // 根據類型設定標籤和圖示
         const typeConfig = {
-            general: { tags: ['記事'], emoji: '📝' },
-            idea: { tags: ['靈感', '想法'], emoji: '💡' },
-            urgent: { tags: ['重要', '緊急'], emoji: '⚡' },
-            reminder: { tags: ['提醒', '備忘'], emoji: '🔔' }
+            general: { tags: ['記事'], emoji: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>' },
+            idea: { tags: ['靈感', '想法'], emoji: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21h6M12 3c4.97 0 9 4.03 9 9 0 2.5-1 4.5-3 6l-2 2H8l-2-2c-2-1.5-3-3.5-3-6 0-4.97 4.03-9 9-9z"/></svg>' },
+            urgent: { tags: ['重要', '緊急'], emoji: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13,2 3,14 12,14 11,22 21,10 12,10"/></svg>' },
+            reminder: { tags: ['提醒', '備忘'], emoji: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' }
         };
         
         const config = typeConfig[noteType] || typeConfig.general;

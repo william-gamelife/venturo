@@ -17,9 +17,10 @@ class AuthManagerV2 {
         this.supabase = window.getSupabaseClient ? window.getSupabaseClient() : null;
         
         if (!this.supabase) {
-            console.warn('☁️ AuthManager: 全域 Supabase 客戶端未找到');
+            console.warn('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> AuthManager: 全域 Supabase 客戶端未找到');
+        window.activeModule = this;
         } else {
-            console.log('☁️ AuthManager 已連接到全域 Supabase 客戶端');
+            console.log('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> AuthManager 已連接到全域 Supabase 客戶端');
         }
         
         this.cachedUsers = null;
@@ -510,4 +511,36 @@ export function isAdmin() {
 
 export function isSuperAdmin() {
     return authManager.isSuperAdmin();
+
+    // 模組清理方法 - 符合規範要求
+    destroy() {
+        // 清理事件監聽器
+        if (this.eventListeners) {
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.eventListeners = [];
+        }
+        
+        // 清理定時器
+        if (this.intervals) {
+            this.intervals.forEach(id => clearInterval(id));
+            this.intervals = [];
+        }
+        if (this.timeouts) {
+            this.timeouts.forEach(id => clearTimeout(id));
+            this.timeouts = [];
+        }
+        
+        // 清理資料
+        this.data = null;
+        this.currentUser = null;
+        
+        // 重置 activeModule
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        console.log(`${this.constructor.name} destroyed`);
+    }
 }

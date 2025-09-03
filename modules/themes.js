@@ -4,7 +4,121 @@
  */
 
 class ThemeManager {
+    
+    // Toast 通知系統
+    showToast(message, type = 'info', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-content">
+                <span class="toast-icon">
+                    ${type === 'success' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>' : type === 'error' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>' : 'ⓘ'}
+                </span>
+                <span class="toast-message">${message}</span>
+                <button class="toast-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+        `;
+        
+        // 添加樣式（如果尚未存在）
+        if (!document.getElementById('toast-styles')) {
+            const style = document.createElement('style');
+            style.id = 'toast-styles';
+            style.textContent = `
+                .toast {
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    min-width: 300px;
+                    padding: 12px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                    z-index: 10000;
+                    animation: toastSlideIn 0.3s ease;
+                }
+                .toast-info { background: #e3f2fd; border-left: 4px solid #2196f3; color: #1976d2; }
+                .toast-success { background: #e8f5e8; border-left: 4px solid #4caf50; color: #2e7d32; }
+                .toast-error { background: #ffebee; border-left: 4px solid #f44336; color: #c62828; }
+                .toast-content { display: flex; align-items: center; gap: 8px; }
+                .toast-close { background: none; border: none; font-size: 18px; cursor: pointer; margin-left: auto; }
+                @keyframes toastSlideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(toast);
+        
+        // 自動移除
+        setTimeout(() => {
+            if (toast.parentElement) {
+                toast.remove();
+            }
+        }, duration);
+        
+        return toast;
+    }
+
+    // Toast 確認對話框
+    showConfirm(message, onConfirm, onCancel = null) {
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-overlay';
+        overlay.innerHTML = `
+            <div class="confirm-dialog">
+                <div class="confirm-content">
+                    <h3>確認操作</h3>
+                    <p>${message}</p>
+                    <div class="confirm-actions">
+                        <button class="btn btn-secondary cancel-btn">取消</button>
+                        <button class="btn btn-primary confirm-btn">確定</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 添加樣式
+        if (!document.getElementById('confirm-styles')) {
+            const style = document.createElement('style');
+            style.id = 'confirm-styles';
+            style.textContent = `
+                .confirm-overlay {
+                    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0,0,0,0.5); z-index: 10001;
+                    display: flex; align-items: center; justify-content: center;
+                }
+                .confirm-dialog {
+                    background: white; border-radius: 12px; padding: 24px;
+                    min-width: 320px; max-width: 480px; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                }
+                .confirm-content h3 { margin: 0 0 16px; color: #333; }
+                .confirm-content p { margin: 0 0 24px; color: #666; line-height: 1.5; }
+                .confirm-actions { display: flex; gap: 12px; justify-content: flex-end; }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(overlay);
+        
+        // 事件處理
+        overlay.querySelector('.cancel-btn').onclick = () => {
+            overlay.remove();
+            if (onCancel) onCancel();
+        };
+        
+        overlay.querySelector('.confirm-btn').onclick = () => {
+            overlay.remove();
+            if (onConfirm) onConfirm();
+        };
+        
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                overlay.remove();
+                if (onCancel) onCancel();
+            }
+        };
+    }
+
     constructor() {
+        window.activeModule = this;
+        
         this.themes = {
             'zen': {
                 name: '枯山水（預設）',
@@ -84,7 +198,7 @@ class ThemeManager {
             // 觸發主題變更事件
             this.dispatchThemeChangeEvent(themeId);
 
-            console.log(`✅ 主題已切換至: ${this.themes[themeId].name}`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> 主題已切換至: ${this.themes[themeId].name}`);
             return true;
 
         } catch (error) {
@@ -198,7 +312,7 @@ class ThemeManager {
     async init() {
         try {
             await this.loadTheme(this.currentTheme);
-            console.log(`🎨 主題系統初始化完成，當前主題: ${this.themes[this.currentTheme].name}`);
+            console.log(`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg> 主題系統初始化完成，當前主題: ${this.themes[this.currentTheme].name}`);
         } catch (error) {
             console.error('主題系統初始化失敗:', error);
             // 如果載入失敗，回退到預設主題
@@ -249,4 +363,36 @@ export { ThemeManager };
 // 如果在非模組環境中使用，將其附加到全域物件
 if (typeof window !== 'undefined') {
     window.ThemeManager = ThemeManager;
+
+    // 模組清理方法 - 符合規範要求
+    destroy() {
+        // 清理事件監聽器
+        if (this.eventListeners) {
+            this.eventListeners.forEach(({ element, event, handler }) => {
+                element.removeEventListener(event, handler);
+            });
+            this.eventListeners = [];
+        }
+        
+        // 清理定時器
+        if (this.intervals) {
+            this.intervals.forEach(id => clearInterval(id));
+            this.intervals = [];
+        }
+        if (this.timeouts) {
+            this.timeouts.forEach(id => clearTimeout(id));
+            this.timeouts = [];
+        }
+        
+        // 清理資料
+        this.data = null;
+        this.currentUser = null;
+        
+        // 重置 activeModule
+        if (window.activeModule === this) {
+            window.activeModule = null;
+        }
+        
+        console.log(`${this.constructor.name} destroyed`);
+    }
 }

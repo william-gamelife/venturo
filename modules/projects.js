@@ -12,6 +12,28 @@
  */
 
 class ProjectsModule {
+    // 符合規範的設施資訊
+    static facilityInfo = {
+        code: 'projects',
+        name: '專案管理',
+        subtitle: '智慧專案協作與進度追蹤',
+        description: '專案管理平台，支援任務分配、進度追蹤、團隊協作等功能。',
+        version: '3.0.0',
+        author: 'GameLife Team',
+        icon: '<svg viewBox="0 0 24 24" fill="none"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" stroke-width="2"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2.5"/></svg>',
+        theme: 'collaboration',
+        color: '#9B7E8B',
+        support: {
+            theme: true,
+            mobile: true,
+            offline: true
+        },
+        permissions: {
+            public: false,
+            allowedUsers: [],
+            requireAuth: true
+        }
+    };
     // SignageHost 招牌資料 - 新版招牌格式
     static getSignage() {
         return {
@@ -190,6 +212,8 @@ class ProjectsModule {
     }
 
     async render(uuid) {
+        // 第一行必須設定 activeModule
+        window.activeModule = this;
         this.currentUser = { uuid };
         
         // 載入同步管理器
@@ -298,7 +322,7 @@ class ProjectsModule {
                     height: 100%;
                     display: flex;
                     flex-direction: column;
-                    padding: 20px;
+                    padding: 20px 0;
                     gap: 20px;
                 }
 
