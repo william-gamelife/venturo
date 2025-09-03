@@ -486,9 +486,33 @@ class TimeboxModule {
                 }
 
                 .time-slot.selected {
-                    background: var(--primary);
-                    border: 2px solid var(--primary);
-                    color: white;
+                    background: linear-gradient(135deg, #2196F3, #1976D2) !important;
+                    color: white !important;
+                    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.4), 
+                               0 2px 8px rgba(33, 150, 243, 0.3),
+                               inset 0 1px 3px rgba(255,255,255,0.3) !important;
+                    transform: scale(1.02);
+                    font-weight: bold;
+                    z-index: 10;
+                    animation: selectedPulse 0.3s ease;
+                    border: 2px solid #1976D2 !important;
+                }
+
+                @keyframes selectedPulse {
+                    0% { transform: scale(1); }
+                    50% { transform: scale(1.05); }
+                    100% { transform: scale(1.02); }
+                }
+                
+                .time-slot.selecting {
+                    background: linear-gradient(135deg, rgba(33, 150, 243, 0.3), rgba(25, 118, 210, 0.3)) !important;
+                    border: 2px dashed #2196F3 !important;
+                    animation: selectingBlink 0.8s ease infinite;
+                }
+
+                @keyframes selectingBlink {
+                    0%, 100% { opacity: 0.7; }
+                    50% { opacity: 1; }
                 }
 
                 .time-slot.occupied {
@@ -985,6 +1009,113 @@ class TimeboxModule {
 
                 .toast.success {
                     background: #27ae60;
+                }
+
+                /* Popover 快速選擇樣式 */
+                .quick-activity-popover {
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+
+                @keyframes popoverFadeIn {
+                    from {
+                        opacity: 0;
+                        transform: scale(0.95) translateY(-5px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: scale(1) translateY(0);
+                    }
+                }
+
+                .popover-header {
+                    padding: 12px 15px;
+                    border-bottom: 1px solid #eee;
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                }
+
+                .selected-time-info {
+                    font-size: 13px;
+                    color: #666;
+                    font-weight: 500;
+                }
+
+                .popover-close {
+                    background: none;
+                    border: none;
+                    font-size: 18px;
+                    color: #999;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 20px;
+                    height: 20px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                }
+
+                .popover-close:hover {
+                    background: #f5f5f5;
+                    color: #666;
+                }
+
+                .quick-activities {
+                    padding: 8px 0;
+                }
+
+                .quick-activity-item {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    padding: 8px 15px;
+                    cursor: pointer;
+                    transition: background 0.2s ease;
+                }
+
+                .quick-activity-item:hover {
+                    background: #f8f9fa;
+                }
+
+                .activity-icon {
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 12px;
+                    font-weight: bold;
+                }
+
+                .activity-name {
+                    font-size: 14px;
+                    color: #333;
+                }
+
+                .popover-footer {
+                    padding: 8px 15px 12px;
+                    border-top: 1px solid #eee;
+                }
+
+                .more-options-btn {
+                    width: 100%;
+                    background: transparent;
+                    border: 1px solid #ddd;
+                    padding: 8px 12px;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-size: 13px;
+                    color: #666;
+                    transition: all 0.2s ease;
+                }
+
+                .more-options-btn:hover {
+                    background: #f8f9fa;
+                    border-color: #ccc;
+                    color: #333;
                 }
 
                 /* 手機版響應式 */
@@ -1528,14 +1659,14 @@ class TimeboxModule {
                 }
             });
             
-            document.addEventListener('mouseup', () => {
+            document.addEventListener('mouseup', (e) => {
                 if (this.isDragging) {
                     this.isDragging = false;
-                    // 拖拽結束後自動彈出編輯對話框
+                    // 拖拽結束後立即彈出 Popover 快速選擇
                     if (this.selectedTimeSlots.size > 0) {
                         setTimeout(() => {
-                            this.showSlotEditDialog();
-                        }, 200);
+                            this.showQuickActivityPopover(e);
+                        }, 100);
                     }
                 }
                 if (this.dragTimer) {
@@ -1606,9 +1737,19 @@ class TimeboxModule {
         clearTimeout(this.longPressTimer);
         
         const touchDuration = Date.now() - this.touchStartTime;
-        if (touchDuration < 200 && this.selectedTimeSlots.size > 1) {
-            // 短按且有多選，顯示編輯
-            this.showSlotEditDialog();
+        
+        // 如果有選中的時間格，顯示快速選擇 Popover
+        if (this.selectedTimeSlots.size > 0) {
+            // 使用觸摸位置
+            const touch = e.changedTouches[0];
+            const fakeEvent = {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            };
+            
+            setTimeout(() => {
+                this.showQuickActivityPopover(fakeEvent);
+            }, 100);
         }
     }
 
@@ -1653,6 +1794,168 @@ class TimeboxModule {
             this.selectedTimeSlots.add(element.dataset.key);
             this.updateSlotSelection();
         }
+    }
+
+    // 快速活動選擇 Popover
+    showQuickActivityPopover(event) {
+        // 移除現有的 popover
+        const existingPopover = document.querySelector('.quick-activity-popover');
+        if (existingPopover) {
+            existingPopover.remove();
+        }
+
+        if (this.selectedTimeSlots.size === 0) return;
+
+        // 獲取最近使用的活動 (從歷史記錄)
+        const recentActivities = this.getRecentActivities();
+        
+        // 獲取滑鼠位置
+        const x = event.clientX || window.innerWidth / 2;
+        const y = event.clientY || window.innerHeight / 2;
+
+        // 創建 Popover
+        const popover = document.createElement('div');
+        popover.className = 'quick-activity-popover';
+        popover.innerHTML = `
+            <div class="popover-header">
+                <span class="selected-time-info">${this.getSelectedTimeInfo()}</span>
+                <button class="popover-close" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+            
+            <div class="quick-activities">
+                ${recentActivities.map(activity => `
+                    <div class="quick-activity-item" 
+                         data-activity-id="${activity.id}"
+                         style="border-left: 4px solid ${activity.color};"
+                         onclick="window.activeModule.quickSelectActivity('${activity.id}')">
+                        <div class="activity-icon" style="background-color: ${activity.color};">
+                            ${activity.name.charAt(0)}
+                        </div>
+                        <span class="activity-name">${activity.name}</span>
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div class="popover-footer">
+                <button class="more-options-btn" onclick="window.activeModule.showFullEditDialog()">
+                    更多選項...
+                </button>
+            </div>
+        `;
+
+        // 設置位置
+        popover.style.cssText = `
+            position: fixed;
+            left: ${Math.min(x, window.innerWidth - 250)}px;
+            top: ${Math.min(y, window.innerHeight - 200)}px;
+            z-index: 1000;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            min-width: 200px;
+            max-width: 250px;
+            animation: popoverFadeIn 0.2s ease;
+        `;
+
+        document.body.appendChild(popover);
+
+        // 點擊外部關閉
+        setTimeout(() => {
+            const closeHandler = (e) => {
+                if (!popover.contains(e.target)) {
+                    popover.remove();
+                    document.removeEventListener('click', closeHandler);
+                }
+            };
+            document.addEventListener('click', closeHandler);
+        }, 100);
+    }
+
+    // 獲取最近使用的活動
+    getRecentActivities() {
+        // 從活動類型中選擇最常用的 4-5 個
+        const allActivities = this.activityTypes.slice();
+        
+        // 如果沒有活動類型，返回預設的
+        if (allActivities.length === 0) {
+            return [
+                { id: 'work', name: '工作', color: '#2196F3' },
+                { id: 'study', name: '學習', color: '#4CAF50' },
+                { id: 'break', name: '休息', color: '#FF9800' },
+                { id: 'meeting', name: '會議', color: '#9C27B0' }
+            ];
+        }
+
+        // 優先顯示最近使用的，最多5個
+        return allActivities.slice(0, 5);
+    }
+
+    // 獲取選中時間資訊
+    getSelectedTimeInfo() {
+        const slots = Array.from(this.selectedTimeSlots);
+        if (slots.length === 0) return '';
+
+        // 計算時間範圍
+        const times = slots.map(slot => {
+            const [day, hour, minute] = slot.split('-');
+            return parseInt(hour) * 60 + parseInt(minute);
+        }).sort((a, b) => a - b);
+
+        const startTime = times[0];
+        const endTime = times[times.length - 1] + this.timeUnit;
+        
+        const formatTime = (minutes) => {
+            const h = Math.floor(minutes / 60);
+            const m = minutes % 60;
+            return `${h}:${m.toString().padStart(2, '0')}`;
+        };
+
+        const duration = endTime - startTime;
+        return `${formatTime(startTime)} - ${formatTime(endTime)} (${duration}分鐘)`;
+    }
+
+    // 快速選擇活動
+    quickSelectActivity(activityId) {
+        const activity = this.activityTypes.find(a => a.id === activityId);
+        if (!activity) return;
+
+        // 應用到選中的時間格
+        const taskId = this.generateUUID();
+        const slots = Array.from(this.selectedTimeSlots);
+
+        slots.forEach(slotKey => {
+            this.timeboxData[slotKey] = {
+                taskId: taskId,
+                title: activity.name,
+                activity: activity.id,
+                color: activity.color,
+                createdAt: new Date().toISOString()
+            };
+        });
+
+        // 儲存並重新渲染
+        this.saveData();
+        this.clearSelection();
+        this.refreshView();
+
+        // 移除 popover
+        document.querySelector('.quick-activity-popover')?.remove();
+
+        this.showToast(`已設定 ${activity.name}`, 'success');
+    }
+
+    // 顯示完整編輯對話框
+    showFullEditDialog() {
+        document.querySelector('.quick-activity-popover')?.remove();
+        this.showSlotEditDialog();
+    }
+
+    // 重新渲染視圖
+    refreshView() {
+        const moduleContainer = document.getElementById('moduleContainer');
+        moduleContainer.innerHTML = this.getHTML();
+        this.attachEventListeners();
     }
 
     // 顯示時段編輯對話框
