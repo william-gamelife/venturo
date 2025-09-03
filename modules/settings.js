@@ -212,6 +212,48 @@ class SettingsModule {
                     </div>
                 </div>
 
+                <!-- 人員管理 (僅管理員可見) -->
+                ${this.isAdmin() ? `
+                <div class="setting-section" style="background: var(--card); border-radius: 16px; padding: 24px; border: 1px solid var(--border); box-shadow: var(--shadow); margin-top: 24px;">
+                    <h3 style="margin: 0 0 16px 0; color: var(--primary); font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                        人員管理
+                    </h3>
+                    
+                    <p style="margin: 0 0 16px 0; font-size: 13px; color: var(--text-light);">管理系統用戶權限和模組存取控制</p>
+                    
+                    <div id="userManagementContent">
+                        <!-- 用戶管理內容將動態載入 -->
+                    </div>
+                    
+                    <div style="margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap;">
+                        <button onclick="window.activeModule.loadUserList()" 
+                                style="background: linear-gradient(135deg, var(--accent), var(--primary)); color: white; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                                <circle cx="9" cy="7" r="4"/>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                            載入用戶清單
+                        </button>
+                        <button onclick="window.activeModule.showPermissionMatrix()" 
+                                style="background: transparent; color: var(--text); border: 1px solid var(--border); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: 500; font-size: 13px; display: inline-flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                            </svg>
+                            權限矩陣
+                        </button>
+                    </div>
+                </div>
+                ` : ''}
+
                 <!-- 底部資訊 -->
                 <div class="settings-footer" style="margin-top: 24px; padding: 20px; background: rgba(139, 115, 85, 0.05); border-radius: 12px; text-align: center;">
                     <p style="margin: 0; font-size: 13px; color: var(--text-light);">
@@ -740,6 +782,96 @@ class SettingsModule {
             const days = Math.floor(diffMinutes / 1440);
             return `${days} 天前`;
         }
+    }
+
+    // 檢查是否為管理員
+    isAdmin() {
+        const adminUsers = ['william', 'carson'];
+        return adminUsers.some(adminId => this.userId && this.userId.toLowerCase().includes(adminId.toLowerCase()));
+    }
+
+    // 載入用戶清單
+    async loadUserList() {
+        const container = document.getElementById('userManagementContent');
+        if (!container) return;
+        
+        container.innerHTML = `
+            <div style="margin: 16px 0; padding: 16px; background: var(--bg); border-radius: 8px; border-left: 4px solid var(--primary);">
+                <h4 style="margin: 0 0 12px 0; color: var(--text); font-size: 14px;">已知用戶</h4>
+                <div style="display: grid; gap: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 6px; border: 1px solid var(--border);">
+                        <div>
+                            <span style="font-weight: 500; color: var(--text);">William (管理員)</span>
+                            <div style="font-size: 12px; color: var(--text-light);">完整權限 - 所有模組</div>
+                        </div>
+                        <span style="color: var(--accent); font-size: 12px; font-weight: 600;">ADMIN</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: white; border-radius: 6px; border: 1px solid var(--border);">
+                        <div>
+                            <span style="font-weight: 500; color: var(--text);">Carson (管理員)</span>
+                            <div style="font-size: 12px; color: var(--text-light);">完整權限 - 所有模組</div>
+                        </div>
+                        <span style="color: var(--accent); font-size: 12px; font-weight: 600;">ADMIN</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // 顯示權限矩陣
+    async showPermissionMatrix() {
+        const container = document.getElementById('userManagementContent');
+        if (!container) return;
+        
+        const modules = [
+            { id: 'overview', name: '總覽', basic: true },
+            { id: 'todos', name: '待辦事項', basic: true },
+            { id: 'calendar', name: '行事曆', basic: true },
+            { id: 'finance', name: '金流', basic: true },
+            { id: 'projects', name: '專案管理', basic: false, advanced: true },
+            { id: 'life-simulator', name: '人生模擬器', basic: true },
+            { id: 'timebox', name: '時間盒', basic: true },
+            { id: 'settings', name: '系統設定', basic: true }
+        ];
+        
+        container.innerHTML = `
+            <div style="margin: 16px 0; padding: 16px; background: var(--bg); border-radius: 8px; border-left: 4px solid var(--accent);">
+                <h4 style="margin: 0 0 16px 0; color: var(--text); font-size: 14px;">權限控制建議</h4>
+                
+                <div style="margin-bottom: 16px;">
+                    <h5 style="margin: 0 0 8px 0; font-size: 13px; color: var(--primary);">用戶群組概念：</h5>
+                    
+                    <div style="display: grid; gap: 12px; margin-bottom: 16px;">
+                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid var(--border);">
+                            <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">👑 管理員 (William, Carson)</div>
+                            <div style="font-size: 12px; color: var(--text-light);">所有模組 + 人員管理權限</div>
+                        </div>
+                        
+                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid var(--border);">
+                            <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">💼 專案用戶</div>
+                            <div style="font-size: 12px; color: var(--text-light);">包含專案管理和打包功能</div>
+                            <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">模組：${modules.filter(m => m.basic || m.advanced).map(m => m.name).join('、')}</div>
+                        </div>
+                        
+                        <div style="padding: 12px; background: white; border-radius: 6px; border: 1px solid var(--border);">
+                            <div style="font-weight: 500; color: var(--text); margin-bottom: 4px;">👤 一般用戶</div>
+                            <div style="font-size: 12px; color: var(--text-light);">基本功能，不包含專案管理</div>
+                            <div style="font-size: 11px; color: var(--text-light); margin-top: 4px;">模組：${modules.filter(m => m.basic && !m.advanced).map(m => m.name).join('、')}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="padding: 12px; background: rgba(139, 115, 85, 0.1); border-radius: 6px; border: 1px solid rgba(139, 115, 85, 0.2);">
+                    <div style="font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 8px;">💡 實作建議：</div>
+                    <div style="font-size: 12px; color: var(--text-light); line-height: 1.5;">
+                        • 在 settings.js 中為每個用戶設定 available_modules 陣列<br>
+                        • 一般用戶移除 'projects' 模組，直接看不到專案功能<br>
+                        • 專案模組內部也可檢查權限，隱藏特定功能按鈕<br>
+                        • 使用 user_id 判斷用戶類型和可用功能
+                    </div>
+                </div>
+            </div>
+        `;
     }
 }
 

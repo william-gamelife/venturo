@@ -729,18 +729,6 @@
                     </a>
                 </li>
                 
-                <!-- 人員管理 -->
-                <li class="nav-item" id="usersNavItem">
-                    <a href="#" class="nav-link" onclick="loadModule('users', this)">
-                        <svg class="nav-icon" viewBox="0 0 24 24">
-                            <circle cx="9" cy="7" r="4" fill="url(#warmGradient)" opacity="0.3"/>
-                            <circle cx="9" cy="7" r="4" fill="none" stroke="currentColor" stroke-width="2"/>
-                            <path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="url(#warmGradient)" opacity="0.2"/>
-                            <path d="M1 21v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" fill="none" stroke="currentColor" stroke-width="2"/>
-                        </svg>
-                        <span>人員管理</span>
-                    </a>
-                </li>
 
                 <!-- 行事曆 -->
                 <li class="nav-item">
@@ -1102,11 +1090,6 @@
             const user = getCurrentUser();
             if (!user) return;
             
-            // 只有管理員可以看到人員管理
-            const usersNavItem = document.getElementById('usersNavItem');
-            if (user.role !== 'admin' && usersNavItem) {
-                usersNavItem.style.display = 'none';
-            }
         }
         
         // 初始化主題系統
@@ -1144,10 +1127,6 @@
                 { id: 'settings', icon: '⚙️', label: '設定', module: 'settings' }
             ];
             
-            // 如果是管理員，添加人員管理
-            if (user && user.role === 'admin') {
-                navItems.splice(4, 0, { id: 'users', icon: '👥', label: '人員', module: 'users' });
-            }
             
             const mobileNavSlider = document.getElementById('mobileNavSlider');
             const mobileNavDots = document.getElementById('mobileNavDots');
@@ -1292,7 +1271,7 @@
                         const match = link.onclick.toString().match(/loadModule\(['"]([^'"]+)['"]/);
                         if (match) {
                             const moduleId = match[1];
-                            if (moduleId !== 'dashboard' && moduleId !== 'users') { // 保留固定項目在頂部
+                            if (moduleId !== 'dashboard') { // 保留固定項目在頂部
                                 navItems[moduleId] = item;
                             }
                         }
@@ -1301,8 +1280,7 @@
                 
                 // 重新排序並插入
                 const dashboardItem = sidebar.querySelector('a[onclick*="dashboard"]')?.parentNode;
-                const usersItem = sidebar.querySelector('a[onclick*="users"]')?.parentNode;
-                let insertAfter = usersItem || dashboardItem;
+                let insertAfter = dashboardItem;
                 
                 // 移除所有可排序的項目
                 Object.values(navItems).forEach(item => item.remove());

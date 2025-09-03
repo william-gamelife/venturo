@@ -19,6 +19,7 @@ class TimeboxModule {
             { id:'prevWeek', label:'←', kind:'secondary', onClick:'prevWeek' },
             { id:'today', label:'今天', kind:'secondary', onClick:'goToToday' },
             { id:'nextWeek', label:'→', kind:'secondary', onClick:'nextWeek' },
+            { id:'activities', label:'📝 活動管理', kind:'secondary', onClick:'openActivityTypes' },
             { id:'timer', label:'🍅 番茄鐘', kind:'primary', onClick:'toggleTimer' }
         ]
     };
@@ -163,6 +164,23 @@ class TimeboxModule {
                                 onclick="window.activeModule.setTimeUnit(60)">60分</button>
                     </div>
                     
+                    <!-- 活動快速選擇區域 -->
+                    <div class="activity-quick-selector">
+                        <span class="quick-selector-label">常用活動：</span>
+                        <div class="activity-tiles">
+                            ${this.getFrequentActivities().map(activity => `
+                                <div class="activity-tile" 
+                                     data-activity-id="${activity.id}"
+                                     style="background-color: ${activity.color};" 
+                                     draggable="true"
+                                     ondragstart="window.activeModule.startActivityDrag(event, '${activity.id}')"
+                                     title="${activity.name}">
+                                    ${activity.name.charAt(0)}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    
                     <div class="selection-info" id="selectionInfo" style="display: none;">
                         <span class="selected-count">已選擇 0 個時段</span>
                         <div class="selection-buttons">
@@ -278,6 +296,104 @@ class TimeboxModule {
                     color: var(--primary);
                     font-weight: 600;
                     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+                }
+
+                /* 活動快速選擇區域 */
+                .activity-quick-selector {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                }
+
+                .quick-selector-label {
+                    font-size: 0.85rem;
+                    color: var(--text-light);
+                    font-weight: 500;
+                    white-space: nowrap;
+                }
+
+                .activity-tiles {
+                    display: flex;
+                    gap: 6px;
+                    flex-wrap: wrap;
+                }
+
+                .activity-tile {
+                    width: 32px;
+                    height: 32px;
+                    border-radius: 8px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    color: white;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    cursor: move;
+                    transition: all 0.2s ease;
+                    border: 2px solid transparent;
+                    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+                    user-select: none;
+                }
+
+                .activity-tile:hover {
+                    transform: scale(1.1);
+                    border-color: white;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+                }
+
+                .activity-tile.dragging {
+                    opacity: 0.7;
+                    transform: scale(0.9);
+                }
+
+                /* 時間調整控制點 */
+                .resize-handle {
+                    position: absolute;
+                    left: 0;
+                    right: 0;
+                    height: 6px;
+                    background: rgba(255, 255, 255, 0.3);
+                    cursor: ns-resize;
+                    opacity: 0;
+                    transition: all 0.2s ease;
+                    z-index: 10;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+
+                .resize-handle::before {
+                    content: '';
+                    width: 20px;
+                    height: 3px;
+                    background: rgba(255, 255, 255, 0.8);
+                    border-radius: 2px;
+                }
+
+                .resize-top {
+                    top: -3px;
+                    border-radius: 6px 6px 0 0;
+                }
+
+                .resize-bottom {
+                    bottom: -3px;
+                    border-radius: 0 0 6px 6px;
+                }
+
+                .time-slot.occupied:hover .resize-handle {
+                    opacity: 1;
+                    background: rgba(255, 255, 255, 0.4);
+                }
+
+                .resize-handle:hover {
+                    opacity: 1 !important;
+                    background: rgba(255, 255, 255, 0.6) !important;
+                    height: 8px;
+                }
+
+                .resize-handle:hover::before {
+                    background: white;
+                    height: 4px;
                 }
 
 
@@ -1063,9 +1179,22 @@ class TimeboxModule {
                                  onmouseup="window.activeModule.onSlotMouseUp(event, '${slotKey}')"
                                  ontouchstart="window.activeModule.onSlotTouchStart(event, '${slotKey}')"
                                  ontouchend="window.activeModule.onSlotTouchEnd(event, '${slotKey}')">
+                                
+                                <!-- 上邊緣調整控制點 -->
+                                <div class="resize-handle resize-top" 
+                                     onmousedown="window.activeModule.startResize(event, '${taskBlock.taskId}', 'top')"
+                                     title="拖曳調整開始時間">
+                                </div>
+                                
                                 <div class="time-slot-content">
                                     <div>${taskBlock.content || activity?.name}</div>
                                     <div style="font-size: 0.7em; opacity: 0.8;">${timeText}</div>
+                                </div>
+                                
+                                <!-- 下邊緣調整控制點 -->
+                                <div class="resize-handle resize-bottom" 
+                                     onmousedown="window.activeModule.startResize(event, '${taskBlock.taskId}', 'bottom')"
+                                     title="拖曳調整結束時間">
                                 </div>
                             </div>
                         `;
@@ -1094,7 +1223,10 @@ class TimeboxModule {
                                  onmouseenter="window.activeModule.onSlotMouseEnter(event, '${slotKey}')"
                                  onmouseup="window.activeModule.onSlotMouseUp(event, '${slotKey}')"
                                  ontouchstart="window.activeModule.onSlotTouchStart(event, '${slotKey}')"
-                                 ontouchend="window.activeModule.onSlotTouchEnd(event, '${slotKey}')">
+                                 ontouchend="window.activeModule.onSlotTouchEnd(event, '${slotKey}')"
+                                 ondragover="window.activeModule.onSlotDragOver(event, '${slotKey}')"
+                                 ondragleave="window.activeModule.onSlotDragLeave(event, '${slotKey}')"
+                                 ondrop="window.activeModule.onSlotDrop(event, '${slotKey}')">
                             </div>
                         `;
                         
@@ -2312,6 +2444,431 @@ class TimeboxModule {
     // SignageHost 按鈕方法：打開活動類型面板
     openActivityTypes() {
         this.showActivityManager();
+    }
+
+    // 獲取常用活動類型（最多8個）
+    getFrequentActivities() {
+        // 取得所有活動類型
+        const allActivities = this.activityTypes || this.getDefaultActivityTypes();
+        
+        // 計算每個活動的使用次數
+        const activityUsage = {};
+        Object.values(this.timeboxData || {}).forEach(dayData => {
+            Object.keys(dayData).forEach(timeKey => {
+                const slot = dayData[timeKey];
+                if (slot && slot.activityId) {
+                    activityUsage[slot.activityId] = (activityUsage[slot.activityId] || 0) + 1;
+                }
+            });
+        });
+        
+        // 依使用次數排序，沒有使用記錄的放後面
+        const sortedActivities = allActivities
+            .map(activity => ({
+                ...activity,
+                usage: activityUsage[activity.id] || 0
+            }))
+            .sort((a, b) => {
+                if (a.usage === 0 && b.usage === 0) {
+                    // 都沒用過的話，按預設順序（工作、學習、運動等優先）
+                    const priority = ['work', 'study', 'exercise', 'rest'];
+                    const aIndex = priority.indexOf(a.id);
+                    const bIndex = priority.indexOf(b.id);
+                    if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+                    if (aIndex !== -1) return -1;
+                    if (bIndex !== -1) return 1;
+                    return a.name.localeCompare(b.name);
+                }
+                return b.usage - a.usage;
+            });
+        
+        // 回傳前8個
+        return sortedActivities.slice(0, 8);
+    }
+
+    // 開始拖曳活動
+    startActivityDrag(event, activityId) {
+        event.dataTransfer.setData('text/plain', `activity:${activityId}`);
+        event.dataTransfer.effectAllowed = 'copy';
+        
+        // 加上拖曳視覺效果
+        const tile = event.target;
+        tile.classList.add('dragging');
+        
+        // 拖曳結束後移除效果
+        setTimeout(() => {
+            tile.classList.remove('dragging');
+        }, 200);
+        
+        console.log(`開始拖曳活動: ${activityId}`);
+    }
+
+    // 時間格子拖放事件處理
+    onSlotDragOver(event, slotKey) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'copy';
+        
+        // 加上視覺提示
+        const slot = event.target;
+        if (slot && !slot.classList.contains('occupied')) {
+            slot.style.backgroundColor = 'rgba(139, 115, 85, 0.1)';
+            slot.style.borderColor = 'var(--primary)';
+        }
+    }
+
+    async onSlotDrop(event, slotKey) {
+        event.preventDefault();
+        
+        // 移除視覺提示
+        const slot = event.target;
+        if (slot) {
+            slot.style.backgroundColor = '';
+            slot.style.borderColor = '';
+        }
+        
+        // 檢查是否是活動拖曳
+        const dragData = event.dataTransfer.getData('text/plain');
+        if (dragData.startsWith('activity:')) {
+            const activityId = dragData.replace('activity:', '');
+            const activity = this.activityTypes.find(a => a.id === activityId);
+            
+            if (activity) {
+                // 直接建立預設30分鐘的活動，之後可以調整
+                await this.createActivityWithDuration(activityId, slotKey, 30);
+            }
+        }
+    }
+
+    // 離開拖放區域時移除視覺提示
+    onSlotDragLeave(event, slotKey) {
+        const slot = event.target;
+        if (slot) {
+            slot.style.backgroundColor = '';
+            slot.style.borderColor = '';
+        }
+    }
+
+    // 生成唯一任務ID
+    generateTaskId() {
+        return `task_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    // 顯示時間長度選擇對話框
+    showDurationDialog(activityId, slotKey) {
+        const activity = this.activityTypes.find(a => a.id === activityId);
+        if (!activity) return;
+
+        const dialog = document.createElement('div');
+        dialog.className = 'dialog-overlay';
+        dialog.innerHTML = `
+            <div class="duration-dialog">
+                <div class="dialog-header">
+                    <h3>設定「${activity.name}」的時間長度</h3>
+                    <button class="dialog-close" onclick="window.activeModule.closeDialog()">×</button>
+                </div>
+                
+                <div class="duration-options">
+                    <div class="quick-durations">
+                        <button class="duration-btn" onclick="window.activeModule.confirmDuration(15, '${activityId}', '${slotKey}')">15分鐘</button>
+                        <button class="duration-btn" onclick="window.activeModule.confirmDuration(30, '${activityId}', '${slotKey}')">30分鐘</button>
+                        <button class="duration-btn" onclick="window.activeModule.confirmDuration(60, '${activityId}', '${slotKey}')">1小時</button>
+                        <button class="duration-btn" onclick="window.activeModule.confirmDuration(120, '${activityId}', '${slotKey}')">2小時</button>
+                    </div>
+                    
+                    <div class="custom-duration">
+                        <label>自訂時間（分鐘）：</label>
+                        <input type="number" id="customDuration" min="15" max="480" step="15" value="30">
+                        <button class="btn btn-primary" onclick="window.activeModule.confirmCustomDuration('${activityId}', '${slotKey}')">確定</button>
+                    </div>
+                </div>
+            </div>
+            
+            <style>
+                .duration-dialog {
+                    background: white;
+                    border-radius: 16px;
+                    padding: 24px;
+                    max-width: 400px;
+                    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+                }
+                
+                .dialog-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    padding-bottom: 16px;
+                    border-bottom: 1px solid var(--border);
+                }
+                
+                .quick-durations {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    gap: 12px;
+                    margin-bottom: 20px;
+                }
+                
+                .duration-btn {
+                    padding: 12px 16px;
+                    background: var(--bg);
+                    border: 1px solid var(--border);
+                    border-radius: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                
+                .duration-btn:hover {
+                    background: var(--primary);
+                    color: white;
+                    border-color: var(--primary);
+                }
+                
+                .custom-duration {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding-top: 16px;
+                    border-top: 1px solid var(--border);
+                }
+                
+                .custom-duration input {
+                    width: 80px;
+                    padding: 8px;
+                    border: 1px solid var(--border);
+                    border-radius: 6px;
+                }
+            </style>
+        `;
+        
+        document.body.appendChild(dialog);
+    }
+
+    // 確認時間長度並建立活動
+    async confirmDuration(minutes, activityId, slotKey) {
+        await this.createActivityWithDuration(activityId, slotKey, minutes);
+        this.closeDialog();
+    }
+
+    // 確認自訂時間長度
+    async confirmCustomDuration(activityId, slotKey) {
+        const minutes = parseInt(document.getElementById('customDuration').value);
+        if (minutes < 15 || minutes > 480) {
+            this.showToast('時間長度必須在15分鐘到8小時之間', 'error');
+            return;
+        }
+        await this.createActivityWithDuration(activityId, slotKey, minutes);
+        this.closeDialog();
+    }
+
+    // 根據指定的時間長度建立活動
+    async createActivityWithDuration(activityId, startSlotKey, durationMinutes) {
+        const activity = this.activityTypes.find(a => a.id === activityId);
+        if (!activity) return;
+
+        // 解析起始時間格子
+        const [dateStr, timeStr] = startSlotKey.split('_');
+        const [hour, minute] = timeStr.split(':').map(Number);
+        
+        // 計算需要多少個時間格子
+        const slotsNeeded = Math.ceil(durationMinutes / this.timeUnit);
+        
+        // 生成唯一任務ID
+        const taskId = this.generateTaskId();
+        
+        // 建立連續的時間格子
+        const createdSlots = [];
+        for (let i = 0; i < slotsNeeded; i++) {
+            // 計算當前格子的時間
+            const currentMinutes = minute + (i * this.timeUnit);
+            const currentHour = hour + Math.floor(currentMinutes / 60);
+            const finalMinute = currentMinutes % 60;
+            
+            // 檢查是否超出一天範圍
+            if (currentHour >= 23) break;
+            
+            // 生成當前格子的key
+            const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${finalMinute.toString().padStart(2, '0')}`;
+            const currentSlotKey = `${dateStr}_${currentTimeStr}`;
+            
+            // 檢查格子是否已被佔用
+            if (this.timeboxData[currentSlotKey]) {
+                this.showToast(`時間格子 ${currentTimeStr} 已被佔用`, 'error');
+                return;
+            }
+            
+            // 建立活動資料
+            this.timeboxData[currentSlotKey] = {
+                taskId: taskId,
+                activityId: activityId,
+                content: activity.name,
+                completed: false,
+                createdAt: new Date().toISOString(),
+                isMainSlot: i === 0 // 標記主要格子
+            };
+            
+            createdSlots.push(currentSlotKey);
+        }
+        
+        await this.saveData();
+        await this.render(this.currentUser);
+        
+        const endTime = createdSlots.length > 1 ? 
+            createdSlots[createdSlots.length - 1].split('_')[1] : timeStr;
+        
+        this.showToast(`已建立「${activity.name}」活動：${timeStr} - ${endTime} (${durationMinutes}分鐘)`, 'success');
+    }
+
+    // 開始調整時間長度
+    startResize(event, taskId, direction) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // 記錄調整狀態
+        this.resizing = {
+            taskId: taskId,
+            direction: direction,
+            startY: event.clientY,
+            originalSlots: this.getTaskSlots(taskId)
+        };
+        
+        // 添加全域事件監聽
+        document.addEventListener('mousemove', this.handleResize.bind(this));
+        document.addEventListener('mouseup', this.endResize.bind(this));
+        
+        // 添加視覺回饋
+        document.body.style.cursor = 'ns-resize';
+        document.body.classList.add('resizing');
+        
+        console.log(`開始調整任務 ${taskId} 的 ${direction} 邊緣`);
+    }
+
+    // 處理調整過程
+    handleResize(event) {
+        if (!this.resizing) return;
+        
+        const deltaY = event.clientY - this.resizing.startY;
+        const slotsToMove = Math.round(deltaY / 30); // 假設每個格子高度約30px
+        
+        if (slotsToMove === 0) return;
+        
+        // 根據方向和移動量計算新的時間範圍
+        this.previewResize(this.resizing.taskId, this.resizing.direction, slotsToMove);
+    }
+
+    // 結束調整
+    async endResize(event) {
+        if (!this.resizing) return;
+        
+        // 移除事件監聽
+        document.removeEventListener('mousemove', this.handleResize.bind(this));
+        document.removeEventListener('mouseup', this.endResize.bind(this));
+        
+        // 移除視覺回饋
+        document.body.style.cursor = '';
+        document.body.classList.remove('resizing');
+        
+        // 應用最終調整
+        const deltaY = event.clientY - this.resizing.startY;
+        const slotsToMove = Math.round(deltaY / 30);
+        
+        if (slotsToMove !== 0) {
+            await this.applyResize(this.resizing.taskId, this.resizing.direction, slotsToMove);
+        }
+        
+        this.resizing = null;
+    }
+
+    // 獲取任務佔用的所有時間格子
+    getTaskSlots(taskId) {
+        const slots = [];
+        for (const [key, data] of Object.entries(this.timeboxData)) {
+            if (data.taskId === taskId) {
+                slots.push(key);
+            }
+        }
+        return slots.sort(); // 按時間順序排序
+    }
+
+    // 預覽調整效果
+    previewResize(taskId, direction, slotsToMove) {
+        // 這裡可以加上即時預覽的視覺效果
+        // 暫時先在控制台顯示
+        console.log(`預覽調整: ${taskId}, ${direction}, ${slotsToMove} 格子`);
+    }
+
+    // 應用調整
+    async applyResize(taskId, direction, slotsToMove) {
+        const currentSlots = this.getTaskSlots(taskId);
+        if (currentSlots.length === 0) return;
+        
+        // 解析時間資訊
+        const firstSlot = currentSlots[0];
+        const lastSlot = currentSlots[currentSlots.length - 1];
+        const [dateStr] = firstSlot.split('_');
+        
+        // 計算新的時間範圍
+        let newSlots = [];
+        
+        if (direction === 'top') {
+            // 調整開始時間
+            const [, startTimeStr] = firstSlot.split('_');
+            const [hour, minute] = startTimeStr.split(':').map(Number);
+            
+            // 計算新的開始時間
+            const newStartMinute = minute - (slotsToMove * this.timeUnit);
+            const newStartHour = hour + Math.floor(newStartMinute / 60);
+            const finalStartMinute = ((newStartMinute % 60) + 60) % 60;
+            
+            // 檢查時間範圍是否合理
+            if (newStartHour < 6 || newStartHour >= 23) {
+                this.showToast('無法調整到該時間範圍', 'error');
+                return;
+            }
+            
+            // 重新建立時間格子
+            const [, endTimeStr] = lastSlot.split('_');
+            const newStartTime = `${newStartHour.toString().padStart(2, '0')}:${finalStartMinute.toString().padStart(2, '0')}`;
+            const newStartKey = `${dateStr}_${newStartTime}`;
+            
+            // 計算新的時長
+            const startTotalMinutes = newStartHour * 60 + finalStartMinute;
+            const [endHour, endMinute] = endTimeStr.split(':').map(Number);
+            const endTotalMinutes = endHour * 60 + endMinute + this.timeUnit;
+            const durationMinutes = endTotalMinutes - startTotalMinutes;
+            
+            // 清除舊的格子
+            currentSlots.forEach(key => delete this.timeboxData[key]);
+            
+            // 建立新的活動
+            const activityId = this.timeboxData[firstSlot]?.activityId;
+            if (activityId) {
+                await this.createActivityWithDuration(activityId, newStartKey, durationMinutes);
+            }
+            
+        } else if (direction === 'bottom') {
+            // 調整結束時間
+            const currentDuration = currentSlots.length * this.timeUnit;
+            const newDuration = currentDuration + (slotsToMove * this.timeUnit);
+            
+            if (newDuration < 15) {
+                this.showToast('活動時長不能少於15分鐘', 'error');
+                return;
+            }
+            
+            // 清除舊的格子
+            currentSlots.forEach(key => delete this.timeboxData[key]);
+            
+            // 建立新的活動
+            const activityId = this.timeboxData[firstSlot]?.activityId;
+            if (activityId) {
+                await this.createActivityWithDuration(activityId, firstSlot, newDuration);
+            }
+        }
+        
+        await this.saveData();
+        await this.render(this.currentUser);
+        
+        this.showToast('活動時間已調整', 'success');
     }
 }
 

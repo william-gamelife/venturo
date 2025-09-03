@@ -533,6 +533,13 @@ class TodosModule {
                     border-color: rgba(201, 169, 97, 0.3);
                 }
 
+                .kanban-column.drag-over {
+                    box-shadow: 0 32px 80px rgba(45, 55, 72, 0.15);
+                    border-color: rgba(201, 169, 97, 0.6);
+                    background: rgba(201, 169, 97, 0.05);
+                    transform: scale(1.02);
+                }
+
                 .column-header {
                     display: flex;
                     align-items: center;
@@ -1619,7 +1626,7 @@ class TodosModule {
             { id: 'unorganized', title: '尚未整理', icon: '' },
             { id: 'in-progress', title: '進行中', icon: '' },
             { id: 'waiting', title: '等待確認', icon: '' },
-            { id: 'project', title: '專案打包', icon: '' },
+            ...(this.hasProjectPermission() ? [{ id: 'project', title: '專案打包', icon: '' }] : []),
             { id: 'completed', title: '完成', icon: '' }
         ];
 
@@ -1630,7 +1637,10 @@ class TodosModule {
             const hasTasksToPackage = isProjectColumn && tasks.length > 0;
             
             return `
-                <div class="kanban-column" data-column="${column.id}">
+                <div class="kanban-column" 
+                     data-column="${column.id}"
+                     ondragover="window.activeModule.handleDragOver(event)"
+                     ondrop="window.activeModule.handleDrop(event, '${column.id}')">
                     <div class="column-header">
                         <div class="column-title">
                             ${column.title}
@@ -1930,37 +1940,39 @@ class TodosModule {
             'other': '其他'
         };
 
-        if (task.project_id) {
-            // 已經屬於專案，顯示同類任務
-            return `
-                <div class="project-info">
-                    <h4>專案資訊</h4>
-                    <p>此任務屬於「${task.project_name}」專案</p>
-                    <p>分類：${drawerNames[drawer]} 大類</p>
-                    
-                    <div class="same-category-tasks">
-                        <h5>同類其他任務：</h5>
-                        <div class="task-checklist">
-                            <!-- 這裡之後整合專案資料時填入 -->
-                            <div class="placeholder">專案整合後顯示同類任務清單</div>
+        if (this.hasProjectPermission()) {
+            if (task.project_id) {
+                // 已經屬於專案，顯示同類任務
+                return `
+                    <div class="project-info">
+                        <h4>專案資訊</h4>
+                        <p>此任務屬於「${task.project_name}」專案</p>
+                        <p>分類：${drawerNames[drawer]} 大類</p>
+                        
+                        <div class="same-category-tasks">
+                            <h5>同類其他任務：</h5>
+                            <div class="task-checklist">
+                                <!-- 這裡之後整合專案資料時填入 -->
+                                <div class="placeholder">專案整合後顯示同類任務清單</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-        } else {
-            // 尚未打包，顯示預覽
-            return `
-                <div class="package-preview">
-                    <h4>專案打包預覽</h4>
-                    <p>這張卡的標籤會讓它進入：<strong>${drawerNames[drawer]} 大類</strong></p>
-                    
-                    <div class="quick-actions">
-                        <button class="preview-btn" onclick="window.activeModule.addToPackage('${task.id}')">
-                            加入「專案打包」
-                        </button>
+                `;
+            } else {
+                // 尚未打包，顯示預覽
+                return `
+                    <div class="package-preview">
+                        <h4>專案打包預覽</h4>
+                        <p>這張卡的標籤會讓它進入：<strong>${drawerNames[drawer]} 大類</strong></p>
+                        
+                        <div class="quick-actions">
+                            <button class="preview-btn" onclick="window.activeModule.addToPackage('${task.id}')">
+                                加入「專案打包」
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            }
         }
     }
 
@@ -1985,7 +1997,7 @@ class TodosModule {
                         </div>
                     </div>
                     <div class="header-actions">
-                        <button class="quick-btn package" onclick="window.activeModule.addToPackage('${task.id}')">加入專案打包</button>
+                        ${this.hasProjectPermission() ? `<button class="quick-btn package" onclick="window.activeModule.addToPackage('${task.id}')">加入專案打包</button>` : ''}
                         <button class="quick-btn complete" onclick="window.activeModule.markComplete('${task.id}')">標記完成</button>
                     </div>
                 </div>
@@ -2590,7 +2602,81 @@ class TodosModule {
             }
         });
         
+        // 清理拖放區域樣式
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            col.classList.remove('drag-over');
+        });
+        
         this.draggedTasks = null;
+    }
+
+    // 拖拽懸停事件
+    handleDragOver(event) {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        
+        // 添加視覺反饋
+        const column = event.currentTarget;
+        if (!column.classList.contains('drag-over')) {
+            // 清理其他欄位的高亮
+            document.querySelectorAll('.kanban-column').forEach(col => {
+                col.classList.remove('drag-over');
+            });
+            // 高亮當前欄位
+            column.classList.add('drag-over');
+        }
+    }
+
+    // 拖放事件處理
+    async handleDrop(event, targetStatus) {
+        event.preventDefault();
+        
+        // 清理視覺反饋
+        event.currentTarget.classList.remove('drag-over');
+        
+        if (!this.draggedTasks || this.draggedTasks.length === 0) {
+            return;
+        }
+
+        try {
+            // 更新任務狀態
+            const updatedTasks = [];
+            for (const taskId of this.draggedTasks) {
+                const task = this.todos.find(t => t.id === taskId);
+                if (task && task.status !== targetStatus) {
+                    task.status = targetStatus;
+                    task.updated_at = new Date().toISOString();
+                    updatedTasks.push(task);
+                }
+            }
+
+            if (updatedTasks.length > 0) {
+                // 儲存到雲端
+                await this.saveData();
+                
+                // 重新渲染
+                this.renderColumns();
+                
+                // 清理選取狀態
+                this.clearSelection();
+                
+                // 顯示成功通知
+                const statusNames = {
+                    'unorganized': '尚未整理',
+                    'in-progress': '進行中',
+                    'waiting': '等待確認',
+                    'project': '專案打包',
+                    'completed': '完成'
+                };
+                
+                const targetName = statusNames[targetStatus] || targetStatus;
+                const taskCount = updatedTasks.length;
+                this.showToast(`已將 ${taskCount} 個任務移至「${targetName}」`, 'success');
+            }
+        } catch (error) {
+            console.error('移動任務失敗:', error);
+            this.showToast('移動任務失敗，請重試', 'error');
+        }
     }
 
     // 合併成專案
@@ -3143,6 +3229,23 @@ class TodosModule {
     // 覆寫原本的刷新方法
     refreshView() {
         this.refreshTodosList();
+    }
+
+    // 權限檢查方法
+    hasProjectPermission() {
+        // 檢查用戶是否有專案功能權限
+        const adminUsers = ['william', 'carson'];
+        const projectUsers = ['william', 'carson']; // 可以擴展更多專案用戶
+        
+        if (!this.currentUser) return false;
+        
+        const userId = this.currentUser.uuid || this.currentUser.id || '';
+        return projectUsers.some(user => userId.toLowerCase().includes(user.toLowerCase()));
+    }
+
+    // 檢查是否為一般用戶（無專案權限）
+    isBasicUser() {
+        return !this.hasProjectPermission();
     }
 }
 
