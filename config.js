@@ -8,17 +8,26 @@ window.ENV = {
     ENVIRONMENT: import.meta.env?.MODE || 'development'
 };
 
+// 單例模式 - 全域唯一Supabase客戶端
+window.getSupabaseClient = function() {
+    if (!window._supabaseClient && window.supabase && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
+        window._supabaseClient = window.supabase.createClient(
+            window.ENV.SUPABASE_URL,
+            window.ENV.SUPABASE_ANON_KEY
+        );
+        console.log('✅ 單例Supabase客戶端已建立');
+    }
+    return window._supabaseClient;
+};
+
 // 確保 Supabase 已載入
 if (typeof window.supabase === 'undefined' && window.ENV.SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
     // 動態載入 Supabase
     const script = document.createElement('script');
     script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
     script.onload = () => {
-        window.supabaseClient = window.supabase.createClient(
-            window.ENV.SUPABASE_URL,
-            window.ENV.SUPABASE_ANON_KEY
-        );
-        console.log('Supabase 已連接');
+        // 立即建立單例客戶端
+        window.getSupabaseClient();
     };
     document.head.appendChild(script);
 }

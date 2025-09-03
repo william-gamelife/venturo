@@ -1995,37 +1995,6 @@ class TodosModule {
         // 綁定展開任務的其他事件
     }
 
-    getTaskCard(todo) {
-        return `
-            <div class="task-card" data-task-id="${todo.id}">
-                <div class="task-checkbox-area">
-                    <input type="checkbox" class="task-checkbox" data-task-id="${todo.id}" onclick="event.stopPropagation(); window.activeModule.toggleTaskSelection('${todo.id}')">
-                </div>
-                
-                <div class="task-card-content" onclick="window.activeModule.expandTask('${todo.id}')">
-                    <div class="task-title">${todo.title}</div>
-                    ${todo.tags && todo.tags.length > 0 ? `<div class="task-tags-simple">
-                        ${todo.tags.slice(0, 3).map(tag => `<span class="task-tag-simple">${tag}</span>`).join('')}
-                        ${todo.tags.length > 3 ? `<span class="task-tag-more">+${todo.tags.length - 3}</span>` : ''}
-                    </div>` : ''}
-                </div>
-                
-                <div class="task-actions-elegant">
-                    <button class="elegant-btn edit-btn" onclick="event.stopPropagation(); window.activeModule.editTask('${todo.id}')" title="編輯">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                    <button class="elegant-btn complete-btn" onclick="event.stopPropagation(); window.activeModule.completeTask('${todo.id}')" title="完成">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                            <path d="M9 11l3 3L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        `;
-    }
 
     getTasksByColumn(columnId) {
         const now = new Date();
@@ -2073,107 +2042,32 @@ class TodosModule {
     }
 
     getTaskCard(task) {
-        const isSelected = this.selectedTodos.has(task.id);
-        const priorityStars = this.getPriorityStars(task.priority);
-        const tagInfo = this.quickTags.find(t => t.id === task.tags?.[0]);
-        const isOverdue = false; // 關閉過期檢查功能
-        const commentsCount = task.comments ? task.comments.length : 0;
-        
         return `
-            <div class="task-card ${isSelected ? 'selected' : ''} ${task.status === 'completed' ? 'completed' : ''} ${isOverdue ? 'overdue' : ''}" 
-                 data-task-id="${task.id}"
-                 onclick="window.activeModule.handleTaskCardClick(event, '${task.id}')">
-                
-                <div class="task-content">
-                    <div class="task-title">
-                        ${task.title}
-                        ${task.projectTag ? `<span class="project-tag">#${task.projectTag}</span>` : ''}
-                        ${isOverdue ? `<span class="overdue-badge">逾期</span>` : ''}
-                    </div>
-                    
-                    ${task.description ? `<div class="task-desc">${task.description}</div>` : ''}
-                    
-                    <div class="task-meta">
-                        ${task.priority > 0 ? `
-                            <div class="task-priority" title="優先級: ${task.priority} 星">
-                                ${priorityStars}
-                            </div>
-                        ` : ''}
-                        
-                        ${tagInfo ? `
-                            <div class="task-tag" style="background: ${tagInfo.color}; color: white;">
-                                ${tagInfo.name}
-                            </div>
-                        ` : ''}
-                        
-                        ${task.dueDate ? `
-                            <div class="task-due ${isOverdue ? 'overdue' : ''}">
-                                <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <rect x="1" y="2" width="10" height="9" rx="1" fill="none" stroke="currentColor"/>
-                                    <path d="M3 0v3M9 0v3M1 4h10" stroke="currentColor"/>
-                                </svg>
-                                ${this.formatDate(task.dueDate)}
-                            </div>
-                        ` : ''}
-                        
-                        ${commentsCount > 0 ? `
-                            <div class="task-comments" title="${commentsCount} 則留言">
-                                <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <path d="M2 2h8a1 1 0 011 1v6a1 1 0 01-1 1H3l-1 2V3a1 1 0 011-1z" stroke="currentColor" fill="none"/>
-                                </svg>
-                                ${commentsCount}
-                            </div>
-                        ` : ''}
-                        
-                        ${task.assignedTo ? `
-                            <div class="task-assignee" title="負責人: ${task.assignedTo}">
-                                <svg width="12" height="12" viewBox="0 0 12 12">
-                                    <circle cx="6" cy="4" r="2" stroke="currentColor" fill="none"/>
-                                    <path d="M2 10c0-2.5 1.8-4 4-4s4 1.5 4 4" stroke="currentColor" fill="none"/>
-                                </svg>
-                                ${task.assignedTo}
-                            </div>
-                        ` : ''}
-                    </div>
+            <div class="task-card" data-task-id="${task.id}">
+                <div class="task-checkbox-area">
+                    <input type="checkbox" class="task-checkbox" data-task-id="${task.id}" onclick="event.stopPropagation(); window.activeModule.toggleTaskSelection('${task.id}')">
                 </div>
                 
+                <div class="task-card-content" onclick="window.activeModule.expandTask('${task.id}')">
+                    <div class="task-title">${task.title}</div>
+                    ${task.tags && task.tags.length > 0 ? `<div class="task-tags-simple">
+                        ${task.tags.slice(0, 3).map(tag => `<span class="task-tag-simple">${tag}</span>`).join('')}
+                        ${task.tags.length > 3 ? `<span class="task-tag-more">+${task.tags.length - 3}</span>` : ''}
+                    </div>` : ''}
+                </div>
                 
-                <!-- 手機版展開內容 -->
-                <div class="task-expanded-content">
-                    ${task.description ? `
-                        <div class="expanded-section">
-                            <div class="expanded-label">描述</div>
-                            <div class="expanded-value">${task.description}</div>
-                        </div>
-                    ` : ''}
-                    
-                    ${task.dueDate ? `
-                        <div class="expanded-section">
-                            <div class="expanded-label">截止日期</div>
-                            <div class="expanded-value">${this.formatDate(task.dueDate)}</div>
-                        </div>
-                    ` : ''}
-                    
-                    
-                    ${task.tags && task.tags.length > 0 ? `
-                        <div class="expanded-section">
-                            <div class="expanded-label">標籤</div>
-                            <div class="expanded-value">
-                                ${task.tags.map(tagId => {
-                                    const tag = this.quickTags.find(t => t.id === tagId);
-                                    return tag ? `<span style="color: ${tag.color}">#${tag.name}</span>` : '';
-                                }).filter(Boolean).join(' ')}
-                            </div>
-                        </div>
-                    ` : ''}
-                    
-                    ${task.assignedTo ? `
-                        <div class="expanded-section">
-                            <div class="expanded-label">負責人</div>
-                            <div class="expanded-value">${task.assignedTo}</div>
-                        </div>
-                    ` : ''}
-                    
+                <div class="task-actions-elegant">
+                    <button class="elegant-btn edit-btn" onclick="event.stopPropagation(); window.activeModule.editTask('${task.id}')" title="編輯">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="m18.5 2.5 3 3L12 15l-4 1 1-4L18.5 2.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
+                    <button class="elegant-btn complete-btn" onclick="event.stopPropagation(); window.activeModule.completeTask('${task.id}')" title="完成">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M9 11l3 3L20 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </button>
                 </div>
             </div>
         `;
