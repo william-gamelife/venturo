@@ -44,12 +44,11 @@ class UsersModule {
         
         this.userId = userId;
         
-        // 動態載入權限檢查
-        const authModule = await import('./auth.js');
-        this.authManager = authModule;
+        // 使用 window.authBridge 替代
+        this.authManager = window.authBridge;
         
         // 檢查權限 - 使用新的權限系統
-        if (!this.authManager.checkPermission('user_management')) {
+        if (!this.authManager.canAccessModule('users')) {
             const moduleContainer = document.getElementById('moduleContainer');
             moduleContainer.innerHTML = `
                 <div style="text-align: center; padding: 60px 20px; color: var(--text-light);">

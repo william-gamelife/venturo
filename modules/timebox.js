@@ -3077,9 +3077,13 @@ class TimeboxModule {
     async endResize(event) {
         if (!this.resizing) return;
         
-        // 移除事件監聽
-        document.removeEventListener('mousemove', this.handleResize.bind(this));
-        document.removeEventListener('mouseup', this.endResize.bind(this));
+        // 移除事件監聽 (使用預存的綁定函數)
+        if (this.boundHandleResize) {
+            document.removeEventListener('mousemove', this.boundHandleResize);
+        }
+        if (this.boundEndResize) {
+            document.removeEventListener('mouseup', this.boundEndResize);
+        }
         
         // 移除視覺回饋
         document.body.style.cursor = '';

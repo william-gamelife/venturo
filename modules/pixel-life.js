@@ -1084,9 +1084,13 @@ class PixelLifeModule {
             clearInterval(this.gameLoop);
         }
         
-        // 移除事件監聽
-        document.removeEventListener('keydown');
-        document.removeEventListener('keyup');
+        // 移除事件監聽 (需要提供相同的處理函數)
+        if (this.keydownHandler) {
+            document.removeEventListener('keydown', this.keydownHandler);
+        }
+        if (this.keyupHandler) {
+            document.removeEventListener('keyup', this.keyupHandler);
+        }
         
         // 儲存遊戲
         this.saveGameData();
