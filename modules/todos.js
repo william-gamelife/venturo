@@ -3288,14 +3288,14 @@ class TodosModule {
     async hasProjectPermission() {
         // 使用新的權限系統檢查專案功能權限
         try {
-            const authModule = await import('./auth.js');
-            return authModule.checkPermission('all_projects') || authModule.isAdmin();
+            // 使用全域 authBridge
+            if (window.authBridge && window.authBridge.canUsePackageFeature) {
+                return window.authBridge.canUsePackageFeature();
+            }
+            return false;
         } catch (error) {
             console.warn('無法載入權限檢查，使用備用方案');
-            // 備用檢查
-            const adminUsers = ['william', 'carson'];
-            const userId = this.currentUser?.uuid || this.currentUser?.id || '';
-            return adminUsers.some(user => userId.toLowerCase().includes(user.toLowerCase()));
+            return false;
         }
     }
 
