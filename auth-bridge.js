@@ -1,5 +1,5 @@
 /**
- * GameLife 權限系統核心 - AuthBridge
+ * GameLife 權限系統核心 - AuthBridge (修復版)
  * 統一認證入口，無複雜依賴，快速啟動
  */
 
@@ -49,8 +49,19 @@ class AuthBridge {
                 
                 // 檢查是否過期
                 if (authData.expireTime && authData.expireTime > Date.now()) {
-                    this.currentUser = authData;
-                    console.log('🔄 已恢復登入狀態:', authData.username);
+                    // 確保資料結構完整
+                    this.currentUser = {
+                        uuid: authData.uuid,
+                        username: authData.username,
+                        displayName: authData.displayName || authData.username,
+                        role: authData.role,
+                        permissions: authData.permissions,
+                        loginTime: authData.loginTime,
+                        expireTime: authData.expireTime,
+                        // 新增：確保 title 欄位存在
+                        title: authData.title || this.getRoleTitle(authData.role)
+                    };
+                    console.log('🔄 已恢復登入狀態:', this.currentUser);
                 } else {
                     // 清除過期資料
                     localStorage.removeItem('gamelife_auth');
@@ -86,12 +97,13 @@ class AuthBridge {
         
         const user = this.permissionHelper.validateUser(username, password);
         if (user) {
-            // 建立完整的登入資料
+            // 建立完整的登入資料（修復：加入 title）
             const loginData = {
                 uuid: user.uuid,
                 username: user.username,
-                displayName: user.displayName,
+                displayName: user.displayName || user.username,
                 role: user.role,
+                title: user.title || this.getRoleTitle(user.role), // 新增 title
                 permissions: user.permissions,
                 loginTime: Date.now(),
                 expireTime: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7天過期
@@ -102,12 +114,24 @@ class AuthBridge {
             // 保存到 localStorage
             localStorage.setItem('gamelife_auth', JSON.stringify(loginData));
             
-            console.log('✅ 登入成功:', username);
+            console.log('✅ 登入成功:', loginData);
             return true;
         }
         
         console.log('❌ 登入失敗:', username);
         return false;
+    }
+
+    // 新增：根據角色獲取職稱
+    getRoleTitle(role) {
+        const roleTitles = {
+            'SUPER_ADMIN': '系統管理員',
+            'BUSINESS_ADMIN': '商務管理員',
+            'GENERAL_USER': '一般使用者',
+            'admin': 'IT主管',
+            'user': '使用者'
+        };
+        return roleTitles[role] || '使用者';
     }
 
     logout() {
@@ -170,13 +194,11 @@ class AuthBridge {
     getUserRole() {
         if (!this.currentUser) return null;
         
-        if (this.permissionHelper) {
-            return this.permissionHelper.getUserRole(this.currentUser.uuid);
-        }
-        
+        // 返回完整的角色資訊
         return {
             role: this.currentUser.role,
-            displayName: this.currentUser.displayName
+            displayName: this.currentUser.displayName,
+            title: this.currentUser.title || this.getRoleTitle(this.currentUser.role)
         };
     }
 
@@ -204,7 +226,9 @@ class AuthBridge {
             hasPermissionHelper: !!this.permissionHelper,
             currentUser: this.currentUser ? {
                 username: this.currentUser.username,
-                role: this.currentUser.role
+                role: this.currentUser.role,
+                title: this.currentUser.title,
+                displayName: this.currentUser.displayName
             } : null
         };
     }
