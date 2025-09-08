@@ -2,14 +2,17 @@
 
 interface ButtonProps {
   variant?: 'primary' | 'secondary' | 'ghost'
+  size?: 'sm' | 'md' | 'lg'
   icon?: React.ReactNode
   children: React.ReactNode
   onClick?: () => void
+  fullWidth?: boolean
+  className?: string
 }
 
-export function Button({ variant = 'primary', icon, children, onClick }: ButtonProps) {
+export function Button({ variant = 'primary', size = 'md', icon, children, onClick, fullWidth = false, className = '' }: ButtonProps) {
   return (
-    <button className={`btn btn-${variant}`} onClick={onClick}>
+    <button className={`btn btn-${variant} btn-${size} ${fullWidth ? 'btn-full-width' : ''} ${className}`} onClick={onClick}>
       {icon && <span className="btn-icon">{icon}</span>}
       <span>{children}</span>
       
@@ -18,13 +21,26 @@ export function Button({ variant = 'primary', icon, children, onClick }: ButtonP
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 10px 16px;
           border-radius: 10px;
           font-weight: 500;
-          font-size: 14px;
           cursor: pointer;
           transition: all 0.2s ease;
           border: none;
+        }
+        
+        .btn-sm {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+        
+        .btn-md {
+          padding: 10px 16px;
+          font-size: 14px;
+        }
+        
+        .btn-lg {
+          padding: 14px 20px;
+          font-size: 16px;
         }
         
         .btn-primary {
@@ -61,6 +77,11 @@ export function Button({ variant = 'primary', icon, children, onClick }: ButtonP
         .btn-icon {
           display: flex;
           align-items: center;
+        }
+        
+        .btn-full-width {
+          width: 100%;
+          justify-content: center;
         }
       `}</style>
     </button>

@@ -1,52 +1,37 @@
-import * as React from "react"
-import { cn } from "@/lib/utils"
+// 臨時 Button 元件 - 快速通道
+import React from 'react'
 
-const buttonVariants = {
-  default: "bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-md transition-colors",
-  secondary: "bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium rounded-md transition-colors",
-  danger: "bg-red-500 hover:bg-red-600 text-white font-medium rounded-md transition-colors",
-  ghost: "hover:bg-primary/10 hover:text-primary transition-colors",
-  link: "underline-offset-4 hover:underline text-primary p-0 h-auto font-normal",
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
+  size?: 'default' | 'sm' | 'lg' | 'icon'
 }
 
-const buttonSizes = {
-  default: "px-4 py-2",
-  sm: "px-3 py-1.5 text-xs",
-  lg: "px-6 py-3 text-base",
-  icon: "h-9 w-9 p-0",
-}
-
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: keyof typeof buttonVariants
-  size?: keyof typeof buttonSizes
-  asChild?: boolean
-  loading?: boolean
-}
-
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "default", size = "default", loading, asChild = false, children, ...props }, ref) => {
+export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+  ({ className = '', variant = 'default', size = 'default', ...props }, ref) => {
+    const variants = {
+      default: 'bg-primary text-white hover:bg-primary/90',
+      destructive: 'bg-red-500 text-white hover:bg-red-600',
+      outline: 'border border-gray-300 bg-transparent hover:bg-gray-100',
+      secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200',
+      ghost: 'hover:bg-gray-100',
+      link: 'text-primary underline-offset-4 hover:underline'
+    }
+    
+    const sizes = {
+      default: 'h-10 px-4 py-2',
+      sm: 'h-9 px-3',
+      lg: 'h-11 px-8',
+      icon: 'h-10 w-10'
+    }
+    
     return (
       <button
-        className={cn(
-          "inline-flex items-center justify-center",
-          buttonVariants[variant],
-          buttonSizes[size],
-          loading && "opacity-50 cursor-not-allowed",
-          className
-        )}
         ref={ref}
-        disabled={loading || props.disabled}
+        className={`inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 ${variants[variant]} ${sizes[size]} ${className}`}
         {...props}
-      >
-        {loading && (
-          <div className="spinner mr-2" />
-        )}
-        {children}
-      </button>
+      />
     )
   }
 )
-Button.displayName = "Button"
 
-export { Button, buttonVariants }
+Button.displayName = 'Button'

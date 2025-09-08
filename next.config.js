@@ -3,8 +3,7 @@ const nextConfig = {
   // 強制所有頁面使用動態渲染
   // 這避免了靜態生成時的錯誤
   experimental: {
-    // 禁用靜態生成的預設行為
-    appDir: true,
+    // appDir 已經是 Next.js 14 的預設值，不再需要設定
   },
   
   // TypeScript 配置

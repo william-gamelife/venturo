@@ -59,6 +59,28 @@ export interface TodoItem {
   parentId?: string  // 新增：父任務ID（用於子任務）
   subtasks?: TodoSubtask[]  // 新增：子任務列表
   isExpanded?: boolean  // 新增：專案卡片是否展開
+  
+  // 角落模式支援
+  businessType?: 'group' | 'order' | 'general'
+  groupCode?: string
+  orderNumber?: string
+  dataCompleteness?: 'skeleton' | 'basic' | 'detailed' | 'complete'
+  cornerModeData?: {
+    isGroupRelated: boolean
+    quickActions: string[]
+    priority: 'high' | 'medium' | 'low'
+    contactPerson?: string
+    contactPhone?: string
+    contactEmail?: string
+    departureDate?: string
+    returnDate?: string
+    totalMembers?: number
+    budget?: number
+    itinerary?: string
+    specialRequests?: string
+    notes?: string
+  }
+  
   createdAt: string
   updatedAt: string
 }

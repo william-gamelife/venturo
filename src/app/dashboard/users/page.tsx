@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { authManager } from '@/lib/auth'
-import { PageHeader } from '@/components/PageHeader'
+import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
 
@@ -322,37 +322,42 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="users-container">
-      <div>
-        <PageHeader
-          title="使用者管理"
-          subtitle="管理系統使用者及其權限設定"
-          icon={
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="m22 21-3-3m0 0a7 7 0 1 1 0-14 7 7 0 0 1 0 14z"/>
-            </svg>
-          }
-          stats={[
-            { label: '總用戶', value: users.length, type: 'default' },
-            { label: '系統管理員', value: users.filter(u => u.role === 'SUPER_ADMIN').length, type: 'info' },
-            { label: '業務管理員', value: users.filter(u => u.role === 'BUSINESS_ADMIN').length, type: 'success' }
-          ]}
-          actions={
-            <button 
-              className="add-user-btn"
+    <ModuleLayout
+      header={{
+        icon: Icons.users,
+        title: "使用者管理",
+        subtitle: "管理系統使用者及其權限設定",
+        actions: (
+          <>
+            <div className="header-stats">
+              <div className="stat-item">
+                <span className="stat-number">{users.length}</span>
+                <span className="stat-label">總用戶</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-number">{users.filter(u => u.role === 'SUPER_ADMIN').length}</span>
+                <span className="stat-label">系統管理員</span>
+              </div>
+              <div className="stat-item">
+                <span className="stat-number">{users.filter(u => u.role === 'BUSINESS_ADMIN').length}</span>
+                <span className="stat-label">業務管理員</span>
+              </div>
+            </div>
+            <Button 
+              variant="primary"
+              icon={
+                <svg viewBox="0 0 16 16" width="16" height="16">
+                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              }
               onClick={() => setShowAddModal(true)}
             >
-              <svg viewBox="0 0 16 16" width="16" height="16">
-                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
               新增使用者
-            </button>
-          }
-        />
-      </div>
-
+            </Button>
+          </>
+        )
+      }}
+    >
       <div className="users-grid">
         {users.map(user => (
           <div key={user.id} className="user-card">
@@ -584,9 +589,32 @@ export default function UsersPage() {
       )}
 
       <style jsx>{`
-        .users-container {
-          max-width: none;
-          margin: 0 auto;
+        .header-stats {
+          display: flex;
+          gap: 24px;
+          margin-right: 16px;
+          padding-right: 16px;
+          border-right: 1px solid rgba(201, 169, 97, 0.3);
+        }
+
+        .header-stats .stat-item {
+          text-align: center;
+        }
+
+        .header-stats .stat-number {
+          display: block;
+          font-size: 18px;
+          font-weight: 700;
+          color: #c9a961;
+          line-height: 1;
+        }
+
+        .header-stats .stat-label {
+          display: block;
+          font-size: 10px;
+          color: #6d685f;
+          margin-top: 2px;
+          white-space: nowrap;
         }
 
         .users-header {
@@ -1002,6 +1030,6 @@ export default function UsersPage() {
           }
         }
       `}</style>
-    </div>
+    </ModuleLayout>
   )
 }

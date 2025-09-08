@@ -28,7 +28,7 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
           background: white;
           border: 1px solid rgba(244, 164, 96, 0.2);
           border-radius: 16px;
-          padding: 24px 12px;
+          padding: 24px 24px;
           margin: 0 0 32px 0;
           box-shadow: 0 2px 12px rgba(244, 164, 96, 0.08);
           position: relative;
@@ -46,27 +46,23 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
         
         .header-content {
           display: flex;
-          justify-content: space-between;
           align-items: center;
           margin: 0;
+          gap: 24px;
+          /* Fixed spacing issue */
         }
         
         .header-left {
           display: flex;
           align-items: center;
           gap: 16px;
+          flex: 1;
         }
         
         .header-icon {
-          width: 48px;
-          height: 48px;
-          background: linear-gradient(135deg, #f4a460, #2f4f2f);
-          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          color: white;
-          box-shadow: 0 4px 16px rgba(244, 164, 96, 0.3);
         }
         
         .header-text {
@@ -91,11 +87,12 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
         .header-actions {
           display: flex;
           gap: 12px;
+          flex-shrink: 0;
         }
         
         @media (max-width: 768px) {
           .page-header {
-            padding: 20px 12px;
+            padding: 20px 20px;
             margin: 0 0 24px 0;
           }
           
@@ -132,7 +129,7 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
         
         @media (max-width: 480px) {
           .page-header {
-            padding: 16px 6px;
+            padding: 16px 16px;
             margin: 0 0 20px 0;
             border-radius: 12px;
           }

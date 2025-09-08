@@ -5,7 +5,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautif
 import { authManager } from '@/lib/auth'
 import { DEFAULT_MODULES } from '@/lib/modules'
 import { BaseAPI } from '@/lib/base-api'
-import { PageHeader } from '@/components/PageHeader'
+import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
 
@@ -226,158 +226,25 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="settings-container">
-      <div>
-        <PageHeader
-          icon={Icons.settings}
-          title="系統設定"
-          subtitle="個人化您的側邊欄排序和介面設定"
-          actions={
-            <>
-              {hasUnsavedChanges && (
-                <Button variant="primary" onClick={saveSidebarOrder}>
-                  儲存變更
-                </Button>
-              )}
-              <Button variant="ghost">
-                重設預設值
-              </Button>
-            </>
-          }
-        />
-      </div>
-      
-      <div className="settings-content">
-        {/* 個人資料設定 */}
-        <div className="setting-section profile">
-          <div className="section-header">
-            <div className="section-icon">
-              <svg viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2C13.1 2 14 2.9 14 4C14 5.1 13.1 6 12 6C10.9 6 10 5.1 10 4C10 2.9 10.9 2 12 2ZM21 9V7L15 7.5V9M15 11.5V9.5L21 9V11L15 11.5M7 10C7 10.9 7.29 11.71 7.76 12.39L7.34 12.81C6.22 13.95 6.22 15.78 7.35 16.91L8.77 18.33C9.9 19.46 11.73 19.46 12.86 18.33L13.28 17.91C14 18.38 14.8 18.67 15.69 18.67C17.1 18.67 18.31 17.85 18.82 16.64L21.04 11.55C21.39 10.85 21.35 10.03 20.95 9.37C20.55 8.71 19.85 8.29 19.1 8.29H17.53C16.22 8.29 15.17 9.34 15.17 10.65V11.9C15.17 12.45 14.73 12.9 14.17 12.9S13.17 12.45 13.17 11.9V10.65C13.17 9.34 12.12 8.29 10.81 8.29H9.24C8.5 8.29 7.8 8.71 7.4 9.37C7 10.03 6.96 10.85 7.31 11.55L9.53 16.64C10.04 17.85 11.25 18.67 12.66 18.67"/>
-              </svg>
-            </div>
-            <div>
-              <h2 className="section-title">個人資料</h2>
-              <p className="section-description">管理您的個人資訊和頭像</p>
-            </div>
-          </div>
-          
-          <div className="profile-card">
-            <div className="profile-main">
-              <div className="avatar-section">
-                <div className="current-avatar">
-                  <div className="avatar-placeholder">
-                    {currentUser?.display_name?.charAt(0)?.toUpperCase() || 'U'}
-                  </div>
-                  <div className="avatar-status online"></div>
-                </div>
-                <div className="avatar-info">
-                  <h3 className="user-display-name">{currentUser?.display_name || 'Unknown User'}</h3>
-                  <p className="user-title">{currentUser?.title || '未設定職稱'}</p>
-                  {currentUser?.role === 'SUPER_ADMIN' && (
-                    <span className="role-badge admin">系統管理員</span>
-                  )}
-                </div>
-              </div>
-              
-              <div className="profile-stats">
-                <div className="stat-card">
-                  <div className="stat-icon">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                    </svg>
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-number">5</span>
-                    <span className="stat-label">已完成任務</span>
-                  </div>
-                </div>
-                <div className="stat-card">
-                  <div className="stat-icon">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
-                    </svg>
-                  </div>
-                  <div className="stat-info">
-                    <span className="stat-number">12</span>
-                    <span className="stat-label">天活躍</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="profile-fields">
-              <div className="field-row">
-                <div className="field-group">
-                  <label>顯示名稱</label>
-                  <div className="input-with-action">
-                    <input 
-                      type="text" 
-                      value={currentUser?.display_name || ''} 
-                      readOnly 
-                    />
-                    <button className="field-action-btn" title="編輯名稱">
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-                <div className="field-group">
-                  <label>職稱</label>
-                  <div className="input-with-action">
-                    <input 
-                      type="text" 
-                      value={currentUser?.title || ''} 
-                      readOnly 
-                    />
-                    <button className="field-action-btn" title="編輯職稱">
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="field-group full-width">
-                <label>帳戶資訊</label>
-                <div className="info-cards">
-                  <div className="info-card">
-                    <span className="info-label">用戶名</span>
-                    <span className="info-value">{currentUser?.username || 'N/A'}</span>
-                  </div>
-                  <div className="info-card">
-                    <span className="info-label">註冊日期</span>
-                    <span className="info-value">{currentUser?.created_at ? new Date(currentUser.created_at).toLocaleDateString('zh-TW') : 'N/A'}</span>
-                  </div>
-                  <div className="info-card">
-                    <span className="info-label">上次登入</span>
-                    <span className="info-value">{currentUser?.last_login_at ? new Date(currentUser.last_login_at).toLocaleDateString('zh-TW') : '從未'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="profile-actions">
-              <button className="btn-secondary" disabled>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M3 4V1h2v3h14V1h2v3h1v16H2V4h1zm16 2H5v12h14V6zM7 8h10v1H7V8zm0 3h10v1H7v-1zm0 3h7v1H7v-1z"/>
-                </svg>
-                上傳頭像
-                <span className="coming-soon">即將推出</span>
-              </button>
-              <button className="btn-primary" disabled>
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M5 4v3H2V4h3zm0 10.5v3H2v-3h3zm0-5.25v3H2v-3h3zM8 19h13v-2H8v2zm0-6h13v-2H8v2zm0-8v2h13V5H8z"/>
-                </svg>
+    <ModuleLayout
+      header={{
+        icon: Icons.settings,
+        title: "系統設定",
+        subtitle: "個人化您的側邊欄排序和介面設定",
+        actions: (
+          <>
+            {hasUnsavedChanges && (
+              <Button variant="primary" onClick={saveSidebarOrder}>
                 儲存變更
-                <span className="coming-soon">即將推出</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
+              </Button>
+            )}
+            <Button variant="ghost">
+              重設預設值
+            </Button>
+          </>
+        )
+      }}
+    >
         {/* 安全設定 */}
         <div className="setting-section">
           <h2 className="section-title">安全設定</h2>
@@ -574,14 +441,8 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
-      </div>
 
       <style jsx>{`
-        .settings-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 24px;
-        }
 
         .settings-header {
           margin-bottom: 32px;
@@ -598,40 +459,6 @@ export default function SettingsPage() {
           font-size: 16px;
           color: #6d685f;
           margin: 0;
-        }
-
-        .settings-content {
-          background: linear-gradient(135deg, #f4f1eb 0%, #e8e2d5 100%);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          padding: 32px;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-          box-shadow: 0 8px 32px rgba(201, 169, 97, 0.1);
-          position: relative;
-        }
-
-        .settings-content::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(135deg,
-            rgba(201, 169, 97, 0.05) 0%,
-            transparent 30%,
-            transparent 70%,
-            rgba(201, 169, 97, 0.03) 100%
-          );
-          border-radius: 20px;
-          pointer-events: none;
-        }
-
-        /* 整體背景 - 溫暖亮色系 */
-        .settings-container {
-          max-width: 1200px;
-          margin: 0 auto;
-          padding: 24px;
         }
 
         .setting-section {
@@ -1322,6 +1149,6 @@ export default function SettingsPage() {
           }
         }
       `}</style>
-    </div>
+    </ModuleLayout>
   )
 }

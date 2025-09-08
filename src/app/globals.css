@@ -28,6 +28,17 @@
   --border: 201 169 97;
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12);
+  
+  /* 相容性變數 - 支援舊的命名方式 */
+  --color-primary: #c9a961;
+  --color-primaryLight: #e4d4a8;
+  --color-primaryDark: #8b7355;
+  --color-backgroundGradient: linear-gradient(135deg, #f4f1eb 0%, #e8e2d5 100%);
+  --color-card: rgba(255, 255, 255, 0.95);
+  --color-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --color-border: rgba(201, 169, 97, 0.2);
+  --color-text: #3a3833;
+  --color-textLight: #6d685f;
 }
 
 * {
@@ -47,6 +58,338 @@ body {
   background: linear-gradient(135deg, rgb(var(--bg)) 0%, rgb(var(--bg-dark)) 100%);
   color: rgb(var(--text));
   min-height: 100vh;
+}
+
+/* 整合任務卡片樣式 */
+.task-card {
+  background: white;
+  border: 1px solid rgba(201, 169, 97, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.task-card.project-card {
+  border-left: 4px solid #c9a961;
+  background: linear-gradient(135deg, rgba(201, 169, 97, 0.05), white);
+}
+
+.task-card.selected {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.task-select-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #c9a961;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.task-main-content {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.task-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #c9a961;
+  cursor: pointer;
+  margin-top: 2px;
+}
+
+.project-icon {
+  margin-top: 2px;
+  font-size: 16px;
+}
+
+.task-content {
+  flex: 1;
+}
+
+.task-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.task-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #3a3833;
+  margin: 0;
+  line-height: 1.3;
+  flex: 1;
+}
+
+.subtask-count {
+  font-size: 11px;
+  color: #c9a961;
+  font-weight: 600;
+  background: rgba(201, 169, 97, 0.1);
+  padding: 2px 6px;
+  border-radius: 10px;
+}
+
+/* 角落模式標籤 */
+.corner-mode-tags {
+  display: flex;
+  gap: 4px;
+}
+
+.business-tag {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.business-tag.group {
+  background: #fbbf24;
+  color: #78350f;
+}
+
+.business-tag.order {
+  background: #60a5fa;
+  color: #1e3a8a;
+}
+
+.business-tag.general {
+  background: #86efac;
+  color: #14532d;
+}
+
+.completeness-tag {
+  padding: 2px 4px;
+  font-size: 14px;
+}
+
+.task-description {
+  font-size: 13px;
+  color: #6d685f;
+  line-height: 1.4;
+  margin: 6px 0;
+}
+
+/* 角落模式額外資訊 */
+.corner-mode-info {
+  margin-top: 8px;
+  padding: 8px;
+  background: rgba(201, 169, 97, 0.05);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.info-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.info-row:last-child {
+  margin-bottom: 0;
+}
+
+.info-label {
+  color: #6d685f;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+/* 子任務展開內容 */
+.subtasks-container {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(201, 169, 97, 0.2);
+}
+
+.subtasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #c9a961;
+}
+
+.add-subtask-btn {
+  padding: 2px 6px;
+  background: rgba(201, 169, 97, 0.1);
+  color: #c9a961;
+  border: 1px solid rgba(201, 169, 97, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: all 0.2s ease;
+}
+
+.add-subtask-btn:hover {
+  background: rgba(201, 169, 97, 0.2);
+}
+
+.subtasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: rgba(201, 169, 97, 0.03);
+  border-radius: 4px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.subtask-item:hover {
+  background: rgba(201, 169, 97, 0.08);
+}
+
+.subtask-item input[type="checkbox"] {
+  width: 12px;
+  height: 12px;
+  accent-color: #c9a961;
+}
+
+.subtask-title {
+  flex: 1;
+  color: #6b7280;
+}
+
+.subtask-title.completed {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.subtask-assignee {
+  font-size: 11px;
+  color: #9ca3af;
+  background: rgba(201, 169, 97, 0.1);
+  padding: 2px 4px;
+  border-radius: 3px;
+}
+
+/* 進度條 */
+.progress-bar {
+  margin-top: 8px;
+  height: 4px;
+  background: rgba(201, 169, 97, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #c9a961, #e4d4a8);
+  transition: width 0.3s ease;
+}
+
+/* 操作按鈕 */
+.task-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  flex-shrink: 0;
+}
+
+.task-card:hover .task-actions {
+  opacity: 1;
+}
+
+.action-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  background: rgba(201, 169, 97, 0.1);
+  color: #6d685f;
+}
+
+.action-btn:hover {
+  background: rgba(201, 169, 97, 0.2);
+  transform: scale(1.1);
+}
+
+.expand-btn:hover {
+  background: rgba(201, 169, 97, 0.2);
+}
+
+.quick-actions-btn {
+  background: rgba(255, 193, 7, 0.1);
+  color: #ff8f00;
+}
+
+.quick-actions-btn:hover {
+  background: rgba(255, 193, 7, 0.2);
+}
+
+.edit-btn {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.edit-btn:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.delete-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.delete-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* 快速動作選單 */
+.quick-actions-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid rgba(201, 169, 97, 0.3);
+  border-radius: 6px;
+  padding: 4px;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  z-index: 100;
+}
+
+.quick-action-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  text-align: left;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 4px;
+  color: #3a3833;
+}
+
+.quick-action-item:hover {
+  background: rgba(201, 169, 97, 0.1);
 }
 
 /* 自定義滾動條 */

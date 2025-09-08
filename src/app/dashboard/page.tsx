@@ -4,53 +4,76 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { authManager } from '@/lib/auth'
 import { BaseAPI } from '@/lib/base-api'
-import { PageHeader } from '@/components/PageHeader'
+import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
 
 export default function DashboardPage() {
   const router = useRouter()
   const [currentUser, setCurrentUser] = useState<any>(null)
-  const [stats, setStats] = useState({
-    todoCount: 0,
-    projectCount: 0,
-    completedTodos: 0,
-    timeboxSessions: 0
-  })
+  const [showDevModal, setShowDevModal] = useState(false)
+  const [selectedWidgetIndex, setSelectedWidgetIndex] = useState<number | null>(null)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   useEffect(() => {
+    // 檢查開發模式
+    if (typeof window !== 'undefined' && localStorage.getItem('dev_mode') === 'true') {
+      const devUser = JSON.parse(localStorage.getItem('dev_user') || '{}')
+      if (devUser.id) {
+        console.log('🔧 開發模式 - 使用模擬用戶')
+        setCurrentUser({
+          id: devUser.id,
+          username: devUser.user_metadata?.username || 'dev_user',
+          display_name: devUser.user_metadata?.display_name || '開發測試員',
+          email: devUser.email
+        })
+        return
+      }
+    }
+    
+    // 正常認證流程
     const user = authManager.getCurrentUser()
     if (!user) {
       router.push('/')
       return
     }
     setCurrentUser(user)
-    loadStats(user.id)
   }, [router])
 
-  const loadStats = async (userId: string) => {
-    try {
-      // 載入待辦事項統計
-      const todos = await BaseAPI.loadData('todos', userId, [])
-      const activeTodos = todos.filter((todo: any) => !todo.completed)
-      const completedTodos = todos.filter((todo: any) => todo.completed)
-      
-      // 載入專案統計
-      const projects = await BaseAPI.loadData('projects', userId, [])
-      const activeProjects = projects.filter((project: any) => project.status === 'active')
-      
-      // 載入時間盒統計
-      const timeboxSessions = await BaseAPI.loadData('timebox', userId, [])
-      
-      setStats({
-        todoCount: activeTodos.length,
-        projectCount: activeProjects.length,
-        completedTodos: completedTodos.length,
-        timeboxSessions: timeboxSessions.length
-      })
-    } catch (error) {
-      console.error('載入統計資料失敗:', error)
+
+  const handleWidgetClick = (index: number) => {
+    setSelectedWidgetIndex(index)
+    setShowDevModal(true)
+  }
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    setDragOverIndex(index)
+  }
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    if (draggedIndex !== null && draggedIndex !== dropIndex) {
+      // 這裡可以處理實際的小工具位置交換邏輯
+      console.log(`移動小工具從位置 ${draggedIndex} 到位置 ${dropIndex}`)
     }
+    setDraggedIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null)
+    setDragOverIndex(null)
   }
 
   if (!currentUser) {
@@ -62,96 +85,96 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="dashboard-overview">
-      <div>
-        <PageHeader
-          icon={Icons.dashboard}
-          title="系統總覽"
-          subtitle={`歡迎回來，${currentUser.display_name || currentUser.username}`}
-          actions={
-            <>
-              <Button variant="ghost" icon={Icons.settings} onClick={() => router.push('/dashboard/settings')}>
-                設定
-              </Button>
-              <Button variant="primary" onClick={() => window.location.reload()}>
-                重新整理
-              </Button>
-            </>
-          }
-        />
-      </div>
+    <ModuleLayout
+      header={{
+        icon: Icons.dashboard,
+        title: "工作台",
+        subtitle: `歡迎回來，${currentUser.display_name || currentUser.username}`,
+        actions: (
+          <>
+            <Button variant="ghost" icon={Icons.settingsSmall} onClick={() => router.push('/dashboard/settings')}>
+              設定
+            </Button>
+            <Button variant="primary" icon={Icons.refreshSmall} onClick={() => window.location.reload()}>
+              重新整理
+            </Button>
+          </>
+        )
+      }}
+    >
 
-      {/* iOS 小工具風格的統計卡片 */}
-      <div className="widget-grid">
-        {/* 待辦事項統計卡片 */}
-        <div 
-          className="stats-card todos-card" 
-          onClick={() => router.push('/dashboard/todos')}
-          data-debug="待辦事項卡片"
-          data-debug-pos="dashboard-todo-card"
-        >
-          <div className="stats-content">
-            <div className="stats-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 11l3 3L22 4"/>
-                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-              </svg>
-            </div>
-            <div className="stats-number">{stats.todoCount}</div>
-            <div className="stats-label">進行中任務</div>
-            <div className="stats-subtitle">{stats.completedTodos} 已完成</div>
-          </div>
-        </div>
 
-        {/* 專案統計卡片 */}
-        <div 
-          className="stats-card projects-card" 
-          onClick={() => router.push('/dashboard/projects')}
-          data-debug="專案統計卡片"
-          data-debug-pos="dashboard-project-card"
-        >
-          <div className="stats-content">
-            <div className="stats-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-                <line x1="8" y1="21" x2="16" y2="21"/>
-                <line x1="12" y1="17" x2="12" y2="21"/>
-              </svg>
+      {/* 小工具區域 */}
+      <div className="widgets-section">
+        <div className="widgets-grid">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div 
+              key={index}
+              className={`widget-placeholder ${
+                draggedIndex === index ? 'dragging' : ''
+              } ${
+                dragOverIndex === index ? 'drag-over' : ''
+              }`}
+              onClick={() => handleWidgetClick(index)}
+              data-widget-id={index}
+              draggable={true}
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+            >
+              <div className="placeholder-content">
+                <div className="placeholder-icon">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="16"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                  </svg>
+                </div>
+                <div className="placeholder-text">添加小工具</div>
+                <div className="placeholder-subtitle">
+                  {draggedIndex === null ? '點擊設置您的小工具' : '拖拽可調整位置'}
+                </div>
+              </div>
             </div>
-            <div className="stats-number">{stats.projectCount}</div>
-            <div className="stats-label">進行中專案</div>
-            <div className="stats-subtitle">專案管理</div>
-          </div>
-        </div>
-
-        {/* 時間盒統計卡片 */}
-        <div 
-          className="stats-card timebox-card" 
-          onClick={() => router.push('/dashboard/timebox')}
-          data-debug="時間盒統計卡片"
-          data-debug-pos="dashboard-timebox-card"
-        >
-          <div className="stats-content">
-            <div className="stats-icon">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12,6 12,12 16,14"/>
-              </svg>
-            </div>
-            <div className="stats-number">{stats.timeboxSessions}</div>
-            <div className="stats-label">時間記錄</div>
-            <div className="stats-subtitle">時間管理</div>
-          </div>
+          ))}
         </div>
       </div>
+
+      {/* 開發中彈窗 */}
+      {showDevModal && (
+        <div className="modal-overlay" onClick={() => setShowDevModal(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>小工具開發中</h3>
+              <button 
+                className="close-button"
+                onClick={() => setShowDevModal(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="dev-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 1v6m0 8v6m11-7h-6m-8 0H1"/>
+                </svg>
+              </div>
+              <p>小工具 #{selectedWidgetIndex !== null ? selectedWidgetIndex + 1 : ''} 正在開發中</p>
+              <p className="dev-subtitle">敬請期待自定義小工具功能！</p>
+            </div>
+            <div className="modal-footer">
+              <Button variant="primary" onClick={() => setShowDevModal(false)}>
+                了解
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
-        .dashboard-overview {
-          max-width: none;
-          margin: 0;
-          padding: 0;
-          position: relative;
-        }
 
 
         /* iOS 小工具風格的統計網格 */
@@ -342,6 +365,202 @@ export default function DashboardPage() {
           font-size: 16px;
         }
 
+        /* 小工具區域樣式 */
+        .widgets-section {
+          margin-top: 0;
+        }
+
+        .section-title {
+          font-size: 24px;
+          font-weight: 700;
+          color: #3a3833;
+          margin: 0 0 24px 0;
+          text-align: left;
+        }
+
+        .widgets-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          max-width: none;
+        }
+
+        @media (max-width: 1200px) {
+          .widgets-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .widgets-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+          }
+        }
+
+        .widget-placeholder {
+          background: transparent;
+          border: 2px dashed rgba(244, 164, 96, 0.4);
+          border-radius: 16px;
+          padding: 32px 16px;
+          min-height: 160px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: border-color 0.2s ease, background-color 0.2s ease;
+          position: relative;
+          will-change: border-color, background-color;
+        }
+
+        .widget-placeholder:hover {
+          border-color: rgba(244, 164, 96, 0.7);
+          background: rgba(244, 164, 96, 0.05);
+        }
+
+        .placeholder-content {
+          text-align: center;
+          opacity: 0.7;
+          transition: all 0.3s ease;
+        }
+
+        .widget-placeholder:hover .placeholder-content {
+          opacity: 1;
+        }
+
+        /* 拖拽狀態樣式 */
+        .widget-placeholder.dragging {
+          opacity: 0.5;
+          transform: rotate(5deg) scale(0.95);
+          border-color: rgba(244, 164, 96, 0.8);
+          background: rgba(244, 164, 96, 0.1);
+        }
+
+        .widget-placeholder.drag-over {
+          border-color: rgba(244, 164, 96, 0.9);
+          background: rgba(244, 164, 96, 0.15);
+          transform: translateY(-4px) scale(1.02);
+          box-shadow: 0 12px 30px rgba(244, 164, 96, 0.25);
+        }
+
+        .widget-placeholder {
+          transition: all 0.3s ease, transform 0.2s ease;
+        }
+
+        .widget-placeholder.dragging {
+          transition: none;
+        }
+
+        .placeholder-icon {
+          margin: 0 auto 12px;
+          color: rgba(244, 164, 96, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .placeholder-text {
+          font-size: 16px;
+          font-weight: 600;
+          color: #3a3833;
+          margin-bottom: 4px;
+        }
+
+        .placeholder-subtitle {
+          font-size: 13px;
+          color: #6d685f;
+          font-weight: 400;
+        }
+
+        /* 彈窗樣式 */
+        .modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+          background: white;
+          border-radius: 16px;
+          max-width: 400px;
+          width: 90%;
+          max-height: 80vh;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+          padding: 20px 24px 16px;
+          border-bottom: 1px solid #f0f0f0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .modal-header h3 {
+          margin: 0;
+          font-size: 18px;
+          font-weight: 600;
+          color: #3a3833;
+        }
+
+        .close-button {
+          background: none;
+          border: none;
+          font-size: 24px;
+          color: #6d685f;
+          cursor: pointer;
+          padding: 0;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 4px;
+          transition: all 0.2s ease;
+        }
+
+        .close-button:hover {
+          background: #f0f0f0;
+          color: #3a3833;
+        }
+
+        .modal-body {
+          padding: 24px;
+          text-align: center;
+        }
+
+        .dev-icon {
+          margin: 0 auto 16px;
+          color: rgba(244, 164, 96, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .modal-body p {
+          margin: 0 0 8px;
+          font-size: 16px;
+          color: #3a3833;
+        }
+
+        .dev-subtitle {
+          font-size: 14px !important;
+          color: #6d685f !important;
+          margin-bottom: 0 !important;
+        }
+
+        .modal-footer {
+          padding: 16px 24px 20px;
+          display: flex;
+          justify-content: center;
+        }
+
         /* 響應式設計 */
         @media (max-width: 768px) {
           .dashboard-overview {
@@ -438,6 +657,6 @@ export default function DashboardPage() {
           }
         }
       `}</style>
-    </div>
+    </ModuleLayout>
   )
 }

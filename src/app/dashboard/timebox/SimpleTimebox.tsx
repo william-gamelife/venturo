@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { PageHeader } from '@/components/PageHeader'
+import { ModuleLayout } from '@/components/ModuleLayout'
 import { Icons } from '@/components/icons'
 
 interface TimeSlot {
@@ -25,17 +25,75 @@ interface ActivityGroup {
 
 export default function SimpleTimebox() {
   const [timeUnit, setTimeUnit] = useState(30) // 30 或 60 分鐘
-  const [timeSlots, setTimeSlots] = useState<Record<string, TimeSlot>>({})
+  // 移除 timeSlots 狀態，只使用 activityGroups
   const [activityGroups, setActivityGroups] = useState<ActivityGroup[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
+  const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 })
+  const [popoverPlacement, setPopoverPlacement] = useState<'right' | 'left'>('right')
+  
+  // 永久活動列表
+  const [permanentActivities, setPermanentActivities] = useState([
+    { id: 'workout', name: '重訓', color: '#ef4444', icon: '💪' },
+    { id: 'cardio', name: '有氧', color: '#10b981', icon: '🏃' },
+    { id: 'study', name: '學習', color: '#3b82f6', icon: '📚' },
+    { id: 'work', name: '工作', color: '#f97316', icon: '💼' },
+  ])
+
+  // 活動管理器顯示狀態
+  const [showActivityManager, setShowActivityManager] = useState(false)
+
+  // 重訓記錄
+  const [workoutRecords, setWorkoutRecords] = useState<Record<string, any>>({})
+  const [showWorkoutDialog, setShowWorkoutDialog] = useState(false)
+  const [currentWorkoutSlot, setCurrentWorkoutSlot] = useState<string | null>(null)
+  const [currentWorkout, setCurrentWorkout] = useState({
+    equipment: '',
+    weight: '',
+    sets: '',
+    reps: ''
+  })
   
   // 新活動表單
   const [newActivity, setNewActivity] = useState({
     name: '',
     duration: 60,
-    color: '#3b82f6'
+    color: '#6366f1'
   })
+
+  // 初始化載入重訓記錄
+  useEffect(() => {
+    const savedRecords = localStorage.getItem('workout_records')
+    if (savedRecords) {
+      setWorkoutRecords(JSON.parse(savedRecords))
+    }
+  }, [])
+
+  // 檢查指定時間格是否被活動佔用 - 超簡化版本
+  const isSlotOccupied = (day: number, hour: number, minute: number) => {
+    const slotStart = hour * 60 + minute
+    const slotEnd = slotStart + timeUnit
+    
+    return activityGroups.some(group => {
+      if (group.day !== day) return false
+      const groupStart = group.startHour * 60 + group.startMinute
+      const groupEnd = groupStart + group.duration
+      return slotStart < groupEnd && slotEnd > groupStart
+    })
+  }
+  
+  // 獲取佔用指定時間格的活動 - 超簡化版本
+  const getSlotActivity = (day: number, hour: number, minute: number) => {
+    const slotStart = hour * 60 + minute
+    const slotEnd = slotStart + timeUnit
+    
+    return activityGroups.find(group => {
+      if (group.day !== day) return false
+      const groupStart = group.startHour * 60 + group.startMinute
+      const groupEnd = groupStart + group.duration
+      return slotStart < groupEnd && slotEnd > groupStart
+    })
+  }
 
   // 生成時間格
   const generateTimeGrid = () => {
@@ -57,15 +115,36 @@ export default function SimpleTimebox() {
   }
 
   // 點擊時間格
-  const handleSlotClick = (day: number, hour: number, minute: number) => {
+  const handleSlotClick = (day: number, hour: number, minute: number, event: React.MouseEvent) => {
     const slotId = `${day}_${hour}_${minute}`
     setSelectedSlot(slotId)
+    
+    // 計算popover位置
+    const rect = (event.currentTarget as HTMLElement).getBoundingClientRect()
+    const windowWidth = window.innerWidth
+    const popoverWidth = 380 // popover預估寬度
+    
+    // 判斷應該顯示在左側還是右側
+    let placement: 'right' | 'left' = 'right'
+    let x = rect.right + 8
+    
+    if (x + popoverWidth > windowWidth - 20) {
+      placement = 'left'
+      x = rect.left - popoverWidth - 8
+    }
+    
+    setPopoverPlacement(placement)
+    setPopoverPosition({
+      x: Math.max(20, x),
+      y: rect.top - 10
+    })
+    
     setShowAddDialog(true)
   }
 
-  // 新增活動
-  const handleAddActivity = () => {
-    if (!selectedSlot || !newActivity.name) return
+  // 新增活動 - 從永久活動列表選擇
+  const handleSelectActivity = (permanentActivity: any, duration: number) => {
+    if (!selectedSlot) return
     
     const [day, hour, minute] = selectedSlot.split('_').map(Number)
     const groupId = `activity_${Date.now()}`
@@ -73,53 +152,22 @@ export default function SimpleTimebox() {
     // 建立活動群組
     const newGroup: ActivityGroup = {
       id: groupId,
-      name: newActivity.name,
-      color: newActivity.color,
+      name: permanentActivity.name,
+      color: permanentActivity.color,
       startSlot: selectedSlot,
-      duration: newActivity.duration,
+      duration: duration,
       day,
       startHour: hour,
       startMinute: minute
     }
     
-    // 填充時間格
-    const slotsToFill = calculateSlots(day, hour, minute, newActivity.duration)
-    const newTimeSlots = { ...timeSlots }
-    
-    slotsToFill.forEach(slotId => {
-      newTimeSlots[slotId] = {
-        id: slotId,
-        activity: newActivity.name,
-        color: newActivity.color,
-        duration: newActivity.duration,
-        groupId
-      }
-    })
-    
-    setTimeSlots(newTimeSlots)
     setActivityGroups([...activityGroups, newGroup])
     
     // 重置表單
     setShowAddDialog(false)
     setSelectedSlot(null)
-    setNewActivity({ name: '', duration: 60, color: '#3b82f6' })
   }
 
-  // 計算需要填充的時間格
-  const calculateSlots = (day: number, startHour: number, startMinute: number, duration: number) => {
-    const slots = []
-    let currentMinutes = startHour * 60 + startMinute
-    const endMinutes = currentMinutes + duration
-    
-    while (currentMinutes < endMinutes && currentMinutes <= 22 * 60) {
-      const h = Math.floor(currentMinutes / 60)
-      const m = currentMinutes % 60
-      slots.push(`${day}_${h}_${m}`)
-      currentMinutes += 30 // 永遠以30分鐘為單位
-    }
-    
-    return slots
-  }
 
   // 計算活動視覺位置
   const calculateActivityPosition = (group: ActivityGroup) => {
@@ -140,28 +188,38 @@ export default function SimpleTimebox() {
   const { days, slots } = generateTimeGrid()
 
   return (
-    <div className="simple-timebox">
-      <PageHeader
-        icon={Icons.timebox}
-        title="時間盒"
-        subtitle="簡單的時間管理"
-        actions={
-          <div className="unit-toggle">
+    <ModuleLayout
+      header={{
+        icon: Icons.timebox,
+        title: "時間盒",
+        subtitle: "簡單的時間管理",
+        actions: (
+          <>
             <button 
-              className={timeUnit === 30 ? 'active' : ''}
-              onClick={() => setTimeUnit(30)}
+              className="manage-activity-btn"
+              onClick={() => setShowActivityManager(true)}
             >
-              30分
+              管理活動
             </button>
-            <button 
-              className={timeUnit === 60 ? 'active' : ''}
-              onClick={() => setTimeUnit(60)}
-            >
-              60分
-            </button>
-          </div>
-        }
-      />
+            <div className="time-unit-selector">
+              <button 
+                className={`unit-btn ${timeUnit === 30 ? 'active' : ''}`}
+                onClick={() => setTimeUnit(30)}
+              >
+                30分
+              </button>
+              <button 
+                className={`unit-btn ${timeUnit === 60 ? 'active' : ''}`}
+                onClick={() => setTimeUnit(60)}
+              >
+                60分
+              </button>
+            </div>
+          </>
+        )
+      }}
+    >
+      <div className="simple-timebox">
 
       {/* 時間表格 */}
       <div className="timebox-grid">
@@ -189,16 +247,17 @@ export default function SimpleTimebox() {
               <div className="slots-layer">
                 {slots.map(slot => {
                   const slotId = `${dayIndex}_${slot.hour}_${slot.minute}`
-                  const slotData = timeSlots[slotId]
+                  const isOccupied = isSlotOccupied(dayIndex, slot.hour, slot.minute)
+                  const slotActivity = getSlotActivity(dayIndex, slot.hour, slot.minute)
                   
                   return (
                     <div
                       key={slotId}
-                      className={`time-slot ${slotData ? 'occupied' : ''}`}
-                      onClick={() => !slotData && handleSlotClick(dayIndex, slot.hour, slot.minute)}
+                      className={`time-slot ${isOccupied ? 'occupied' : ''}`}
+                      onClick={(e) => !isOccupied && handleSlotClick(dayIndex, slot.hour, slot.minute, e)}
                       style={{
-                        background: slotData ? `${slotData.color}20` : 'transparent',
-                        cursor: slotData ? 'default' : 'pointer'
+                        background: isOccupied && slotActivity ? `${slotActivity.color}20` : 'transparent',
+                        cursor: isOccupied ? 'default' : 'pointer'
                       }}
                     />
                   )
@@ -221,15 +280,12 @@ export default function SimpleTimebox() {
                           backgroundColor: group.color
                         }}
                         onClick={() => {
-                          if (confirm(`刪除 ${group.name}？`)) {
+                          // 如果是重訓活動，開啟記錄對話框
+                          if (group.name.includes('重訓') || group.name.includes('健身') || group.name.includes('訓練')) {
+                            setCurrentWorkoutSlot(group.startSlot)
+                            setShowWorkoutDialog(true)
+                          } else if (confirm(`刪除 ${group.name}？`)) {
                             // 刪除活動
-                            const newTimeSlots = { ...timeSlots }
-                            Object.keys(newTimeSlots).forEach(key => {
-                              if (newTimeSlots[key].groupId === group.id) {
-                                delete newTimeSlots[key]
-                              }
-                            })
-                            setTimeSlots(newTimeSlots)
                             setActivityGroups(activityGroups.filter(g => g.id !== group.id))
                           }
                         }}
@@ -249,115 +305,365 @@ export default function SimpleTimebox() {
         </div>
       </div>
 
-      {/* 新增活動對話框 */}
+      {/* 新增活動Popover */}
       {showAddDialog && (
-        <div className="dialog-overlay" onClick={() => setShowAddDialog(false)}>
-          <div className="dialog" onClick={e => e.stopPropagation()}>
-            <h3>新增活動</h3>
+        <>
+          <div className="popover-backdrop" onClick={() => setShowAddDialog(false)} />
+          <div 
+            className={`activity-popover ${popoverPlacement}`}
+            style={{
+              position: 'fixed',
+              left: `${popoverPosition.x}px`,
+              top: `${popoverPosition.y}px`,
+              zIndex: 1000
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* 箭頭指示器 */}
+            <div className="popover-arrow" />
             
-            <div className="form-group">
-              <label>活動名稱</label>
-              <input
-                type="text"
-                value={newActivity.name}
-                onChange={e => setNewActivity({...newActivity, name: e.target.value})}
-                placeholder="例如：開會"
-                autoFocus
+            <div className="popover-content">
+              <h3>🎯 選擇活動</h3>
+              
+              <div className="activity-selection-grid">
+                {permanentActivities.map(activity => (
+                  <div 
+                    key={activity.id} 
+                    className="permanent-activity-card"
+                    style={{ borderColor: activity.color }}
+                  >
+                    <div className="activity-header">
+                      <span className="activity-icon">{activity.icon}</span>
+                      <span className="activity-name">{activity.name}</span>
+                    </div>
+                    
+                    <div className="duration-buttons">
+                      <button 
+                        className="duration-btn"
+                        onClick={() => handleSelectActivity(activity, 30)}
+                      >
+                        30分
+                      </button>
+                      <button 
+                        className="duration-btn"
+                        onClick={() => handleSelectActivity(activity, 60)}
+                      >
+                        60分
+                      </button>
+                      <button 
+                        className="duration-btn"
+                        onClick={() => handleSelectActivity(activity, 90)}
+                      >
+                        90分
+                      </button>
+                      <button 
+                        className="duration-btn"
+                        onClick={() => handleSelectActivity(activity, 120)}
+                      >
+                        120分
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="popover-actions">
+                <button 
+                  className="cancel-btn"
+                  onClick={() => setShowAddDialog(false)}
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 重訓記錄對話框 */}
+      {showWorkoutDialog && (
+        <div className="dialog-overlay" onClick={() => setShowWorkoutDialog(false)}>
+          <div className="dialog workout-dialog" onClick={e => e.stopPropagation()}>
+            <h3>💪 重訓記錄</h3>
+            
+            <div className="workout-form">
+              <input 
+                type="text" 
+                placeholder="器材名稱（如：臥推）" 
+                value={currentWorkout.equipment}
+                onChange={e => setCurrentWorkout({...currentWorkout, equipment: e.target.value})}
+              />
+              <input 
+                type="number" 
+                placeholder="重量 (kg)" 
+                value={currentWorkout.weight}
+                onChange={e => setCurrentWorkout({...currentWorkout, weight: e.target.value})}
+              />
+              <input 
+                type="number" 
+                placeholder="組數" 
+                value={currentWorkout.sets}
+                onChange={e => setCurrentWorkout({...currentWorkout, sets: e.target.value})}
+              />
+              <input 
+                type="number" 
+                placeholder="次數" 
+                value={currentWorkout.reps}
+                onChange={e => setCurrentWorkout({...currentWorkout, reps: e.target.value})}
               />
             </div>
             
-            <div className="form-group">
-              <label>持續時間</label>
-              <select 
-                value={newActivity.duration}
-                onChange={e => setNewActivity({...newActivity, duration: Number(e.target.value)})}
-              >
-                <option value={30}>30分鐘</option>
-                <option value={60}>1小時</option>
-                <option value={90}>1.5小時</option>
-                <option value={120}>2小時</option>
-                <option value={180}>3小時</option>
-                <option value={240}>4小時</option>
-              </select>
-            </div>
-            
-            <div className="form-group">
-              <label>顏色</label>
-              <div className="color-options">
-                {['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'].map(color => (
-                  <button
-                    key={color}
-                    className={`color-btn ${newActivity.color === color ? 'active' : ''}`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setNewActivity({...newActivity, color})}
-                  />
+            {/* 重訓記錄歷史 */}
+            <div className="workout-history">
+              <h4>📊 今日記錄</h4>
+              <div className="history-list">
+                {Object.entries(workoutRecords)
+                  .filter(([_, record]) => record.date === new Date().toLocaleDateString())
+                  .slice(-3)
+                  .map(([id, record]) => (
+                  <div key={id} className="history-item">
+                    <span className="equipment">{record.equipment}</span>
+                    <span className="details">{record.weight}kg × {record.sets}組 × {record.reps}下</span>
+                  </div>
                 ))}
+                {Object.entries(workoutRecords).filter(([_, record]) => record.date === new Date().toLocaleDateString()).length === 0 && (
+                  <div className="no-records">今日尚無記錄</div>
+                )}
               </div>
             </div>
             
             <div className="dialog-actions">
-              <button onClick={() => setShowAddDialog(false)}>取消</button>
-              <button onClick={handleAddActivity} disabled={!newActivity.name}>
-                確定
+              <button onClick={() => setShowWorkoutDialog(false)}>取消</button>
+              <button onClick={() => {
+                // 儲存重訓記錄
+                if (currentWorkoutSlot && currentWorkout.equipment) {
+                  const record = {
+                    date: new Date().toLocaleDateString(),
+                    time: currentWorkoutSlot,
+                    ...currentWorkout
+                  }
+                  
+                  const newRecords = {
+                    ...workoutRecords,
+                    [Date.now()]: record
+                  }
+                  setWorkoutRecords(newRecords)
+                  
+                  // 儲存到 localStorage
+                  localStorage.setItem('workout_records', JSON.stringify(newRecords))
+                  
+                  alert(`${record.equipment} ${record.weight}kg ${record.sets}組${record.reps}下 已記錄！`)
+                }
+                setShowWorkoutDialog(false)
+                setCurrentWorkout({ equipment: '', weight: '', sets: '', reps: '' })
+                setCurrentWorkoutSlot(null)
+              }} disabled={!currentWorkout.equipment}>
+                💾 儲存記錄
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <style jsx>{`
+      {/* 活動管理器對話框 */}
+      {showActivityManager && (
+        <div className="dialog-overlay" onClick={() => setShowActivityManager(false)}>
+          <div className="dialog activity-manager" onClick={e => e.stopPropagation()}>
+            <h3>🎯 永久活動管理</h3>
+            
+            <div className="permanent-activities">
+              {permanentActivities.map(activity => (
+                <div key={activity.id} className="activity-card" style={{ borderColor: activity.color + '40' }}>
+                  <div className="activity-icon">{activity.icon}</div>
+                  <div className="activity-card-name">{activity.name}</div>
+                </div>
+              ))}
+              
+              {/* 新增活動卡片 */}
+              <div className="activity-card" onClick={() => {
+                const newName = prompt('新活動名稱:')
+                const newIcon = prompt('選擇 emoji:')
+                if (newName && newIcon) {
+                  setPermanentActivities([...permanentActivities, {
+                    id: Date.now().toString(),
+                    name: newName,
+                    color: '#6366f1',
+                    icon: newIcon
+                  }])
+                }
+              }}>
+                <div className="activity-icon">➕</div>
+                <div className="activity-card-name">新增活動</div>
+              </div>
+            </div>
+            
+            <div className="dialog-actions">
+              <button onClick={() => setShowActivityManager(false)}>完成</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 週統計區 */}
+      <div className="week-stats">
+        <h3>本週活動統計</h3>
+        <div className="stats-grid">
+          {Object.entries(
+            activityGroups.reduce((acc, group) => {
+              acc[group.name] = (acc[group.name] || 0) + group.duration
+              return acc
+            }, {} as Record<string, number>)
+          ).map(([name, minutes]) => (
+            <div key={name} className="stat-card">
+              <div className="stat-name">{name}</div>
+              <div className="stat-value">
+                {minutes >= 60 ? `${(minutes/60).toFixed(1)}小時` : `${minutes}分鐘`}
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* 週日覆盤功能 */}
+        {new Date().getDay() === 0 && (
+          <button 
+            className="review-btn"
+            onClick={() => {
+              if(confirm('要將本週安排複製到下週一嗎？')) {
+                // 複製邏輯
+                const mondayActivities = activityGroups.filter(g => g.day === 0)
+                // 實作複製到下週的邏輯
+              }
+            }}
+          >
+            📋 複製本週安排到下週
+          </button>
+        )}
+      </div>
+
+      <style jsx global>{`
         .simple-timebox {
           padding: 0;
         }
 
-        .unit-toggle {
+        .header-actions {
           display: flex;
-          gap: 8px;
+          gap: 16px;
+          align-items: center;
         }
 
-        .unit-toggle button {
-          padding: 6px 12px;
-          border: 1px solid #ccc;
-          background: white;
-          border-radius: 6px;
+        .manage-activity-btn {
+          padding: 10px 20px;
+          background: linear-gradient(135deg, #c9a961 0%, #e4d4a8 100%);
+          color: white !important;
+          border: none;
+          border-radius: 10px;
+          font-weight: 600;
           cursor: pointer;
+          transition: all 0.2s;
+          font-size: 14px;
+          box-shadow: 0 2px 8px rgba(201, 169, 97, 0.2);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          text-decoration: none;
         }
 
-        .unit-toggle button.active {
-          background: #3b82f6;
-          color: white;
-          border-color: #3b82f6;
+        .manage-activity-btn:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(201, 169, 97, 0.3);
+        }
+
+        .time-unit-selector {
+          display: flex;
+          background: #f8fafb;
+          border-radius: 12px;
+          padding: 2px;
+          border: 1px solid #e5e7eb;
+          flex-shrink: 0;
+        }
+
+        .unit-btn {
+          padding: 8px 16px;
+          border: none;
+          background: transparent;
+          border-radius: 10px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s;
+          color: #6b7280;
+          font-size: 14px;
+        }
+
+        .unit-btn.active {
+          background: white;
+          color: #c9a961;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+          .manage-activity-btn {
+            padding: 8px 16px;
+            font-size: 13px;
+          }
+          
+          .unit-btn {
+            padding: 6px 12px;
+            font-size: 13px;
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .manage-activity-btn {
+            padding: 6px 12px;
+            font-size: 12px;
+          }
+          
+          .unit-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+          }
         }
 
         .timebox-grid {
           background: white;
-          border-radius: 12px;
+          border-radius: 16px;
           overflow: hidden;
-          margin-top: 20px;
+          margin-top: 10px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+          border: 1px solid #f0f0f0;
         }
 
         .grid-header {
           display: grid;
-          grid-template-columns: 80px repeat(7, 1fr);
-          background: #f5f5f5;
-          border-bottom: 2px solid #ddd;
+          grid-template-columns: 90px repeat(7, 1fr);
+          background: linear-gradient(135deg, #f8fafb 0%, #f1f5f9 100%);
+          border-bottom: 1px solid #e2e8f0;
         }
 
         .time-header,
         .day-header {
-          padding: 12px;
+          padding: 16px 12px;
           font-weight: 600;
           text-align: center;
-          border-right: 1px solid #ddd;
+          border-right: 1px solid #e5e7eb;
+          color: #374151;
+          font-size: 14px;
+        }
+
+        .time-header {
+          background: linear-gradient(135deg, #c9a961 0%, #e4d4a8 100%);
+          color: white;
         }
 
         .grid-body {
           display: grid;
-          grid-template-columns: 80px repeat(7, 1fr);
+          grid-template-columns: 90px repeat(7, 1fr);
         }
 
         .time-labels {
-          border-right: 2px solid #ddd;
+          border-right: 1px solid #e2e8f0;
+          background: linear-gradient(135deg, #fafbfc 0%, #f8fafb 100%);
         }
 
         .time-label {
@@ -365,14 +671,16 @@ export default function SimpleTimebox() {
           display: flex;
           align-items: center;
           justify-content: center;
-          border-bottom: 1px solid #eee;
-          font-size: 12px;
-          color: #666;
+          border-bottom: 1px solid #f0f0f0;
+          font-size: 14px;
+          color: #6b7280;
+          font-weight: 500;
         }
 
         .day-column {
           position: relative;
-          border-right: 1px solid #ddd;
+          border-right: 1px solid #e5e7eb;
+          background: #ffffff;
         }
 
         .slots-layer {
@@ -381,12 +689,13 @@ export default function SimpleTimebox() {
 
         .time-slot {
           height: ${timeUnit === 30 ? '40px' : '60px'};
-          border-bottom: 1px solid #eee;
-          transition: background 0.2s;
+          border-bottom: 1px solid #f8fafc;
+          transition: all 0.2s;
         }
 
         .time-slot:hover:not(.occupied) {
-          background: #f0f9ff !important;
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%) !important;
+          border-color: #c9a961;
         }
 
         .activities-layer {
@@ -426,6 +735,183 @@ export default function SimpleTimebox() {
         .activity-duration {
           font-size: 10px;
           opacity: 0.9;
+        }
+
+        /* Popover樣式 */
+        .popover-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: transparent;
+          z-index: 999;
+        }
+
+        .activity-popover {
+          background: white;
+          border-radius: 16px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05);
+          width: 380px;
+          animation: popoverFadeIn 0.2s ease-out;
+          transform-origin: top left;
+        }
+
+        .activity-popover.right {
+          transform-origin: top left;
+        }
+
+        .activity-popover.left {
+          transform-origin: top right;
+        }
+
+        @keyframes popoverFadeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        .popover-arrow {
+          position: absolute;
+          width: 12px;
+          height: 12px;
+          background: white;
+          transform: rotate(45deg);
+          box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.05);
+          top: 20px;
+        }
+
+        .activity-popover.right .popover-arrow {
+          left: -6px;
+        }
+
+        .activity-popover.left .popover-arrow {
+          right: -6px;
+        }
+
+        .popover-content {
+          position: relative;
+          padding: 24px;
+          z-index: 1;
+        }
+
+        .popover-content h3 {
+          margin: 0 0 20px 0;
+          color: #374151;
+          font-size: 18px;
+          font-weight: 700;
+        }
+
+        .activity-selection-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+          margin-bottom: 20px;
+          max-height: 300px;
+          overflow-y: auto;
+        }
+
+        .permanent-activity-card {
+          border: 2px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 16px;
+          background: rgba(255, 255, 255, 0.9);
+          transition: all 0.2s;
+        }
+
+        .permanent-activity-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .permanent-activity-card .activity-header {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 12px;
+        }
+
+        .permanent-activity-card .activity-icon {
+          font-size: 20px;
+        }
+
+        .permanent-activity-card .activity-name {
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .duration-buttons {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .duration-btn {
+          padding: 6px 12px;
+          border: 1px solid #d1d5db;
+          border-radius: 6px;
+          background: white;
+          color: #6b7280;
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .duration-btn:hover {
+          border-color: #c9a961;
+          background: #c9a961;
+          color: white;
+        }
+
+        .popover-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+          margin-top: 24px;
+        }
+
+        .cancel-btn,
+        .confirm-btn {
+          padding: 10px 20px;
+          border: none;
+          border-radius: 10px;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s;
+        }
+
+        .cancel-btn {
+          background: #f3f4f6;
+          color: #6b7280;
+        }
+
+        .cancel-btn:hover {
+          background: #e5e7eb;
+          transform: translateY(-1px);
+        }
+
+        .confirm-btn {
+          background: linear-gradient(135deg, #c9a961 0%, #e4d4a8 100%);
+          color: white;
+        }
+
+        .confirm-btn:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 6px 20px rgba(201, 169, 97, 0.3);
+        }
+
+        .confirm-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none !important;
+          box-shadow: none !important;
         }
 
         .dialog-overlay {
@@ -516,7 +1002,310 @@ export default function SimpleTimebox() {
           opacity: 0.5;
           cursor: not-allowed;
         }
+        /* 活動管理器對話框 */
+        .activity-manager {
+          max-width: 600px;
+        }
+
+        .permanent-activities {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+
+        .activity-card {
+          background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+          border-radius: 12px;
+          padding: 16px;
+          text-align: center;
+          border: 2px solid transparent;
+          transition: all 0.3s;
+          cursor: pointer;
+        }
+
+        .activity-card:hover {
+          border-color: #c9a961;
+          transform: translateY(-4px);
+          box-shadow: 0 8px 25px rgba(201, 169, 97, 0.15);
+        }
+
+        .activity-icon {
+          font-size: 32px;
+          margin-bottom: 8px;
+        }
+
+        .activity-card-name {
+          font-weight: 600;
+          font-size: 14px;
+          color: #374151;
+        }
+
+        /* 重訓記錄對話框 */
+        .workout-dialog {
+          max-width: 500px;
+        }
+
+        .workout-form {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+
+        .workout-form input {
+          padding: 12px;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 14px;
+        }
+
+        .workout-form input:focus {
+          outline: none;
+          border-color: #c9a961;
+          box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+        }
+
+        /* 週統計區域 */
+        .week-stats {
+          background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+          border-radius: 16px;
+          padding: 24px;
+          margin-top: 32px;
+          border: 1px solid #e2e8f0;
+        }
+
+        .week-stats h3 {
+          margin: 0 0 20px 0;
+          color: #374151;
+          font-size: 18px;
+          font-weight: 600;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .week-stats h3:before {
+          content: '📊';
+          font-size: 20px;
+        }
+
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+
+        .stat-card {
+          background: white;
+          border-radius: 12px;
+          padding: 18px;
+          text-align: center;
+          border: 1px solid #e5e7eb;
+          transition: all 0.3s;
+        }
+
+        .stat-card:hover {
+          border-color: #c9a961;
+          box-shadow: 0 4px 15px rgba(201, 169, 97, 0.1);
+          transform: translateY(-2px);
+        }
+
+        .stat-name {
+          font-size: 14px;
+          color: #6b7280;
+          margin-bottom: 8px;
+          font-weight: 500;
+        }
+
+        .stat-value {
+          font-size: 20px;
+          font-weight: 700;
+          color: #374151;
+        }
+
+        .review-btn {
+          background: linear-gradient(135deg, #c9a961, #e4d4a8);
+          color: white;
+          border: none;
+          padding: 12px 24px;
+          border-radius: 10px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin: 0 auto;
+        }
+
+        .review-btn:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(201, 169, 97, 0.3);
+        }
+
+        /* 增強對話框樣式 */
+        .dialog {
+          background: white;
+          border-radius: 16px;
+          padding: 28px;
+          width: 90%;
+          max-width: 420px;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+          border: 1px solid #e5e7eb;
+        }
+
+        .dialog h3 {
+          margin: 0 0 24px 0;
+          font-size: 20px;
+          font-weight: 700;
+          color: #374151;
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+        }
+
+        .form-group label {
+          display: block;
+          margin-bottom: 8px;
+          font-weight: 600;
+          color: #374151;
+          font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 14px;
+          transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+          outline: none;
+          border-color: #c9a961;
+          box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+        }
+
+        .color-options {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+
+        .color-btn {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          border: 2px solid transparent;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .color-btn:hover {
+          transform: scale(1.1);
+        }
+
+        .color-btn.active {
+          border-color: #374151;
+          transform: scale(1.15);
+          box-shadow: 0 0 0 2px rgba(55, 65, 81, 0.2);
+        }
+
+        .dialog-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
+          margin-top: 28px;
+        }
+
+        .dialog-actions button {
+          padding: 10px 24px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          font-weight: 600;
+          font-size: 14px;
+          transition: all 0.2s;
+        }
+
+        .dialog-actions button:first-child {
+          background: #f3f4f6;
+          color: #6b7280;
+        }
+
+        .dialog-actions button:first-child:hover {
+          background: #e5e7eb;
+        }
+
+        .dialog-actions button:last-child {
+          background: linear-gradient(135deg, #c9a961, #e4d4a8);
+          color: white;
+        }
+
+        .dialog-actions button:last-child:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 15px rgba(201, 169, 97, 0.3);
+        }
+
+        .dialog-actions button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none !important;
+          box-shadow: none !important;
+        }
+
+        /* 重訓記錄歷史 */
+        .workout-history {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid #e5e7eb;
+        }
+
+        .workout-history h4 {
+          margin: 0 0 12px 0;
+          font-size: 16px;
+          color: #374151;
+        }
+
+        .history-list {
+          max-height: 120px;
+          overflow-y: auto;
+        }
+
+        .history-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 8px 12px;
+          background: #f8fafc;
+          border-radius: 6px;
+          margin-bottom: 6px;
+        }
+
+        .equipment {
+          font-weight: 600;
+          color: #374151;
+        }
+
+        .details {
+          font-size: 12px;
+          color: #6b7280;
+        }
+
+        .no-records {
+          text-align: center;
+          color: #9ca3af;
+          font-size: 14px;
+          padding: 20px;
+        }
       `}</style>
-    </div>
+      </div>
+    </ModuleLayout>
   )
 }

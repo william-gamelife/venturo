@@ -1,0 +1,948 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { checkAuth, getMockTodos, getMockUserProfile } from '@/lib/auth-utils'
+import { ModuleLayout } from '@/components/ModuleLayout'
+import { Icons } from '@/components/icons'
+
+// 型別定義
+interface Todo {
+  id: string
+  title: string
+  description?: string
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  type: 'task' | 'project' | 'invoice' | 'order' | 'group' | 'quotation'
+  due_date?: string
+  tags: string[]
+  linkedId?: string // 連結到其他模組
+  created_at: string
+  updated_at: string
+}
+
+interface UserProfile {
+  id: string
+  email: string
+  username?: string
+  role: 'admin' | 'corner' | 'user'
+}
+
+export default function TodosPage() {
+  const router = useRouter()
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isDevMode, setIsDevMode] = useState(false)
+  const [activeView, setActiveView] = useState<'board' | 'list'>('board')
+  const [addingColumn, setAddingColumn] = useState<'pending' | 'in_progress' | null>(null)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [draggedTask, setDraggedTask] = useState<Todo | null>(null)
+
+  // 載入使用者資料和待辦事項
+  useEffect(() => {
+    loadUserAndTodos()
+  }, [])
+
+  const loadUserAndTodos = async () => {
+    try {
+      const { user, isDevMode: devMode } = await checkAuth()
+      
+      if (!user) {
+        router.push('/auth/signin')
+        return
+      }
+
+      setIsDevMode(devMode)
+
+      if (devMode) {
+        console.log('🔧 載入開發模式數據')
+        setUserProfile(getMockUserProfile())
+        // 簡化的模擬數據
+        setTodos([
+          {
+            id: '1',
+            title: '準備王先生團體報價單',
+            type: 'quotation',
+            status: 'pending',
+            tags: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: '2',
+            title: '聯絡飯店確認房況',
+            type: 'task',
+            status: 'in_progress',
+            tags: [],
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ])
+        setLoading(false)
+        return
+      }
+
+      // 正常模式從 API 載入
+      await loadTodos()
+    } catch (error) {
+      console.error('載入資料失敗:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const loadTodos = async () => {
+    try {
+      const response = await fetch('/api/todos')
+      const { data } = await response.json()
+      if (data) {
+        setTodos(data)
+      }
+    } catch (error) {
+      console.error('載入待辦事項失敗:', error)
+    }
+  }
+
+  // 快速新增任務
+  const handleQuickAdd = (status: 'pending' | 'in_progress') => {
+    if (!newTaskTitle.trim()) return
+
+    const newTodo: Todo = {
+      id: Date.now().toString(),
+      title: newTaskTitle,
+      type: 'task',
+      status: status,
+      tags: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    setTodos([...todos, newTodo])
+    setNewTaskTitle('')
+    setAddingColumn(null)
+    showNotification('任務已新增', 'success')
+  }
+
+  // 更新待辦事項狀態
+  const handleUpdateStatus = async (id: string, status: Todo['status']) => {
+    setTodos(todos.map(todo => 
+      todo.id === id 
+        ? { ...todo, status, updated_at: new Date().toISOString() }
+        : todo
+    ))
+    
+    if (status === 'completed') {
+      showNotification('任務完成！', 'success')
+    }
+  }
+
+  // 刪除待辦事項
+  const handleDeleteTodo = async (id: string) => {
+    if (!confirm('確定要刪除這個任務嗎？')) return
+    setTodos(todos.filter(todo => todo.id !== id))
+    showNotification('任務已刪除', 'info')
+  }
+
+  // 拖曳處理函數
+  const handleDragStart = (e: React.DragEvent, task: Todo) => {
+    setDraggedTask(task)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, newStatus: Todo['status']) => {
+    e.preventDefault()
+    if (draggedTask && draggedTask.status !== newStatus) {
+      handleUpdateStatus(draggedTask.id, newStatus)
+      const statusName = newStatus === 'pending' ? '待處理' : newStatus === 'in_progress' ? '進行中' : '已完成'
+      showNotification(`任務已移至${statusName}`, 'success')
+    }
+    setDraggedTask(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedTask(null)
+  }
+
+  // 顯示通知
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    const notification = document.createElement('div')
+    notification.className = `notification notification-${type}`
+    notification.textContent = message
+    
+    const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      background: ${bgColor};
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    `
+    document.body.appendChild(notification)
+    
+    setTimeout(() => {
+      notification.remove()
+    }, 3000)
+  }
+
+  // 按狀態分組待辦事項
+  const pendingTodos = todos.filter(t => t.status === 'pending')
+  const inProgressTodos = todos.filter(t => t.status === 'in_progress')
+  const completedTodos = todos.filter(t => t.status === 'completed')
+
+  if (loading) {
+    return (
+      <div className="loading">
+        正在載入任務系統...
+      </div>
+    )
+  }
+
+  return (
+    <ModuleLayout
+      header={{
+        icon: Icons.todos,
+        title: "任務管理",
+        subtitle: "角落工作模式",
+        actions: (
+          <div className="view-toggles">
+            <button 
+              className={`view-btn ${activeView === 'board' ? 'active' : ''}`}
+              onClick={() => setActiveView('board')}
+            >
+              看板
+            </button>
+            <button 
+              className={`view-btn ${activeView === 'list' ? 'active' : ''}`}
+              onClick={() => setActiveView('list')}
+            >
+              列表
+            </button>
+          </div>
+        )
+      }}
+    >
+      {/* 開發模式提示 */}
+      {isDevMode && (
+        <div className="dev-mode-banner">
+          🔧 開發模式 - 使用模擬數據，變更不會保存
+        </div>
+      )}
+
+      {/* 看板視圖 */}
+      {activeView === 'board' ? (
+        <div className="kanban-board">
+          {/* 待處理容器 */}
+          <div className="kanban-column">
+            <div className="column-header pending">
+              <div className="header-left">
+                <h3>待處理</h3>
+                <span className="count-badge">{pendingTodos.length}</span>
+              </div>
+              <button 
+                className="add-task-header-btn"
+                onClick={() => setAddingColumn('pending')}
+                title="新增任務"
+              >
+                +
+              </button>
+            </div>
+            <div 
+              className="tasks-container"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, 'pending')}
+            >
+              {pendingTodos.map(todo => (
+                <div 
+                  key={todo.id} 
+                  className={`task-card ${draggedTask?.id === todo.id ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, todo)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <h4 
+                    className="task-title"
+                    onClick={() => {
+                      if (todo.type === 'quotation') {
+                        router.push('/dashboard/quotations/new')
+                      } else if (todo.type === 'project' && todo.linkedId) {
+                        router.push(`/dashboard/projects/${todo.linkedId}`)
+                      }
+                    }}
+                    style={{
+                      cursor: (todo.type === 'quotation' || todo.type === 'project') ? 'pointer' : 'default'
+                    }}
+                  >
+                    {todo.type === 'quotation' && '📝 '}
+                    {todo.type === 'project' && '📁 '}
+                    {todo.type === 'invoice' && '💰 '}
+                    {todo.type === 'order' && '📋 '}
+                    {todo.type === 'group' && '👥 '}
+                    {todo.title}
+                  </h4>
+                  {todo.description && (
+                    <p className="task-desc">{todo.description}</p>
+                  )}
+                </div>
+              ))}
+              
+              {/* 快速新增區域 */}
+              {addingColumn === 'pending' ? (
+                <div className="quick-add-card">
+                  <input
+                    type="text"
+                    placeholder="輸入任務名稱..."
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleQuickAdd('pending')
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!newTaskTitle) setAddingColumn(null)
+                    }}
+                    autoFocus
+                    className="quick-add-input"
+                  />
+                  <div className="quick-add-actions">
+                    <button 
+                      onClick={() => handleQuickAdd('pending')}
+                      className="quick-add-confirm"
+                    >
+                      新增
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAddingColumn(null)
+                        setNewTaskTitle('')
+                      }}
+                      className="quick-add-cancel"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 進行中容器 */}
+          <div className="kanban-column">
+            <div className="column-header in-progress">
+              <h3>進行中</h3>
+              <span className="count-badge">{inProgressTodos.length}</span>
+            </div>
+            <div 
+              className="tasks-container"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, 'in_progress')}
+            >
+              {inProgressTodos.map(todo => (
+                <div 
+                  key={todo.id} 
+                  className={`task-card ${draggedTask?.id === todo.id ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, todo)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <h4 
+                    className="task-title"
+                    onClick={() => {
+                      if (todo.type === 'quotation') {
+                        router.push('/dashboard/quotations/new')
+                      } else if (todo.type === 'project' && todo.linkedId) {
+                        router.push(`/dashboard/projects/${todo.linkedId}`)
+                      }
+                    }}
+                    style={{
+                      cursor: (todo.type === 'quotation' || todo.type === 'project') ? 'pointer' : 'default'
+                    }}
+                  >
+                    {todo.type === 'quotation' && '📝 '}
+                    {todo.type === 'project' && '📁 '}
+                    {todo.type === 'invoice' && '💰 '}
+                    {todo.type === 'order' && '📋 '}
+                    {todo.type === 'group' && '👥 '}
+                    {todo.title}
+                  </h4>
+                  {todo.description && (
+                    <p className="task-desc">{todo.description}</p>
+                  )}
+                </div>
+              ))}
+              
+              {/* 快速新增區域 */}
+              {addingColumn === 'in_progress' ? (
+                <div className="quick-add-card">
+                  <input
+                    type="text"
+                    placeholder="輸入任務名稱..."
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleQuickAdd('in_progress')
+                      }
+                    }}
+                    onBlur={() => {
+                      if (!newTaskTitle) setAddingColumn(null)
+                    }}
+                    autoFocus
+                    className="quick-add-input"
+                  />
+                  <div className="quick-add-actions">
+                    <button 
+                      onClick={() => handleQuickAdd('in_progress')}
+                      className="quick-add-confirm"
+                    >
+                      新增
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setAddingColumn(null)
+                        setNewTaskTitle('')
+                      }}
+                      className="quick-add-cancel"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 已完成容器 */}
+          <div className="kanban-column">
+            <div className="column-header completed">
+              <h3>已完成</h3>
+              <span className="count-badge">{completedTodos.length}</span>
+            </div>
+            <div 
+              className="tasks-container"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, 'completed')}
+            >
+              {completedTodos.map(todo => (
+                <div 
+                  key={todo.id} 
+                  className={`task-card completed ${draggedTask?.id === todo.id ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, todo)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <div className="task-header">
+                    <span className="completed-icon">✓</span>
+                  </div>
+                  <h4 
+                    className="task-title"
+                    onClick={() => {
+                      if (todo.type === 'quotation') {
+                        router.push('/dashboard/quotations/new')
+                      } else if (todo.type === 'project' && todo.linkedId) {
+                        router.push(`/dashboard/projects/${todo.linkedId}`)
+                      }
+                    }}
+                    style={{
+                      cursor: (todo.type === 'quotation' || todo.type === 'project') ? 'pointer' : 'default'
+                    }}
+                  >
+                    {todo.type === 'quotation' && '📝 '}
+                    {todo.type === 'project' && '📁 '}
+                    {todo.type === 'invoice' && '💰 '}
+                    {todo.type === 'order' && '📋 '}
+                    {todo.type === 'group' && '👥 '}
+                    {todo.title}
+                  </h4>
+                  {todo.description && (
+                    <p className="task-desc">{todo.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : (
+        // 列表視圖
+        <div className="list-view">
+          {todos.map(todo => (
+            <div key={todo.id} className={`list-item ${todo.status}`}>
+              <input
+                type="checkbox"
+                checked={todo.status === 'completed'}
+                onChange={(e) => 
+                  handleUpdateStatus(
+                    todo.id, 
+                    e.target.checked ? 'completed' : 'pending'
+                  )
+                }
+                className="task-checkbox"
+              />
+              <div className="list-content">
+                <h4 
+                  className={todo.status === 'completed' ? 'completed' : ''}
+                  onClick={() => {
+                    if (todo.type === 'quotation') {
+                      router.push('/dashboard/quotations/new')
+                    } else if (todo.type === 'project' && todo.linkedId) {
+                      router.push(`/dashboard/projects/${todo.linkedId}`)
+                    }
+                  }}
+                  style={{
+                    cursor: (todo.type === 'quotation' || todo.type === 'project') ? 'pointer' : 'default'
+                  }}
+                >
+                  {todo.type === 'quotation' && '📝 '}
+                  {todo.type === 'project' && '📁 '}
+                  {todo.type === 'invoice' && '💰 '}
+                  {todo.type === 'order' && '📋 '}
+                  {todo.type === 'group' && '👥 '}
+                  {todo.title}
+                </h4>
+              </div>
+              <button 
+                onClick={() => handleDeleteTodo(todo.id)}
+                className="delete-btn"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <style jsx>{`
+        .loading {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 400px;
+          color: #6d685f;
+          font-size: 16px;
+        }
+
+        .dev-mode-banner {
+          background: linear-gradient(135deg, #f59e0b, #d97706);
+          color: white;
+          padding: 12px 20px;
+          border-radius: 12px;
+          margin-bottom: 20px;
+          font-weight: 500;
+        }
+
+        .view-toggles {
+          display: flex;
+          gap: 4px;
+          background: rgba(201, 169, 97, 0.1);
+          padding: 4px;
+          border-radius: 10px;
+        }
+
+        .view-btn {
+          padding: 8px 16px;
+          background: transparent;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 500;
+          color: #6d685f;
+          transition: all 0.2s ease;
+        }
+
+        .view-btn.active {
+          background: white;
+          color: #c9a961;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 看板視圖 */
+        .kanban-board {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          flex: 1;
+          align-items: start;
+        }
+
+        .kanban-column {
+          background: rgba(255, 255, 255, 0.6);
+          border-radius: 16px;
+          padding: 16px;
+          border: 1px solid rgba(201, 169, 97, 0.2);
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .column-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px;
+          margin: -16px -16px 16px -16px;
+          border-radius: 16px 16px 0 0;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .add-task-header-btn {
+          width: 32px;
+          height: 32px;
+          background: rgba(255, 255, 255, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.5);
+          border-radius: 8px;
+          color: white;
+          font-size: 18px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .add-task-header-btn:hover {
+          background: rgba(255, 255, 255, 0.4);
+          border-color: rgba(255, 255, 255, 0.7);
+          transform: scale(1.05);
+        }
+
+        .column-header.pending {
+          background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+
+        .column-header.in-progress {
+          background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        }
+
+        .column-header.completed {
+          background: linear-gradient(135deg, #34d399, #10b981);
+        }
+
+        .column-header h3 {
+          margin: 0;
+          color: white;
+          font-size: 16px;
+          font-weight: 600;
+        }
+
+        .count-badge {
+          background: rgba(255, 255, 255, 0.3);
+          color: white;
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        .tasks-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          min-height: 300px;
+          flex: 1;
+        }
+
+        .task-card {
+          background: white;
+          border-radius: 12px;
+          padding: 16px;
+          border: 1px solid rgba(201, 169, 97, 0.15);
+          transition: all 0.3s ease;
+          cursor: grab;
+          user-select: none;
+        }
+
+        .task-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-card:active {
+          cursor: grabbing;
+        }
+
+        .task-card.dragging {
+          opacity: 0.5;
+          transform: rotate(5deg);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+          z-index: 1000;
+        }
+
+        .tasks-container {
+          min-height: 300px;
+          border: 2px dashed transparent;
+          transition: border-color 0.2s ease;
+          border-radius: 12px;
+          padding: 8px;
+        }
+
+        .tasks-container:hover {
+          border-color: rgba(201, 169, 97, 0.3);
+          background: rgba(201, 169, 97, 0.05);
+        }
+
+        .task-card.completed {
+          opacity: 0.7;
+        }
+
+        .task-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 8px;
+        }
+
+        .completed-icon {
+          color: #10b981;
+          font-weight: 700;
+          font-size: 18px;
+        }
+
+        .task-title {
+          margin: 0 0 8px 0;
+          font-size: 15px;
+          font-weight: 600;
+          color: #3a3833;
+        }
+
+        .task-title:hover {
+          color: #c9a961;
+        }
+
+        .task-card.completed .task-title {
+          text-decoration: line-through;
+          color: #6d685f;
+        }
+
+        .task-desc {
+          font-size: 13px;
+          color: #6d685f;
+          margin: 0 0 12px 0;
+          line-height: 1.4;
+        }
+
+        .task-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .action-btn {
+          flex: 1;
+          padding: 6px 12px;
+          border: none;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .action-btn.start {
+          background: rgba(59, 130, 246, 0.1);
+          color: #3b82f6;
+        }
+
+        .action-btn.start:hover {
+          background: rgba(59, 130, 246, 0.2);
+        }
+
+        .action-btn.complete {
+          background: rgba(16, 185, 129, 0.1);
+          color: #10b981;
+        }
+
+        .action-btn.complete:hover {
+          background: rgba(16, 185, 129, 0.2);
+        }
+
+        .action-btn.back {
+          background: rgba(245, 158, 11, 0.1);
+          color: #f59e0b;
+        }
+
+        .action-btn.back:hover {
+          background: rgba(245, 158, 11, 0.2);
+        }
+
+        .action-btn.reopen {
+          background: rgba(107, 114, 128, 0.1);
+          color: #6b7280;
+        }
+
+        .action-btn.reopen:hover {
+          background: rgba(107, 114, 128, 0.2);
+        }
+
+        .action-btn.delete {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+        }
+
+        .action-btn.delete:hover {
+          background: rgba(239, 68, 68, 0.2);
+        }
+
+        /* 快速新增 */
+        .add-task-btn {
+          width: 100%;
+          padding: 12px;
+          background: rgba(201, 169, 97, 0.1);
+          border: 2px dashed rgba(201, 169, 97, 0.3);
+          border-radius: 12px;
+          color: #c9a961;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .add-task-btn:hover {
+          background: rgba(201, 169, 97, 0.15);
+          border-color: rgba(201, 169, 97, 0.5);
+        }
+
+        .quick-add-card {
+          background: white;
+          border-radius: 12px;
+          padding: 16px;
+          border: 2px solid #c9a961;
+        }
+
+        .quick-add-input {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid rgba(201, 169, 97, 0.3);
+          border-radius: 6px;
+          font-size: 14px;
+          margin-bottom: 12px;
+        }
+
+        .quick-add-input:focus {
+          outline: none;
+          border-color: #c9a961;
+        }
+
+        .quick-add-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        .quick-add-confirm {
+          flex: 1;
+          padding: 6px 12px;
+          background: #c9a961;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        .quick-add-cancel {
+          flex: 1;
+          padding: 6px 12px;
+          background: rgba(107, 114, 128, 0.1);
+          color: #6b7280;
+          border: none;
+          border-radius: 6px;
+          font-weight: 500;
+          cursor: pointer;
+        }
+
+        /* 列表視圖 */
+        .list-view {
+          background: rgba(255, 255, 255, 0.8);
+          border-radius: 16px;
+          padding: 20px;
+          border: 1px solid rgba(201, 169, 97, 0.2);
+        }
+
+        .list-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px;
+          border-bottom: 1px solid rgba(201, 169, 97, 0.1);
+          transition: background 0.2s ease;
+        }
+
+        .list-item:hover {
+          background: rgba(201, 169, 97, 0.05);
+        }
+
+        .list-item:last-child {
+          border-bottom: none;
+        }
+
+        .task-checkbox {
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+        }
+
+        .list-content {
+          flex: 1;
+        }
+
+        .list-content h4 {
+          margin: 0;
+          font-size: 16px;
+          color: #3a3833;
+        }
+
+        .list-content h4.completed {
+          text-decoration: line-through;
+          color: #6d685f;
+        }
+
+        .delete-btn {
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 20px;
+          line-height: 1;
+          transition: all 0.2s ease;
+        }
+
+        .delete-btn:hover {
+          background: rgba(239, 68, 68, 0.2);
+        }
+
+        @media (max-width: 768px) {
+          .kanban-board {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
+    </ModuleLayout>
+  )
+}

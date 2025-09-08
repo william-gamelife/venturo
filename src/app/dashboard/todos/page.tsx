@@ -1,1279 +1,613 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { authManager } from '@/lib/auth'
-import { TodoItem, TodoSubtask } from '@/lib/types'
-import { StatusTodoAPI } from '@/lib/api/StatusTodoAPI'
-import { PageHeader } from '@/components/PageHeader'
-import { Button } from '@/components/Button'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { checkAuth, getMockTodos, getMockUserProfile } from '@/lib/auth-utils'
+import { ModuleLayout } from '@/components/ModuleLayout'
 import { Icons } from '@/components/icons'
 
-// 輔助函數
-const getCurrentUser = () => authManager.getCurrentUser()
-
-interface Column {
+// 型別定義
+interface Todo {
   id: string
   title: string
-  status: TodoItem['status']
+  description?: string
+  status: 'pending' | 'in_progress' | 'completed' | 'cancelled'
+  type: 'task' | 'project' | 'invoice' | 'order' | 'group' | 'quotation'
+  due_date?: string
+  tags: string[]
+  linkedId?: string
+  created_at: string
+  updated_at: string
+}
+
+interface UserProfile {
+  id: string
+  email: string
+  username?: string
+  role: 'admin' | 'corner' | 'user'
 }
 
 export default function TodosPage() {
-  const [currentUser, setCurrentUser] = useState<any>(null)
-  const [todos, setTodos] = useState<TodoItem[]>([])
-  const [hasPackagingPermission, setHasPackagingPermission] = useState(false)
-  const [currentMode, setCurrentMode] = useState<'game' | 'corner'>('game')
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [newTaskColumn, setNewTaskColumn] = useState<string>('')
-  const [draggedItem, setDraggedItem] = useState<TodoItem | null>(null)
-  const [editingTask, setEditingTask] = useState<TodoItem | null>(null)
-  const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set())
-  const [deleteConfirm, setDeleteConfirm] = useState<{show: boolean, taskId: string | null}>({show: false, taskId: null})
-  const [isDragging, setIsDragging] = useState(false)
-  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
-  const [showQuickAdd, setShowQuickAdd] = useState(false)
-  const [quickAddPosition, setQuickAddPosition] = useState({ x: 0, y: 0 })
-  const [quickAddColumn, setQuickAddColumn] = useState<string>('')
-  const [showCompletedPanel, setShowCompletedPanel] = useState(false)
-  const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
-    tags: [] as string[],
-    type: 'task' as 'task' | 'project',
-    comments: [] as string[]
-  })
+  const router = useRouter()
+  const [todos, setTodos] = useState<Todo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [activeView, setActiveView] = useState<'board' | 'list'>('board')
+  const [showAddPopover, setShowAddPopover] = useState<{ column: 'pending' | 'in_progress', x: number, y: number } | null>(null)
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDesc, setNewTaskDesc] = useState('')
+  const [draggedTask, setDraggedTask] = useState<Todo | null>(null)
+  const [showCompletedDrawer, setShowCompletedDrawer] = useState(false)
+  const [hoveredCard, setHoveredCard] = useState<string | null>(null)
 
-  // 定義看板欄位
-  const getColumns = (): Column[] => {
-    const baseColumns: Column[] = [
-      { id: 'backlog', title: '尚未整理', status: 'backlog' },
-      { id: 'in-progress', title: '進行中', status: 'in-progress' },
-      { id: 'review', title: '等待確認', status: 'review' }
-    ]
-
-    // 只有在角落模式下且有打包權限時才顯示專案欄位
-    if (hasPackagingPermission && currentMode === 'corner') {
-      baseColumns.push({ id: 'packaging', title: '專案', status: 'packaging' })
-    }
-
-    // 不再顯示完成欄位在主看板中
-    // baseColumns.push({ id: 'done', title: '完成', status: 'done' })
-
-    return baseColumns
-  }
-
+  // 載入使用者資料和待辦事項
   useEffect(() => {
-    const user = authManager.getCurrentUser()
-    setCurrentUser(user)
-    
-    if (!user) return
+    loadUserAndTodos()
+  }, [])
 
-    // 檢查打包權限（有專案權限 = 有打包功能）
-    const hasPackaging = user.permissions?.projects || false
-    setHasPackagingPermission(hasPackaging)
-
-    // 載入用戶的模式偏好
-    const savedMode = localStorage.getItem(`gamelife_mode_${user.id}`)
-    if (savedMode === 'corner' || savedMode === 'game') {
-      setCurrentMode(savedMode)
-    }
-
-    if (user) {
-      loadTodos()
-    }
-  }, [currentUser])
-
-  const loadTodos = async () => {
-    console.log('🔍 開始載入 todos...')
-    console.log('📋 Current user ID:', currentUser?.id)
-    
+  const loadUserAndTodos = async () => {
     try {
-      const apiTodos = await StatusTodoAPI.getAll(currentUser.id)
-      console.log('📦 從 API 取得的 todos:', apiTodos)
-      console.log('📊 API Todos 數量:', apiTodos.length)
+      const { user } = await checkAuth()
       
-      // 檢查數據結構並轉換（如果需要）
-      let formattedTodos = apiTodos
-      if (apiTodos.length > 0) {
-        console.log('📋 第一個 todo 的結構:', apiTodos[0])
-        
-        // 如果 API 返回的數據沒有 status 欄位，需要轉換
-        formattedTodos = apiTodos.map((todo: any) => {
-          // 如果已經有正確的結構，直接返回
-          if (todo.status) {
-            return todo
-          }
-          
-          // 如果是簡單格式，需要轉換
-          return {
-            ...todo,
-            status: todo.completed ? 'done' : 'backlog',
-            description: todo.description || '',
-            tags: todo.tags || [],
-            type: todo.type || 'task',
-            comments: todo.comments || [],
-            subtasks: todo.subtasks || [],
-            isExpanded: todo.isExpanded || false
-          }
-        })
+      if (!user) {
+        router.push('/auth/signin')
+        return
       }
+
+      setUserProfile(getMockUserProfile())
       
-      console.log('🔄 格式化後的 todos:', formattedTodos)
-      setTodos(formattedTodos)
-      console.log('✅ setTodos 執行完成')
+      // 簡化的模擬數據
+      setTodos([
+        {
+          id: '1',
+          title: '完成每日運動',
+          description: '跑步30分鐘或做瑜伽',
+          type: 'task',
+          status: 'pending',
+          tags: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          title: '學習 React Hooks',
+          description: '完成線上課程第三章',
+          type: 'task',
+          status: 'in_progress',
+          tags: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '3',
+          title: '整理房間',
+          type: 'task',
+          status: 'pending',
+          tags: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '4',
+          title: '閱讀《原子習慣》',
+          description: '完成第一章',
+          type: 'task',
+          status: 'completed',
+          tags: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ])
+      setLoading(false)
     } catch (error) {
-      console.error('❌ 載入 todos 失敗:', error)
+      console.error('載入資料失敗:', error)
+      setLoading(false)
     }
   }
 
+  // 快速新增任務
+  const handleQuickAdd = (status: 'pending' | 'in_progress') => {
+    if (!newTaskTitle.trim()) return
 
-  const generateId = () => {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2)
-  }
-
-  const getTasksByStatus = (status: TodoItem['status']) => {
-    return todos.filter(todo => todo.status === status)
-      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-  }
-
-  const addTodo = async (title: string) => {
-    console.log('➕ 新增任務:', title)
-    console.log('👤 Current user ID:', currentUser?.id)
-    console.log('🗄️ 儲存 key:', `gamelife_todos_${currentUser?.id}`)
-    
-    const result = await StatusTodoAPI.create(currentUser.id, {
-      title,
-      status: newTaskColumn || 'backlog',
-      priority: 'medium'
-    })
-    
-    console.log('📤 新增結果:', result)
-    
-    if (result.success) {
-      console.log('✅ 新增成功，重新載入資料...')
-      await loadTodos() // 重新載入
-      
-      // 檢查實際儲存位置
-      const stored = localStorage.getItem(`gamelife_todos_${currentUser.id}`)
-      console.log('💾 實際儲存的資料:', stored)
-    } else {
-      console.error('❌ 新增失敗:', result)
-    }
-  }
-
-  const handleAddTask = async () => {
-    if (!newTask.title.trim()) return
-
-    await addTodo(newTask.title)
-
-    // 重置表單
-    setNewTask({
-      title: '',
-      description: '',
-      tags: [],
+    const newTodo: Todo = {
+      id: Date.now().toString(),
+      title: newTaskTitle,
+      description: newTaskDesc,
       type: 'task',
-      comments: []
+      status: status,
+      tags: [],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }
+
+    setTodos([...todos, newTodo])
+    setNewTaskTitle('')
+    setNewTaskDesc('')
+    setShowAddPopover(null)
+    showNotification('任務已新增 +10 EXP', 'success')
+  }
+
+  // 開啟新增彈窗
+  const openAddPopover = (column: 'pending' | 'in_progress', event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    setShowAddPopover({ 
+      column, 
+      x: rect.left,
+      y: rect.bottom + 8
     })
-    setShowAddDialog(false)
-    setNewTaskColumn('')
   }
 
-  const handleEditTask = async () => {
-    if (!editingTask || !editingTask.title.trim()) return
-
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      console.error('No current user found')
-      return
-    }
-
-    try {
-      const { id, createdAt, updatedAt, ...updateData } = editingTask
-      const result = await StatusTodoAPI.update(currentUser.id, editingTask.id, updateData)
-      
-      if (result.success) {
-        await loadTodos()
-        setEditingTask(null)
-      } else {
-        console.error('Failed to update task:', result.error)
-      }
-    } catch (error) {
-      console.error('Error updating task:', error)
-    }
-  }
-
-  const toggleTodo = async (id: string) => {
-    const result = await StatusTodoAPI.toggleComplete(currentUser.id, id)
-    if (result.success) {
-      await loadTodos() // 重新載入
-    }
-  }
-
-  const deleteTodo = async (id: string) => {
-    const result = await StatusTodoAPI.delete(currentUser.id, id)
-    if (result.success) {
-      await loadTodos() // 重新載入
-    }
-  }
-
-  const handleDeleteTask = (taskId: string) => {
-    setDeleteConfirm({show: true, taskId})
-  }
-
-  const confirmDelete = async () => {
-    if (deleteConfirm.taskId) {
-      await deleteTodo(deleteConfirm.taskId)
-    }
-    setDeleteConfirm({show: false, taskId: null})
-  }
-
-  const handleDragOver = (e: React.DragEvent, columnId?: string) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = 'move'
-    if (columnId && columnId !== dragOverColumn) {
-      setDragOverColumn(columnId)
-    }
-  }
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    // 只有當離開整個欄位區域時才清除狀態
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-      setDragOverColumn(null)
-    }
-  }
-
-  const handleDragStart = (e: React.DragEvent, task: TodoItem) => {
-    console.log('Starting drag for task:', task.title)
-    console.log('User has todos permission:', !!currentUser.permissions?.todos)
+  // 更新待辦事項狀態
+  const handleUpdateStatus = async (id: string, status: Todo['status']) => {
+    setTodos(todos.map(todo => 
+      todo.id === id 
+        ? { ...todo, status, updated_at: new Date().toISOString() }
+        : todo
+    ))
     
-    setIsDragging(true)
-    setDraggedItem(task)
-    
-    // 使用簡單的字符串而不是JSON
-    if (selectedTasks.has(task.id)) {
-      e.dataTransfer.setData('text/plain', `batch:${Array.from(selectedTasks).join(',')}`)
-      console.log('Set batch drag data:', Array.from(selectedTasks))
-    } else {
-      e.dataTransfer.setData('text/plain', `single:${task.id}`)
-      console.log('Set single drag data:', task.id)
+    if (status === 'completed') {
+      showNotification('任務完成！獲得 10 EXP ⭐', 'success')
     }
+  }
+
+  // 刪除待辦事項
+  const handleDeleteTodo = async (id: string) => {
+    setTodos(todos.filter(todo => todo.id !== id))
+    showNotification('任務已刪除', 'info')
+  }
+
+  // 拖曳處理函數
+  const handleDragStart = (e: React.DragEvent, task: Todo) => {
+    setDraggedTask(task)
     e.dataTransfer.effectAllowed = 'move'
   }
 
-  const handleDrop = async (e: React.DragEvent, newStatus: TodoItem['status']) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
-    console.log('Drop event triggered for status:', newStatus)
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, newStatus: Todo['status']) => {
+    e.preventDefault()
+    if (draggedTask && draggedTask.status !== newStatus) {
+      handleUpdateStatus(draggedTask.id, newStatus)
+      const statusName = newStatus === 'pending' ? '準備區' : '等待區'
+      showNotification(`任務已移至${statusName}`, 'success')
+    }
+    setDraggedTask(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedTask(null)
+  }
+
+  // 顯示通知
+  const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
+    const notification = document.createElement('div')
+    notification.className = `notification notification-${type}`
+    notification.textContent = message
     
-    setIsDragging(false)
-    setDragOverColumn(null)
+    const bgColor = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'
+    notification.style.cssText = `
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 16px 24px;
+      background: ${bgColor};
+      color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    `
+    document.body.appendChild(notification)
     
-    const dragData = e.dataTransfer.getData('text/plain')
-    console.log('Retrieved drag data:', dragData)
-    
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      console.error('No current user found')
-      setDraggedItem(null)
-      return
-    }
-    
-    try {
-      if (!dragData) {
-        console.log('No drag data, using fallback with draggedItem:', draggedItem?.title)
-        // 如果DataTransfer失敗，使用state中的draggedItem作為備用
-        if (draggedItem) {
-          const result = await StatusTodoAPI.updateStatus(currentUser.id, draggedItem.id, newStatus)
-          if (result.success) {
-            await loadTodos()
-            console.log('Successfully moved task using fallback method')
-          } else {
-            console.error('Failed to move task:', result.error)
-          }
-        }
-        setDraggedItem(null)
-        return
-      }
-      
-      if (dragData.startsWith('batch:')) {
-        // 批次移動
-        const taskIds = dragData.substring(6).split(',')
-        console.log('Batch move:', taskIds)
-        const result = await StatusTodoAPI.bulkUpdateStatus(currentUser.id, taskIds, newStatus)
-        if (result.success) {
-          await loadTodos()
-          setSelectedTasks(new Set())
-        } else {
-          console.error('Failed to batch move tasks:', result.error)
-        }
-      } else if (dragData.startsWith('single:')) {
-        // 單個移動
-        const taskId = dragData.substring(7)
-        const task = todos.find(t => t.id === taskId)
-        if (task) {
-          console.log('Single move:', task.title, 'to', newStatus)
-          const result = await StatusTodoAPI.updateStatus(currentUser.id, taskId, newStatus)
-          if (result.success) {
-            await loadTodos()
-          } else {
-            console.error('Failed to move task:', result.error)
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error in handleDrop:', error)
-    }
-    
-    setDraggedItem(null)
+    setTimeout(() => {
+      notification.remove()
+    }, 3000)
   }
 
-  const openAddDialog = (columnId: string) => {
-    setNewTaskColumn(columnId)
-    setShowAddDialog(true)
-  }
+  // 按狀態分組待辦事項
+  const pendingTodos = todos.filter(t => t.status === 'pending')
+  const inProgressTodos = todos.filter(t => t.status === 'in_progress')
+  const completedTodos = todos.filter(t => t.status === 'completed')
 
-  const handleQuickAdd = (e: React.MouseEvent, columnId: string) => {
-    // 只在非拖拽狀態下觸發
-    if (isDragging) return
-    
-    // 檢查是否點擊到卡片或其他元素
-    const target = e.target as HTMLElement
-    if (target.closest('.task-card')) return
-    
-    const rect = e.currentTarget.getBoundingClientRect()
-    setQuickAddPosition({ 
-      x: rect.left + 20, 
-      y: e.clientY 
-    })
-    setQuickAddColumn(columnId)
-    setShowQuickAdd(true)
-  }
-
-  const handleQuickAddSubmit = async (title: string) => {
-    if (!title.trim()) return
-
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      console.error('No current user found')
-      return
-    }
-
-    try {
-      const result = await StatusTodoAPI.create(currentUser.id, {
-        title: title,
-        description: '',
-        status: (quickAddColumn as TodoItem['status']) || 'backlog',
-        tags: [],
-        type: 'task',
-        priority: 'medium'
-      })
-
-      if (result.success) {
-        await loadTodos()
-        setShowQuickAdd(false)
-      } else {
-        console.error('Failed to create task:', result.error)
-      }
-    } catch (error) {
-      console.error('Error creating task:', error)
-    }
-  }
-
-  const toggleTaskSelection = (taskId: string) => {
-    const newSelected = new Set(selectedTasks)
-    if (newSelected.has(taskId)) {
-      newSelected.delete(taskId)
-    } else {
-      newSelected.add(taskId)
-    }
-    setSelectedTasks(newSelected)
-  }
-
-  const toggleProjectExpansion = async (projectId: string) => {
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      console.error('No current user found')
-      return
-    }
-
-    try {
-      const todo = todos.find(t => t.id === projectId)
-      if (todo) {
-        const result = await StatusTodoAPI.update(currentUser.id, projectId, {
-          isExpanded: !todo.isExpanded
-        })
-        
-        if (result.success) {
-          await loadTodos()
-        } else {
-          console.error('Failed to update project expansion:', result.error)
-        }
-      }
-    } catch (error) {
-      console.error('Error updating project expansion:', error)
-    }
-  }
-
-  const toggleSubtaskComplete = async (projectId: string, subtaskId: string) => {
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      console.error('No current user found')
-      return
-    }
-
-    try {
-      const todo = todos.find(t => t.id === projectId)
-      if (!todo || !todo.subtasks) return
-
-      const subtask = todo.subtasks.find(s => s.id === subtaskId)
-      if (!subtask) return
-
-      const result = await StatusTodoAPI.updateSubtask(
-        currentUser.id, 
-        projectId, 
-        subtaskId, 
-        { completed: !subtask.completed }
-      )
-      
-      if (result.success) {
-        await loadTodos()
-      } else {
-        console.error('Failed to update subtask:', result.error)
-      }
-    } catch (error) {
-      console.error('Error updating subtask:', error)
-    }
-  }
-
-  const addSubtask = async (projectId: string, subtaskTitle: string) => {
-    if (!subtaskTitle.trim()) return
-
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      console.error('No current user found')
-      return
-    }
-
-    try {
-      const result = await StatusTodoAPI.addSubtask(currentUser.id, projectId, {
-        title: subtaskTitle,
-        priority: 'medium'
-      })
-      
-      if (result.success) {
-        await loadTodos()
-      } else {
-        console.error('Failed to add subtask:', result.error)
-      }
-    } catch (error) {
-      console.error('Error adding subtask:', error)
-    }
-  }
-
-  // 新增留言功能
-  const addComment = async (taskId: string, comment: string) => {
-    if (!comment.trim()) return
-    
-    const currentUser = getCurrentUser()
-    if (!currentUser) {
-      console.error('No current user found')
-      return
-    }
-
-    try {
-      const result = await StatusTodoAPI.addComment(currentUser.id, taskId, comment)
-      
-      if (result.success) {
-        await loadTodos()
-      } else {
-        console.error('Failed to add comment:', result.error)
-      }
-    } catch (error) {
-      console.error('Error adding comment:', error)
-    }
-  }
-
-  if (!currentUser) {
+  if (loading) {
     return (
       <div className="loading">
-        正在載入待辦事項...
+        正在載入任務系統...
       </div>
     )
   }
-
-  if (!currentUser.permissions?.todos) {
-    return (
-      <div className="access-denied">
-        <div className="access-denied-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-        </div>
-        <h2>權限不足</h2>
-        <p>您沒有權限查看待辦事項功能</p>
-      </div>
-    )
-  }
-
-  const columns = getColumns()
 
   return (
-    <div className="todos-container">
-      <div>
-        <PageHeader
-          icon={Icons.todos}
-          title="待辦事項"
-          subtitle={`看板式任務管理 ${(hasPackagingPermission && currentMode === 'corner') ? '• 專案打包版' : '• 基礎版'}`}
-          actions={
-            <Button 
-              variant="secondary" 
-              icon={
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <path d="M13.5 3L6 11L2.5 7.5l1.06-1.06L6 8.94l6.44-6.44L13.5 3z"/>
-                </svg>
-              }
-              onClick={() => setShowCompletedPanel(true)}
+    <ModuleLayout
+      header={{
+        icon: Icons.todos,
+        title: "任務管理",
+        subtitle: "冒險模式",
+        actions: (
+          <div className="header-actions">
+            <button 
+              className={`completed-btn ${showCompletedDrawer ? 'active' : ''}`}
+              onClick={() => setShowCompletedDrawer(!showCompletedDrawer)}
             >
-              完成 ({getTasksByStatus('done').length})
-            </Button>
-          }
-        />
-      </div>
-
-      <div className={`kanban-board columns-${columns.length}`}>
-        {columns.map(column => (
-          <div 
-            key={column.id}
-            className="kanban-column"
-            data-drag-over={dragOverColumn === column.id}
-            onDragOver={(e) => handleDragOver(e, column.id)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, column.status)}
-          >
-            <div className="column-header">
-              <div className="column-title-section">
-                <h3 className="column-title">{column.title}</h3>
-                <span className="column-count">{getTasksByStatus(column.status).length}</span>
-              </div>
-              {column.status !== 'done' && column.status !== 'packaging' && currentUser.permissions?.todos && (
-                <button 
-                  className="add-task-btn"
-                  onClick={() => openAddDialog(column.id)}
-                  title="新增任務"
-                >
-                  <svg viewBox="0 0 16 16" width="12" height="12">
-                    <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </button>
-              )}
+              已完成 ({completedTodos.length})
+            </button>
+            <div className="view-toggles">
+              <button 
+                className={`view-btn ${activeView === 'board' ? 'active' : ''}`}
+                onClick={() => setActiveView('board')}
+              >
+                看板
+              </button>
+              <button 
+                className={`view-btn ${activeView === 'list' ? 'active' : ''}`}
+                onClick={() => setActiveView('list')}
+              >
+                列表
+              </button>
             </div>
-
+          </div>
+        )
+      }}
+    >
+      {/* 看板視圖 */}
+      {activeView === 'board' ? (
+        <div className="kanban-board">
+          {/* 準備區容器 */}
+          <div className="kanban-column">
+            <div className="column-header pending">
+              <div className="header-left">
+                <h3>準備區</h3>
+                <span className="count-badge">{pendingTodos.length}</span>
+              </div>
+              <button 
+                className="add-task-header-btn"
+                onClick={(e) => openAddPopover('pending', e)}
+                title="新增任務"
+              >
+                +
+              </button>
+            </div>
             <div 
-              className="column-tasks"
-              onClick={(e) => {
-                if (column.status !== 'done' && column.status !== 'packaging' && currentUser.permissions?.todos) {
-                  handleQuickAdd(e, column.id)
-                }
-              }}
+              className="tasks-container"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, 'pending')}
             >
-              {getTasksByStatus(column.status).map(task => (
+              {pendingTodos.map(todo => (
                 <div 
-                  key={task.id}
-                  className={`task-card ${task.status === 'done' ? 'completed' : ''} ${selectedTasks.has(task.id) ? 'selected' : ''} ${task.type === 'project' ? 'project-card' : ''}`}
-                  draggable={!!currentUser.permissions?.todos}
-                  onDragStart={(e) => handleDragStart(e, task)}
-                  onClick={(e) => {
-                    // 避免在拖曳時觸發點擊
-                    if (isDragging || e.detail === 0) return
-                    
-                    // 延遲處理，確保拖拽狀態更新完成
-                    setTimeout(() => {
-                      if (!isDragging) {
-                        if (task.type === 'project') {
-                          e.preventDefault()
-                          toggleProjectExpansion(task.id)
-                        } else {
-                          setEditingTask(task)
-                        }
-                      }
-                    }, 100)
-                  }}
-                  onDragEnd={() => {
-                    console.log('Drag ended for:', task.title)
-                    setIsDragging(false)
-                    setDraggedItem(null)
-                  }}
+                  key={todo.id} 
+                  className={`task-card ${draggedTask?.id === todo.id ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, todo)}
+                  onDragEnd={handleDragEnd}
+                  onMouseEnter={() => setHoveredCard(todo.id)}
+                  onMouseLeave={() => setHoveredCard(null)}
                 >
-
-                  <div className="task-main-content">
-                    <div className="task-header">
-                      <h4 className="task-title">
-                        {task.type === 'project' && (
-                          <span className="project-icon">📋</span>
-                        )}
-                        {task.title}
-                        {task.type === 'project' && task.subtasks && (
-                          <span className="subtask-count">
-                            ({task.subtasks.filter(s => s.completed).length}/{task.subtasks.length})
-                          </span>
-                        )}
-                      </h4>
-                      <div className="task-actions">
-                        {currentUser.permissions?.todos && (
-                          <button 
-                            className="action-btn delete-btn"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteTask(task.id)
-                            }}
-                            title="刪除"
-                          >
-                            <svg width="14" height="14" viewBox="0 0 14 14">
-                              <path d="M11 3L3 11M3 3l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                            </svg>
-                          </button>
-                        )}
-                      </div>
+                  <h4 className="task-title">
+                    {todo.title}
+                  </h4>
+                  {todo.description && (
+                    <p className="task-desc">{todo.description}</p>
+                  )}
+                  
+                  {/* Hover 時顯示的快捷按鈕 - 準備區也可以直接完成 */}
+                  {hoveredCard === todo.id && (
+                    <div className="hover-actions" style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      display: 'flex',
+                      gap: '4px',
+                      animation: 'fadeIn 0.2s ease'
+                    }}>
+                      <button 
+                        className="hover-btn complete"
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          color: '#10b981',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#10b981';
+                          e.currentTarget.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
+                          e.currentTarget.style.color = '#10b981';
+                        }}
+                        onClick={() => handleUpdateStatus(todo.id, 'completed')}
+                        title="標記完成"
+                      >
+                        ✓
+                      </button>
+                      <button 
+                        className="hover-btn delete"
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#ef4444',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#ef4444';
+                          e.currentTarget.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                          e.currentTarget.style.color = '#ef4444';
+                        }}
+                        onClick={() => handleDeleteTodo(todo.id)}
+                        title="刪除"
+                      >
+                        ✕
+                      </button>
                     </div>
-                    
-
-                    {/* 專案子任務展開區域 */}
-                    {task.type === 'project' && task.isExpanded && (
-                      <div className="subtasks-container">
-                        <div className="subtasks-header">
-                          <span>子任務</span>
-                          <button 
-                            className="add-subtask-btn"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              const title = prompt('請輸入子任務標題')
-                              if (title) addSubtask(task.id, title)
-                            }}
-                          >
-                            + 新增
-                          </button>
-                        </div>
-                        
-                        <div className="subtasks-list">
-                          {task.subtasks?.map(subtask => (
-                            <div key={subtask.id} className="subtask-item">
-                              <input
-                                type="checkbox"
-                                checked={subtask.completed}
-                                onChange={(e) => {
-                                  e.stopPropagation()
-                                  toggleSubtaskComplete(task.id, subtask.id)
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              />
-                              <span className={`subtask-title ${subtask.completed ? 'completed' : ''}`}>
-                                {subtask.title}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               ))}
-
-              {getTasksByStatus(column.status).length === 0 && (
-                <div className="empty-column">
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <path d="M9 11l3 3L20 5"/>
-                  </svg>
-                  <p>暫無任務</p>
-                </div>
-              )}
             </div>
           </div>
-        ))}
-      </div>
 
-      {/* 新增任務對話框 */}
-      {showAddDialog && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowAddDialog(false)}>
-          <div className="modal-content">
-            <h3 className="modal-title">新增任務</h3>
-            
-            <div className="form-group">
-              <label>任務標題</label>
-              <input
-                type="text"
-                value={newTask.title}
-                onChange={(e) => setNewTask({...newTask, title: e.target.value})}
-                placeholder="輸入任務標題"
-                autoFocus
-              />
-            </div>
-
-            <div className="form-group">
-              <label>任務描述</label>
-              <textarea
-                value={newTask.description}
-                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
-                placeholder="輸入任務描述（選填）"
-                rows={3}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>任務類型</label>
-              <select
-                value={newTask.type}
-                onChange={(e) => setNewTask({...newTask, type: e.target.value as 'task' | 'project'})}
-              >
-                <option value="task">一般任務</option>
-                {currentMode === 'corner' && (
-                  <option value="project">專案</option>
-                )}
-              </select>
-            </div>
-
-
-            <div className="modal-actions">
+          {/* 等待區容器 */}
+          <div className="kanban-column">
+            <div className="column-header in-progress">
+              <div className="header-left">
+                <h3>等待區</h3>
+                <span className="count-badge">{inProgressTodos.length}</span>
+              </div>
               <button 
-                className="btn-secondary" 
-                onClick={() => setShowAddDialog(false)}
+                className="add-task-header-btn"
+                onClick={(e) => openAddPopover('in_progress', e)}
+                title="新增任務"
               >
-                取消
+                +
               </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleAddTask}
-              >
-                新增任務
-              </button>
+            </div>
+            <div 
+              className="tasks-container"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, 'in_progress')}
+            >
+              {inProgressTodos.map(todo => (
+                <div 
+                  key={todo.id} 
+                  className={`task-card ${draggedTask?.id === todo.id ? 'dragging' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, todo)}
+                  onDragEnd={handleDragEnd}
+                  onMouseEnter={() => setHoveredCard(todo.id)}
+                  onMouseLeave={() => setHoveredCard(null)}
+                >
+                  <h4 className="task-title">
+                    {todo.title}
+                  </h4>
+                  {todo.description && (
+                    <p className="task-desc">{todo.description}</p>
+                  )}
+                  
+                  {/* Hover 時顯示的快捷按鈕 - 等待區也可以直接完成 */}
+                  {hoveredCard === todo.id && (
+                    <div className="hover-actions" style={{
+                      position: 'absolute',
+                      top: '12px',
+                      right: '12px',
+                      display: 'flex',
+                      gap: '4px',
+                      animation: 'fadeIn 0.2s ease'
+                    }}>
+                      <button 
+                        className="hover-btn complete"
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          color: '#10b981',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#10b981';
+                          e.currentTarget.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
+                          e.currentTarget.style.color = '#10b981';
+                        }}
+                        onClick={() => handleUpdateStatus(todo.id, 'completed')}
+                        title="標記完成"
+                      >
+                        ✓
+                      </button>
+                      <button 
+                        className="hover-btn delete"
+                        style={{
+                          width: '28px',
+                          height: '28px',
+                          borderRadius: '6px',
+                          border: 'none',
+                          fontSize: '14px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: 'rgba(239, 68, 68, 0.1)',
+                          color: '#ef4444',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = '#ef4444';
+                          e.currentTarget.style.color = 'white';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
+                          e.currentTarget.style.color = '#ef4444';
+                        }}
+                        onClick={() => handleDeleteTodo(todo.id)}
+                        title="刪除"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      )}
-
-      {/* 編輯任務對話框 */}
-      {editingTask && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setEditingTask(null)}>
-          <div className="modal-content">
-            <h3 className="modal-title">編輯任務</h3>
-            
-            <div className="form-group">
-              <label>任務標題</label>
-              <input
-                type="text"
-                value={editingTask.title}
-                onChange={(e) => setEditingTask({...editingTask, title: e.target.value})}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>任務描述</label>
-              <textarea
-                value={editingTask.description || ''}
-                onChange={(e) => setEditingTask({...editingTask, description: e.target.value})}
-                rows={3}
-              />
-            </div>
-
-
-
-            <div className="form-group">
-              <label>留言記錄</label>
-              <div className="comments-section">
-                {editingTask.comments && editingTask.comments.length > 0 ? (
-                  <div className="existing-comments">
-                    {editingTask.comments.map((comment, index) => (
-                      <div key={index} className="comment-item">
-                        <span className="comment-text">{comment}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="no-comments">暫無留言</p>
+      ) : (
+        // 列表視圖
+        <div className="list-view">
+          {todos.filter(t => t.status !== 'completed').map(todo => (
+            <div key={todo.id} className={`list-item ${todo.status}`}>
+              <div className="list-content">
+                <h4>{todo.title}</h4>
+                {todo.description && (
+                  <p className="list-desc">{todo.description}</p>
                 )}
-                <input
-                  type="text"
-                  placeholder="新增留言..."
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                      addComment(editingTask.id, e.currentTarget.value)
-                      e.currentTarget.value = ''
-                      // 更新編輯中的任務資料
-                      const updatedTask = todos.find(t => t.id === editingTask.id)
-                      if (updatedTask) {
-                        setEditingTask(updatedTask)
-                      }
-                    }
-                  }}
-                />
+              </div>
+              <div className="list-actions">
+                <button 
+                  className="action-btn complete"
+                  onClick={() => handleUpdateStatus(todo.id, 'completed')}
+                >
+                  完成
+                </button>
+                <button 
+                  className="action-btn delete"
+                  onClick={() => handleDeleteTodo(todo.id)}
+                >
+                  刪除
+                </button>
               </div>
             </div>
-
-            <div className="modal-actions">
-              <button 
-                className="btn-secondary" 
-                onClick={() => setEditingTask(null)}
-              >
-                取消
-              </button>
-              <button 
-                className="btn-primary" 
-                onClick={handleEditTask}
-              >
-                儲存變更
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       )}
 
-      {/* 刪除確認對話框 */}
-      {deleteConfirm.show && (
-        <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setDeleteConfirm({show: false, taskId: null})}>
-          <div className="modal-content delete-confirm-modal">
-            <h3 className="modal-title">確認刪除</h3>
-            <p className="delete-warning">
-              確定要刪除這個任務嗎？此操作無法復原。
-            </p>
-            <div className="modal-actions">
-              <button 
-                className="btn-secondary" 
-                onClick={() => setDeleteConfirm({show: false, taskId: null})}
-              >
-                取消
-              </button>
-              <button 
-                className="btn-danger" 
-                onClick={confirmDelete}
-              >
-                確認刪除
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Add Popover */}
-      {showQuickAdd && (
+      {/* 新增任務 Popover */}
+      {showAddPopover && (
         <>
+          <div className="popover-backdrop" onClick={() => setShowAddPopover(null)} />
           <div 
-            className="popover-overlay"
-            onClick={() => setShowQuickAdd(false)}
-          />
-          <div 
-            className="quick-add-popover"
+            className="add-popover"
             style={{
-              position: 'fixed',
-              left: quickAddPosition.x,
-              top: quickAddPosition.y,
-              zIndex: 1001
+              left: `${showAddPopover.x}px`,
+              top: `${showAddPopover.y}px`
             }}
           >
-            <div className="quick-add-header">
-              <h4>快速新增任務</h4>
-            </div>
-            
-            <div className="quick-add-content">
-              <input
-                type="text"
-                placeholder="輸入任務標題..."
-                autoFocus
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                    handleQuickAddSubmit(e.currentTarget.value)
-                  } else if (e.key === 'Escape') {
-                    setShowQuickAdd(false)
-                  }
-                }}
-                onBlur={(e) => {
-                  // 延遲執行，讓用戶有時間點擊其他按鈕
-                  setTimeout(() => {
-                    if (e.target.value.trim()) {
-                      handleQuickAddSubmit(e.target.value)
-                    } else {
-                      setShowQuickAdd(false)
-                    }
-                  }, 100)
-                }}
-              />
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Completed Tasks Slide Panel */}
-      {showCompletedPanel && (
-        <>
-          <div 
-            className="slide-panel-overlay"
-            onClick={() => setShowCompletedPanel(false)}
-          />
-          <div className="completed-slide-panel">
-            <div className="slide-panel-header">
-              <h3>完成的任務</h3>
+            <h4>新增任務</h4>
+            <input
+              type="text"
+              placeholder="任務名稱"
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  handleQuickAdd(showAddPopover.column)
+                }
+              }}
+              autoFocus
+              className="popover-input"
+            />
+            <textarea
+              placeholder="任務描述（選填）"
+              value={newTaskDesc}
+              onChange={(e) => setNewTaskDesc(e.target.value)}
+              className="popover-textarea"
+            />
+            <div className="popover-actions">
               <button 
-                className="close-panel-btn"
-                onClick={() => setShowCompletedPanel(false)}
+                onClick={() => handleQuickAdd(showAddPopover.column)}
+                className="popover-confirm"
+                disabled={!newTaskTitle.trim()}
               >
-                ✕
+                新增
+              </button>
+              <button 
+                onClick={() => {
+                  setShowAddPopover(null)
+                  setNewTaskTitle('')
+                  setNewTaskDesc('')
+                }}
+                className="popover-cancel"
+              >
+                取消
               </button>
             </div>
-            
-            <div className="slide-panel-content">
-              {getTasksByStatus('done').length === 0 ? (
-                <div className="empty-completed">
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5">
-                    <path d="M9 12l2 2 4-4"/>
-                    <circle cx="12" cy="12" r="10"/>
-                  </svg>
-                  <p>還沒有完成的任務</p>
-                </div>
-              ) : (
-                <div className="completed-tasks-list">
-                  {getTasksByStatus('done').map(task => (
-                    <div key={task.id} className="completed-task-item">
-                      <div className="completed-task-header">
-                        <h4 className="completed-task-title">
-                          {task.type === 'project' && (
-                            <span className="project-icon">📋</span>
-                          )}
-                          {task.title}
-                        </h4>
-                        <span className="completed-date">
-                          {new Date(task.updatedAt).toLocaleDateString('zh-TW')}
-                        </span>
-                      </div>
-                      {task.description && (
-                        <p className="completed-task-description">{task.description}</p>
-                      )}
-                      {task.comments && task.comments.length > 0 && (
-                        <div className="completed-task-comments">
-                          {task.comments.map((comment, index) => (
-                            <div key={index} className="completed-comment">
-                              {comment}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </>
       )}
 
+      {/* 已完成抽屜 */}
+      <div className={`completed-drawer ${showCompletedDrawer ? 'open' : ''}`}>
+        <div className="drawer-header">
+          <h3>已完成任務</h3>
+          <button 
+            className="close-drawer"
+            onClick={() => setShowCompletedDrawer(false)}
+          >
+            ×
+          </button>
+        </div>
+        <div className="drawer-content">
+          {completedTodos.length === 0 ? (
+            <p className="empty-message">暫無已完成的任務</p>
+          ) : (
+            completedTodos.map(todo => (
+              <div key={todo.id} className="completed-task">
+                <div className="task-info">
+                  <h4>{todo.title}</h4>
+                  {todo.description && <p>{todo.description}</p>}
+                  <span className="complete-time">
+                    完成於 {new Date(todo.updated_at).toLocaleString('zh-TW')}
+                  </span>
+                </div>
+                <div className="task-actions">
+                  <button 
+                    className="action-btn reopen"
+                    onClick={() => handleUpdateStatus(todo.id, 'pending')}
+                  >
+                    重新開啟
+                  </button>
+                  <button 
+                    className="action-btn delete"
+                    onClick={() => handleDeleteTodo(todo.id)}
+                  >
+                    刪除
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       <style jsx>{`
-        .todos-container {
-          max-width: none;
-          margin: 0;
-          height: 100%;
-          display: flex;
-          flex-direction: column;
-          width: 100%;
-        }
-
-
-        .stats-overview {
-          display: flex;
-          gap: 24px;
-        }
-
-        .stat-item {
-          text-align: center;
-        }
-
-        .stat-number {
-          display: block;
-          font-size: 24px;
-          font-weight: 700;
-          color: #c9a961;
-          line-height: 1;
-        }
-
-        .stat-label {
-          display: block;
-          font-size: 12px;
-          color: #6d685f;
-          margin-top: 2px;
-        }
-
-        .kanban-board {
-          flex: 1;
-          display: grid;
-          gap: 16px;
-          overflow-x: auto;
-          padding-bottom: 20px;
-          min-height: 500px;
-          width: 100%;
-        }
-
-        .kanban-board.columns-4 {
-          grid-template-columns: repeat(4, minmax(280px, 1fr));
-        }
-
-        .kanban-board.columns-5 {
-          grid-template-columns: repeat(5, minmax(240px, 1fr));
-        }
-
-        .kanban-column {
-          background: rgba(255, 255, 255, 0.6);
-          border-radius: 16px;
-          padding: 12px;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-          min-height: 400px;
-          transition: all 0.3s ease;
-          min-width: 240px;
-          position: relative;
-        }
-
-        .kanban-column:hover {
-          background: rgba(255, 255, 255, 0.8);
-          box-shadow: 0 8px 32px rgba(201, 169, 97, 0.1);
-        }
-
-        .kanban-column[data-drag-over="true"] {
-          background: rgba(201, 169, 97, 0.1);
-          border: 2px dashed rgba(201, 169, 97, 0.5);
-          transform: scale(1.02);
-        }
-
-        .column-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          border-bottom: 2px solid rgba(201, 169, 97, 0.3);
-        }
-
-        .column-title-section {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .column-title {
-          font-size: 16px;
-          font-weight: 600;
-          color: #3a3833;
-          margin: 0;
-        }
-
-        .column-count {
-          background: rgba(201, 169, 97, 0.2);
-          color: #8b7355;
-          padding: 2px 8px;
-          border-radius: 12px;
-          font-size: 12px;
-          font-weight: 600;
-          min-width: 20px;
-          text-align: center;
-        }
-
-        .add-task-btn {
-          width: 28px;
-          height: 28px;
-          border: none;
-          background: rgba(201, 169, 97, 0.2);
-          color: #8b7355;
-          border-radius: 8px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        }
-
-        .add-task-btn:hover {
-          background: rgba(201, 169, 97, 0.3);
-          transform: scale(1.1);
-        }
-
-        .column-tasks {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          min-height: 300px;
-        }
-
-        .task-card {
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 8px;
-          padding: 16px 12px;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-          transition: all 0.3s ease;
-          cursor: move;
-          position: relative;
-          min-height: 60px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-        }
-
-        .task-card:active {
-          opacity: 0.7;
-          transform: rotate(2deg);
-          z-index: 1000;
-        }
-
-        .task-card.selected {
-          border-color: #3b82f6;
-          background: rgba(59, 130, 246, 0.05);
-        }
-
-        .task-card.project-card {
-          border-left: 4px solid #8b5cf6;
-          background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), rgba(255, 255, 255, 0.9));
-        }
-
-        .project-icon {
-          margin-right: 6px;
-          font-size: 14px;
-        }
-
-        .subtask-count {
-          font-size: 12px;
-          color: #8b5cf6;
-          font-weight: 500;
-          margin-left: 8px;
-        }
-
-        .task-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(201, 169, 97, 0.2);
-          border-color: rgba(201, 169, 97, 0.4);
-        }
-
-        .task-card.completed {
-          opacity: 0.7;
-          background: rgba(245, 245, 245, 0.9);
-        }
-
-        .task-card.completed .task-title {
-          text-decoration: line-through;
-          color: #6b7280;
-        }
-
-        .task-header {
-          display: flex;
-          align-items: center;
-          margin: 0;
-          gap: 8px;
-          flex: 1;
-        }
-
-
-        .task-main-content {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          flex: 1;
-        }
-
-        .task-title {
-          font-size: 14px;
-          font-weight: 500;
-          color: #3a3833;
-          margin: 0;
-          line-height: 1.3;
-          flex: 1;
-        }
-
-        .task-actions {
-          display: flex;
-          gap: 4px;
-          opacity: 0;
-          transition: opacity 0.2s ease;
-        }
-
-        .task-card:hover .task-actions {
-          opacity: 1;
-        }
-
-        .action-btn {
-          width: 24px;
-          height: 24px;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.2s ease;
-        }
-
-
-        .delete-btn {
-          background: rgba(239, 68, 68, 0.1);
-          color: #ef4444;
-        }
-
-        .delete-btn:hover {
-          background: rgba(239, 68, 68, 0.2);
-          transform: scale(1.1);
-        }
-
-        .task-description {
-          font-size: 13px;
-          color: #6d685f;
-          line-height: 1.4;
-          margin: 0 0 12px 0;
-        }
-
-        .task-meta {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-
-
-        .task-priority {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          flex-shrink: 0;
-        }
-
-        .empty-column {
-          text-align: center;
-          padding: 40px 20px;
-          color: #9ca3af;
-        }
-
-        .empty-column svg {
-          margin-bottom: 8px;
-          opacity: 0.5;
-        }
-
-        .empty-column p {
-          margin: 0;
-          font-size: 14px;
-        }
-
-        .access-denied {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          min-height: 400px;
-          text-align: center;
-          color: #6d685f;
-        }
-
-        .access-denied-icon {
-          width: 64px;
-          height: 64px;
-          margin-bottom: 20px;
-          color: #c9a961;
-        }
-
-        .access-denied h2 {
-          margin: 0 0 8px 0;
-          color: #3a3833;
-          font-size: 1.5rem;
-        }
-
         .loading {
           display: flex;
           align-items: center;
@@ -1283,306 +617,517 @@ export default function TodosPage() {
           font-size: 16px;
         }
 
-        .modal-overlay {
+        .header-actions {
+          display: flex;
+          gap: 16px;
+          align-items: center;
+        }
+
+        .completed-btn {
+          padding: 8px 16px;
+          background: rgba(16, 185, 129, 0.1);
+          color: #10b981;
+          border: 1px solid rgba(16, 185, 129, 0.3);
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+
+        .completed-btn:hover {
+          background: rgba(16, 185, 129, 0.2);
+        }
+
+        .completed-btn.active {
+          background: #10b981;
+          color: white;
+        }
+
+        .view-toggles {
+          display: flex;
+          gap: 4px;
+          background: rgba(201, 169, 97, 0.1);
+          padding: 4px;
+          border-radius: 10px;
+        }
+
+        .view-btn {
+          padding: 8px 16px;
+          background: transparent;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 500;
+          color: #6d685f;
+          transition: all 0.2s ease;
+        }
+
+        .view-btn.active {
+          background: white;
+          color: #c9a961;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 看板視圖 - 使用 grid 讓容器不超過螢幕高度 */
+        .kanban-board {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          height: calc(100vh - 240px);
+          max-height: 600px;
+        }
+
+        .kanban-column {
+          background: rgba(255, 255, 255, 0.6);
+          border-radius: 16px;
+          padding: 16px;
+          border: 1px solid rgba(201, 169, 97, 0.2);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          overflow: hidden;
+        }
+
+        .column-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 12px;
+          margin: -16px -16px 16px -16px;
+          border-radius: 16px 16px 0 0;
+          flex-shrink: 0;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .add-task-header-btn {
+          width: 32px;
+          height: 32px;
+          background: rgba(255, 255, 255, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.5);
+          border-radius: 8px;
+          color: white;
+          font-size: 18px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .add-task-header-btn:hover {
+          background: rgba(255, 255, 255, 0.4);
+          border-color: rgba(255, 255, 255, 0.7);
+          transform: scale(1.05);
+        }
+
+        .column-header.pending {
+          background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        }
+
+        .column-header.in-progress {
+          background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+        }
+
+        .column-header h3 {
+          margin: 0;
+          color: white;
+          font-size: 16px;
+          font-weight: 600;
+        }
+
+        .count-badge {
+          background: rgba(255, 255, 255, 0.3);
+          color: white;
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 14px;
+          font-weight: 600;
+        }
+
+        .tasks-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          flex: 1;
+          padding: 8px;
+          overflow-y: auto;
+          overflow-x: hidden;
+        }
+
+        /* 自訂滾動條 */
+        .tasks-container::-webkit-scrollbar {
+          width: 6px;
+        }
+
+        .tasks-container::-webkit-scrollbar-track {
+          background: rgba(201, 169, 97, 0.1);
+          border-radius: 3px;
+        }
+
+        .tasks-container::-webkit-scrollbar-thumb {
+          background: rgba(201, 169, 97, 0.3);
+          border-radius: 3px;
+        }
+
+        .tasks-container::-webkit-scrollbar-thumb:hover {
+          background: rgba(201, 169, 97, 0.5);
+        }
+
+        .task-card {
+          background: white;
+          border-radius: 12px;
+          padding: 16px;
+          border: 1px solid rgba(201, 169, 97, 0.15);
+          transition: all 0.3s ease;
+          cursor: grab;
+          user-select: none;
+          position: relative;
+          flex-shrink: 0;
+        }
+
+        .task-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-card:active {
+          cursor: grabbing;
+        }
+
+        .task-card.dragging {
+          opacity: 0.5;
+          transform: rotate(5deg);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+          z-index: 1000;
+        }
+
+        .task-title {
+          margin: 0 0 8px 0;
+          font-size: 15px;
+          font-weight: 600;
+          color: #3a3833;
+          padding-right: 70px;
+        }
+
+        .task-desc {
+          font-size: 13px;
+          color: #6d685f;
+          margin: 0;
+          line-height: 1.4;
+        }
+
+        /* Popover 新增介面 */
+        .popover-backdrop {
           position: fixed;
           top: 0;
           left: 0;
           right: 0;
           bottom: 0;
-          background: rgba(0, 0, 0, 0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 1000;
+          background: rgba(0, 0, 0, 0.1);
+          z-index: 998;
         }
 
-        .modal-content {
+        .add-popover {
+          position: fixed;
           background: white;
-          border-radius: 16px;
-          padding: 24px;
-          max-width: 500px;
-          width: 90%;
-          max-height: 80vh;
-          overflow-y: auto;
+          border-radius: 12px;
+          padding: 20px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+          z-index: 999;
+          width: 320px;
+          animation: popIn 0.2s ease;
         }
 
-        .modal-title {
-          margin: 0 0 20px 0;
+        .add-popover h4 {
+          margin: 0 0 16px 0;
+          font-size: 16px;
           color: #3a3833;
-          font-size: 20px;
-          font-weight: 600;
         }
 
-        .form-group {
-          margin-bottom: 16px;
-        }
-
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
-          margin-bottom: 16px;
-        }
-
-        .form-group label {
-          display: block;
-          margin-bottom: 4px;
-          font-weight: 500;
-          color: #3a3833;
-          font-size: 14px;
-        }
-
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
+        .popover-input {
           width: 100%;
           padding: 10px;
           border: 1px solid rgba(201, 169, 97, 0.3);
           border-radius: 8px;
           font-size: 14px;
+          margin-bottom: 12px;
         }
 
-        .form-group textarea {
+        .popover-input:focus {
+          outline: none;
+          border-color: #c9a961;
+        }
+
+        .popover-textarea {
+          width: 100%;
+          padding: 10px;
+          border: 1px solid rgba(201, 169, 97, 0.3);
+          border-radius: 8px;
+          font-size: 14px;
+          margin-bottom: 16px;
           resize: vertical;
           min-height: 60px;
+          font-family: inherit;
         }
 
-        .modal-actions {
+        .popover-textarea:focus {
+          outline: none;
+          border-color: #c9a961;
+        }
+
+        .popover-actions {
           display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 24px;
+          gap: 8px;
         }
 
-        .btn-secondary {
-          padding: 10px 20px;
-          border: 1px solid rgba(201, 169, 97, 0.3);
-          background: white;
-          border-radius: 8px;
-          cursor: pointer;
-          color: #6d685f;
-        }
-
-        .btn-primary {
-          padding: 10px 20px;
+        .popover-confirm {
+          flex: 1;
+          padding: 8px 16px;
           background: linear-gradient(135deg, #c9a961, #e4d4a8);
           color: white;
           border: none;
           border-radius: 8px;
-          cursor: pointer;
           font-weight: 500;
-        }
-
-        /* 子任務樣式 */
-        .subtasks-container {
-          margin-top: 12px;
-          padding-top: 12px;
-          border-top: 1px solid rgba(139, 92, 246, 0.2);
-        }
-
-        .subtasks-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 8px;
-          font-size: 12px;
-          font-weight: 600;
-          color: #8b5cf6;
-        }
-
-        .add-subtask-btn {
-          padding: 2px 6px;
-          background: rgba(139, 92, 246, 0.1);
-          color: #8b5cf6;
-          border: 1px solid rgba(139, 92, 246, 0.3);
-          border-radius: 4px;
           cursor: pointer;
-          font-size: 10px;
           transition: all 0.2s ease;
         }
 
-        .add-subtask-btn:hover {
-          background: rgba(139, 92, 246, 0.2);
+        .popover-confirm:hover:not(:disabled) {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
         }
 
-        .subtasks-list {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
+        .popover-confirm:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
 
-        .subtask-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px 8px;
-          background: rgba(139, 92, 246, 0.03);
-          border-radius: 4px;
-          font-size: 12px;
-        }
-
-        .subtask-item input[type="checkbox"] {
-          width: 12px;
-          height: 12px;
-          accent-color: #8b5cf6;
-        }
-
-        .subtask-title {
+        .popover-cancel {
           flex: 1;
+          padding: 8px 16px;
+          background: rgba(107, 114, 128, 0.1);
           color: #6b7280;
-        }
-
-        .subtask-title.completed {
-          text-decoration: line-through;
-          opacity: 0.6;
-        }
-
-        /* 刪除確認模態框樣式 */
-        .delete-confirm-modal {
-          max-width: 400px;
-          text-align: center;
-        }
-
-        .delete-warning {
-          color: #6b7280;
-          margin: 16px 0;
-          line-height: 1.5;
-        }
-
-        .btn-danger {
-          padding: 10px 20px;
-          background: linear-gradient(135deg, #ef4444, #dc2626);
-          color: white;
           border: none;
           border-radius: 8px;
-          cursor: pointer;
           font-weight: 500;
+          cursor: pointer;
+        }
+
+        /* 其他樣式保持不變 */
+        .action-btn {
+          padding: 6px 12px;
+          border: none;
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 500;
+          cursor: pointer;
           transition: all 0.2s ease;
         }
 
-        .btn-danger:hover {
-          background: linear-gradient(135deg, #dc2626, #b91c1c);
-          transform: translateY(-1px);
+        .action-btn.complete {
+          background: rgba(16, 185, 129, 0.1);
+          color: #10b981;
         }
 
-        /* 留言區域樣式 */
-        .comments-section {
-          margin-top: 8px;
+        .action-btn.delete {
+          background: rgba(239, 68, 68, 0.1);
+          color: #ef4444;
         }
 
-        .existing-comments {
-          margin-bottom: 12px;
+        .action-btn.reopen {
+          background: rgba(107, 114, 128, 0.1);
+          color: #6b7280;
         }
 
-        .comment-item {
-          margin-bottom: 10px;
-          padding: 8px 0;
-          border-bottom: 1px solid rgba(201, 169, 97, 0.1);
-        }
-
-        .comment-text {
-          font-size: 13px;
-          color: #6d685f;
-          line-height: 1.5;
-        }
-
-        .no-comments {
-          color: #9ca3af;
-          font-style: italic;
-          margin-bottom: 10px;
-        }
-
-        /* Quick Add Popover 樣式 */
-        .popover-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: transparent;
-          z-index: 1000;
-        }
-
-        .quick-add-popover {
-          background: white;
-          border-radius: 12px;
-          padding: 16px;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        /* 列表視圖 */
+        .list-view {
+          background: rgba(255, 255, 255, 0.8);
+          border-radius: 16px;
+          padding: 20px;
           border: 1px solid rgba(201, 169, 97, 0.2);
-          min-width: 250px;
-          max-width: 300px;
+          max-height: calc(100vh - 240px);
+          overflow-y: auto;
         }
 
-        .quick-add-header {
-          margin-bottom: 12px;
+        .list-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 16px;
+          border-bottom: 1px solid rgba(201, 169, 97, 0.1);
+          transition: background 0.2s ease;
         }
 
-        .quick-add-header h4 {
+        .list-item:hover {
+          background: rgba(201, 169, 97, 0.05);
+        }
+
+        .list-item:last-child {
+          border-bottom: none;
+        }
+
+        .list-content {
+          flex: 1;
+        }
+
+        .list-content h4 {
           margin: 0;
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 16px;
           color: #3a3833;
         }
 
-        .quick-add-content input {
-          width: 100%;
-          padding: 10px 12px;
-          border: 1px solid rgba(201, 169, 97, 0.3);
+        .list-desc {
+          margin: 4px 0 0 0;
+          font-size: 13px;
+          color: #6d685f;
+        }
+
+        .list-actions {
+          display: flex;
+          gap: 8px;
+        }
+
+        /* 已完成抽屜 */
+        .completed-drawer {
+          position: fixed;
+          top: 0;
+          right: -400px;
+          width: 400px;
+          height: 100vh;
+          background: white;
+          box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+          transition: right 0.3s ease;
+          z-index: 999;
+          display: flex;
+          flex-direction: column;
+        }
+
+        .completed-drawer.open {
+          right: 0;
+        }
+
+        .drawer-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px;
+          border-bottom: 1px solid rgba(201, 169, 97, 0.2);
+          background: linear-gradient(135deg, #34d399, #10b981);
+          color: white;
+        }
+
+        .drawer-header h3 {
+          margin: 0;
+          font-size: 18px;
+        }
+
+        .close-drawer {
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
           border-radius: 8px;
-          font-size: 14px;
-          outline: none;
-          transition: border-color 0.2s ease;
+          cursor: pointer;
+          font-size: 20px;
+          line-height: 1;
         }
 
-        .quick-add-content input:focus {
-          border-color: #c9a961;
-          box-shadow: 0 0 0 3px rgba(201, 169, 97, 0.1);
+        .drawer-content {
+          flex: 1;
+          overflow-y: auto;
+          padding: 20px;
         }
 
-        @media (max-width: 1200px) {
-          .kanban-board {
-            gap: 12px;
-          }
-          
-          .kanban-column {
-            padding: 10px;
-            min-width: 220px;
-          }
+        .completed-task {
+          background: rgba(16, 185, 129, 0.05);
+          border-radius: 12px;
+          padding: 16px;
+          margin-bottom: 12px;
+          border: 1px solid rgba(16, 185, 129, 0.2);
         }
 
-        @media (max-width: 1024px) {
-          .kanban-board {
-            overflow-x: auto;
-            grid-template-columns: repeat(${columns.length}, minmax(220px, 280px));
-            gap: 10px;
-          }
-          
-          .stats-overview {
-            gap: 16px;
-          }
+        .task-info h4 {
+          margin: 0 0 8px 0;
+          font-size: 15px;
+          color: #3a3833;
+          text-decoration: line-through;
+        }
+
+        .task-info p {
+          margin: 0 0 8px 0;
+          font-size: 13px;
+          color: #6d685f;
+        }
+
+        .complete-time {
+          font-size: 11px;
+          color: #10b981;
+        }
+
+        .empty-message {
+          text-align: center;
+          color: #6d685f;
+          margin-top: 40px;
         }
 
         @media (max-width: 768px) {
-          .todos-header {
-            flex-direction: column;
-            gap: 16px;
-          }
-          
           .kanban-board {
-            grid-template-columns: repeat(${columns.length}, 260px);
-            gap: 8px;
+            grid-template-columns: 1fr;
+            height: auto;
+            max-height: none;
           }
           
           .kanban-column {
-            padding: 8px;
-            min-width: 200px;
+            height: 400px;
           }
           
-          .form-row {
-            grid-template-columns: 1fr;
+          .completed-drawer {
+            width: 100%;
+            right: -100%;
+          }
+          
+          .add-popover {
+            width: 90%;
+            left: 5% !important;
+            right: 5%;
+          }
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @keyframes popIn {
+          from {
+            opacity: 0;
+            transform: scale(0.9);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
           }
         }
       `}</style>
-    </div>
+    </ModuleLayout>
   )
 }

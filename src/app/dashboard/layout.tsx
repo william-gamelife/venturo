@@ -5,6 +5,8 @@ import { useRouter, usePathname } from 'next/navigation'
 import { authManager } from '@/lib/auth'
 import { GameDebugGrid } from '@/components/GameDebugGrid'
 import { SimpleGridHelper } from '@/components/SimpleGridHelper'
+import { Icons } from '@/components/icons'
+import { Button } from '@/components/Button'
 
 interface SidebarProps {
   children: React.ReactNode
@@ -45,17 +47,8 @@ export default function DashboardLayout({ children }: SidebarProps) {
       setCurrentMode(savedMode)
     }
 
-    // 載入 Claude 調試讀取器
-    const script = document.createElement('script')
-    script.src = '/src/lib/debug-reader.js'
-    script.async = true
-    document.head.appendChild(script)
-
     return () => {
-      const existingScript = document.head.querySelector('script[src="/src/lib/debug-reader.js"]')
-      if (existingScript) {
-        document.head.removeChild(existingScript)
-      }
+      // Cleanup function
     }
   }, [router])
 
@@ -70,6 +63,8 @@ export default function DashboardLayout({ children }: SidebarProps) {
     if (currentUser) {
       localStorage.setItem(`gamelife_mode_${currentUser.id}`, newMode)
     }
+    
+    // React 狀態更新會自動觸發重新渲染，不需要頁面重載
   }
 
   const isActive = (href: string) => {
@@ -137,7 +132,7 @@ export default function DashboardLayout({ children }: SidebarProps) {
       id: 'calendar',
       name: '行事曆',
       href: '/dashboard/calendar',
-      modes: ['game'],
+      modes: ['game', 'corner'], // 兩個模式都顯示
       icon: (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -148,6 +143,78 @@ export default function DashboardLayout({ children }: SidebarProps) {
       )
     },
     // 角落模式專屬
+    {
+      id: 'quotations',
+      name: '報價單',
+      href: '/dashboard/quotations',
+      modes: ['corner'], // 只在角落模式顯示
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <path d="M12 11h-2"/>
+          <path d="M12 15h-2"/>
+          <path d="M14 11h2"/>
+          <path d="M14 15h2"/>
+        </svg>
+      )
+    },
+    {
+      id: 'groups',
+      name: '團體管理',
+      href: '/dashboard/groups',
+      modes: ['corner'], // 只在角落模式顯示
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+      )
+    },
+    {
+      id: 'orders',
+      name: '訂單管理',
+      href: '/dashboard/orders',
+      modes: ['corner'], // 只在角落模式顯示
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10,9 9,9 8,9"/>
+        </svg>
+      )
+    },
+    {
+      id: 'receipts',
+      name: '收款單',
+      href: '/dashboard/receipts',
+      modes: ['corner'], // 只在角落模式顯示
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="2" y="5" width="20" height="14" rx="2"/>
+          <path d="M2 10h20"/>
+          <path d="M12 15h.01"/>
+        </svg>
+      )
+    },
+    {
+      id: 'invoices',
+      name: '請款單',
+      href: '/dashboard/invoices',
+      modes: ['corner'], // 只在角落模式顯示
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <line x1="12" y1="18" x2="12" y2="12"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+      )
+    },
     {
       id: 'projects',
       name: '專案管理',
@@ -217,8 +284,8 @@ export default function DashboardLayout({ children }: SidebarProps) {
       {/* 側邊欄 */}
       <div className="sidebar">
         <div className="sidebar-logo" data-debug-pos="sidebar-logo">
-          <div className="logo-icon">G</div>
-          <div className="logo-text">GameLife</div>
+          <div className="logo-icon">V</div>
+          <div className="logo-text">VENTURO</div>
         </div>
         
         {/* 模式切換按鈕 */}
@@ -226,8 +293,8 @@ export default function DashboardLayout({ children }: SidebarProps) {
           <div className="toggle-container" onClick={toggleMode}>
             <div className={`toggle-slider ${currentMode}`}></div>
             <div className="toggle-labels">
-              <span className={`toggle-label ${currentMode === 'game' ? 'active' : ''}`}>遊戲</span>
-              <span className={`toggle-label ${currentMode === 'corner' ? 'active' : ''}`}>角落</span>
+            <span className={`toggle-label ${currentMode === 'game' ? 'active' : ''}`}>冒險</span>
+            <span className={`toggle-label ${currentMode === 'corner' ? 'active' : ''}`}>角落</span>
             </div>
           </div>
         </div>
@@ -292,13 +359,14 @@ export default function DashboardLayout({ children }: SidebarProps) {
               </svg>
               {showDebugGrid ? '關閉調試' : '調試模式'}
             </button>
-            <button className="logout-btn-sidebar" onClick={handleLogout} data-debug-pos="logout-btn">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M16 17l5-5-5-5v3H9v4h7v3z"/>
-                <path d="M2 2h7v2H4v16h5v2H2V2z"/>
-              </svg>
+            <Button 
+              variant="primary" 
+              icon={Icons.logoutSmall}
+              onClick={handleLogout}
+              fullWidth={true}
+            >
               登出
-            </button>
+            </Button>
           </div>
         </nav>
       </div>
@@ -330,17 +398,20 @@ export default function DashboardLayout({ children }: SidebarProps) {
         }
 
         .sidebar {
-          position: relative;
+          position: fixed;
+          left: 0;
+          top: 0;
           width: 200px;
-          min-width: 200px;
           height: 100vh;
-          background: rgba(255, 253, 250, 0.9);
+          background: rgba(255, 253, 250, 0.95);
           backdrop-filter: blur(20px);
-          padding: 24px 20px;
+          padding: 24px 20px 280px 20px;
           border-right: 1px solid rgba(201, 169, 97, 0.2);
           display: flex;
           flex-direction: column;
-          flex-shrink: 0;
+          z-index: 100;
+          overflow-y: auto;
+          overflow-x: hidden;
         }
 
         .sidebar-logo {
@@ -348,39 +419,73 @@ export default function DashboardLayout({ children }: SidebarProps) {
           align-items: center;
           gap: 12px;
           margin-bottom: 32px;
+          flex-shrink: 0;
         }
 
         .logo-icon {
-          width: 32px;
-          height: 32px;
-          background: linear-gradient(135deg, #f4a460, #2f4f2f);
-          border-radius: 10px;
+          width: 36px;
+          height: 36px;
+          background: linear-gradient(135deg, #c9a961, #e4d4a8);
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
-          font-weight: 700;
-          box-shadow: 0 2px 8px rgba(244, 164, 96, 0.3);
+          font-weight: 900;
+          font-size: 20px;
+          box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+          border: 2px solid rgba(255, 255, 255, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .logo-icon::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: linear-gradient(
+            45deg,
+            transparent 30%,
+            rgba(255, 255, 255, 0.2) 50%,
+            transparent 70%
+          );
+          transform: rotate(45deg);
+          animation: shimmer 3s infinite;
+        }
+        
+        @keyframes shimmer {
+          0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+          100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
         }
 
         .logo-text {
           font-size: 18px;
-          font-weight: 600;
+          font-weight: 700;
           color: #3a3833;
+          letter-spacing: 0.5px;
+          text-transform: uppercase;
+          background: linear-gradient(135deg, #c9a961, #8b7355);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         /* 模式切換按鈕樣式 - 滑動色塊設計 */
         .mode-switcher {
           margin-bottom: 20px;
+          flex-shrink: 0;
         }
 
         .toggle-container {
           position: relative;
           width: 100%;
           height: 44px;
-          background: rgba(244, 164, 96, 0.1);
+          background: rgba(201, 169, 97, 0.1);
           border-radius: 12px;
-          border: 1px solid rgba(244, 164, 96, 0.2);
+          border: 1px solid rgba(201, 169, 97, 0.2);
           cursor: pointer;
           transition: all 0.3s ease;
           padding: 4px;
@@ -388,8 +493,8 @@ export default function DashboardLayout({ children }: SidebarProps) {
 
         .toggle-container:hover {
           transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(244, 164, 96, 0.25);
-          border-color: rgba(244, 164, 96, 0.4);
+          box-shadow: 0 6px 20px rgba(201, 169, 97, 0.25);
+          border-color: rgba(201, 169, 97, 0.4);
         }
 
         .toggle-slider {
@@ -398,15 +503,15 @@ export default function DashboardLayout({ children }: SidebarProps) {
           left: 4px;
           width: calc(50% - 4px);
           height: calc(100% - 8px);
-          background: linear-gradient(135deg, #f4a460, #2f4f2f);
+          background: linear-gradient(135deg, #c9a961, #e4d4a8);
           border-radius: 8px;
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+          box-shadow: 0 2px 8px rgba(201, 169, 97, 0.3);
         }
 
         .toggle-slider.corner {
           transform: translateX(calc(100% + 0px));
-          background: linear-gradient(135deg, #2f4f2f, #f4a460);
+          background: linear-gradient(135deg, #8b7355, #c9a961);
         }
 
         .toggle-labels {
@@ -438,10 +543,14 @@ export default function DashboardLayout({ children }: SidebarProps) {
           list-style: none;
           padding: 0;
           margin: 0;
+          transition: all 0.3s ease;
+          flex: 1;
+          overflow-y: visible;
         }
 
         .nav-item {
           margin-bottom: 4px;
+          transition: opacity 0.2s ease, transform 0.2s ease;
         }
 
         .nav-link {
@@ -479,6 +588,7 @@ export default function DashboardLayout({ children }: SidebarProps) {
         }
 
         .main-content {
+          margin-left: 200px;
           padding-right: 20px;
           padding-left: 20px;
           min-height: 100vh;
@@ -498,9 +608,20 @@ export default function DashboardLayout({ children }: SidebarProps) {
 
         /* 側邊欄底部區域 */
         .sidebar-footer {
-          margin-top: auto;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          width: 200px;
+          padding: 20px;
           padding-top: 20px;
           border-top: 1px solid rgba(201, 169, 97, 0.2);
+          background: linear-gradient(to top, 
+            rgba(255, 253, 250, 1) 0%,
+            rgba(255, 253, 250, 1) 90%,
+            rgba(255, 253, 250, 0.95) 100%);
+          backdrop-filter: blur(20px);
+          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+          z-index: 101;
         }
 
         .user-info-sidebar {
@@ -520,22 +641,6 @@ export default function DashboardLayout({ children }: SidebarProps) {
           font-size: 12px;
         }
 
-        .logout-btn-sidebar {
-          width: 100%;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, #f4a460, #2f4f2f);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          cursor: pointer;
-          font-weight: 500;
-          font-size: 14px;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-        }
 
         .simple-grid-btn {
           width: 100%;
@@ -587,28 +692,6 @@ export default function DashboardLayout({ children }: SidebarProps) {
           box-shadow: 0 4px 12px rgba(0, 255, 255, 0.2);
         }
 
-        .logout-btn-sidebar {
-          width: 100%;
-          padding: 12px 16px;
-          background: linear-gradient(135deg, #f4a460, #2f4f2f);
-          color: white;
-          border: none;
-          border-radius: 12px;
-          cursor: pointer;
-          font-weight: 500;
-          font-size: 14px;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 8px;
-        }
-
-        .logout-btn-sidebar:hover {
-          background: linear-gradient(135deg, #2f4f2f, #f4a460);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(244, 164, 96, 0.3);
-        }
 
         .loading-spinner {
           width: 32px;
