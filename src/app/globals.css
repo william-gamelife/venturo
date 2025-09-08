@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme inline {
+  --animate-aurora: aurora 60s linear infinite;
+  @keyframes aurora {
+    from {
+      background-position: 50% 50%, 50% 50%;
+    }
+    to {
+      background-position: 350% 50%, 350% 50%;
+    }
+  }
+}
+
+/* GameLife 3.0 全局樣式 */
+
+:root {
+  --primary: 201 169 97;
+  --primary-light: 228 212 168;
+  --primary-dark: 139 115 85;
+  --bg: 244 241 235;
+  --bg-dark: 232 226 213;
+  --card: 255 255 255;
+  --accent: 122 139 116;
+  --text: 58 56 51;
+  --text-light: 109 104 95;
+  --text-muted: 155 149 136;
+  --border: 201 169 97;
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background: linear-gradient(135deg, rgb(var(--bg)) 0%, rgb(var(--bg-dark)) 100%);
+  color: rgb(var(--text));
+  min-height: 100vh;
+}
+
+/* 自定義滾動條 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--bg));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgb(var(--primary) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--primary) / 0.5);
+}
+
+/* 選擇文字顏色 */
+::selection {
+  background: rgb(var(--primary) / 0.2);
+  color: rgb(var(--text));
+}
