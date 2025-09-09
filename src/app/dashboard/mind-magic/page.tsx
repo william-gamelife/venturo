@@ -21,6 +21,10 @@ export default function MindMagicPage() {
     router.push('/dashboard/mind-magic/test');
   };
 
+  const startRitualTest = () => {
+    router.push('/dashboard/mind-magic/ritual-test');
+  };
+
   const viewResults = () => {
     router.push('/dashboard/mind-magic/results');
   };
@@ -62,13 +66,33 @@ export default function MindMagicPage() {
             </div>
           </div>
 
-          <div className="action-buttons">
-            <button className="btn-primary" onClick={startTest}>
-              開始測驗
-            </button>
-            <button className="btn-secondary" onClick={viewResults}>
-              查看歷史結果
-            </button>
+          <div className="test-options">
+            <h3>選擇你的測驗體驗</h3>
+            <div className="test-type-cards">
+              <div className="test-type-card">
+                <div className="test-type-icon">⚡</div>
+                <h4>快速測驗</h4>
+                <p>傳統的60題測驗，直接獲得結果</p>
+                <button className="btn-outline" onClick={startTest}>
+                  開始測驗
+                </button>
+              </div>
+              <div className="test-type-card featured">
+                <div className="test-type-icon">🔮</div>
+                <h4>儀式體驗</h4>
+                <p>療癒級的心靈儀式，深度自我探索</p>
+                <span className="recommended-badge">推薦</span>
+                <button className="btn-primary" onClick={startRitualTest}>
+                  開始儀式
+                </button>
+              </div>
+            </div>
+            
+            <div className="results-section">
+              <button className="btn-secondary" onClick={viewResults}>
+                查看歷史結果
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -152,17 +176,106 @@ export default function MindMagicPage() {
           margin: 0;
         }
         
-        .action-buttons {
-          display: flex;
-          gap: 1rem;
-          justify-content: center;
+        .test-options {
           margin-top: 3rem;
+          text-align: center;
+        }
+        
+        .test-options h3 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #2d3748;
+          margin-bottom: 2rem;
+        }
+        
+        .test-type-cards {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+          gap: 2rem;
+          margin: 2rem 0 3rem;
+          max-width: 600px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        
+        .test-type-card {
+          background: white;
+          border: 2px solid rgba(201, 169, 97, 0.2);
+          border-radius: 16px;
+          padding: 2rem;
+          position: relative;
+          transition: all 0.3s ease;
+        }
+        
+        .test-type-card:hover {
+          border-color: rgba(201, 169, 97, 0.4);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+          transform: translateY(-2px);
+        }
+        
+        .test-type-card.featured {
+          border-color: #c9a961;
+          background: linear-gradient(135deg, rgba(201, 169, 97, 0.05), rgba(255, 255, 255, 0.95));
+        }
+        
+        .test-type-icon {
+          font-size: 3rem;
+          margin-bottom: 1rem;
+          display: block;
+        }
+        
+        .test-type-card h4 {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #2d3748;
+          margin-bottom: 0.5rem;
+        }
+        
+        .test-type-card p {
+          color: #666;
+          font-size: 0.9rem;
+          margin-bottom: 1.5rem;
+          line-height: 1.5;
+        }
+        
+        .recommended-badge {
+          position: absolute;
+          top: -8px;
+          right: 16px;
+          background: linear-gradient(135deg, #c9a961, #d4b86a);
+          color: white;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+        
+        .btn-outline {
+          background: transparent;
+          border: 2px solid rgba(201, 169, 97, 0.3);
+          color: #c9a961;
+          padding: 0.75rem 2rem;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .btn-outline:hover {
+          border-color: #c9a961;
+          background: rgba(201, 169, 97, 0.05);
+        }
+        
+        .results-section {
+          border-top: 1px solid rgba(201, 169, 97, 0.2);
+          padding-top: 2rem;
+          margin-top: 2rem;
         }
         
         @media (max-width: 768px) {
-          .action-buttons {
-            flex-direction: column;
-            align-items: center;
+          .test-type-cards {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
           }
         }
       `}</style>

@@ -1,1372 +1,1460 @@
-// 心靈魔法 - 希臘神話十二原型測驗題目
+// 🌗 光影1320測驗系統 - 完整題庫與答案對照表
+// Version: 1.0
+// 60題 × 5選項 × 權重系統 = 1320種人格指紋
 
 export interface Question {
-  id: number;
+  id: string;
+  phase: number;
+  axis: string;
+  weight: number;
   text: string;
+  scene?: string;
+  projection?: boolean;
+  relationship?: boolean;
   options: {
     text: string;
-    archetypes: { [key: string]: number }; // 每個回答對應的原型分數
+    value: number;
+    archetypes: { [key: string]: number };
   }[];
 }
 
-// 十二原型定義
+// 光影12神原型定義
 export const ARCHETYPES = {
-  ZEUS: 'zeus',        // 宙斯 - 統治者
-  HERA: 'hera',        // 希拉 - 女王/妻子
-  POSEIDON: 'poseidon', // 波塞頓 - 海王
-  DEMETER: 'demeter',   // 得墨忒耳 - 母親
-  ATHENA: 'athena',     // 雅典娜 - 智者
-  APOLLO: 'apollo',     // 阿波羅 - 太陽神
-  ARTEMIS: 'artemis',   // 阿爾忒彌斯 - 獨立女性
-  ARES: 'ares',         // 阿瑞斯 - 戰士
-  APHRODITE: 'aphrodite', // 阿芙羅黛蒂 - 愛情女神
-  HEPHAESTUS: 'hephaestus', // 赫菲斯托斯 - 工匠
-  HERMES: 'hermes',     // 赫耳墨斯 - 信使/商人
-  DIONYSUS: 'dionysus'  // 狄俄尼索斯 - 狂歡者
+  ATH: 'ath',     // 理性之神 - 雅典娜型
+  APH: 'aph',     // 感性之神 - 阿芙羅黛蒂型  
+  HER: 'her',     // 行動之神 - 赫耳墨斯型
+  ODI: 'odi',     // 思索之神 - 奧丁型
+  PRO: 'pro',     // 創造之神 - 普羅米修斯型
+  ZEU: 'zeu',     // 秩序之神 - 宙斯型
+  HOR: 'hor',     // 領導之神 - 荷魯斯型
+  LOK: 'lok',     // 自由之神 - 洛基型
+  ISI: 'isi',     // 夢想之神 - 伊西斯型
+  HEP: 'hep',     // 實踐之神 - 赫菲斯托斯型
+  AMA: 'ama',     // 挑戰之神 - 阿瑪忒伊亞型
+  FRE: 'fre'      // 療癒之神 - 弗雷亞型
 } as const;
 
+// 系統配置
+export const CONFIG = {
+  totalQuestions: 60,
+  totalPatterns: 1320,
+  testDuration: "12-15分鐘",
+  
+  phases: {
+    phase1: { 
+      range: "Q1-Q18", 
+      type: "詩意題", 
+      weight: 1.5,
+      purpose: "潛意識探索"
+    },
+    phase2: { 
+      range: "Q19-Q42", 
+      type: "情境題", 
+      weight: 2.0,
+      purpose: "行為測量"
+    },
+    phase3: { 
+      range: "Q43-Q60", 
+      type: "陰影題", 
+      weight: 1.0,
+      purpose: "投射與整合"
+    }
+  },
+  
+  axes: {
+    "ATH-APH": { light: "理性", shadow: "感性", code: ["ATH", "APH"] },
+    "HER-ODI": { light: "行動", shadow: "思索", code: ["HER", "ODI"] },
+    "PRO-ZEU": { light: "創造", shadow: "秩序", code: ["PRO", "ZEU"] },
+    "HOR-LOK": { light: "領導", shadow: "自由", code: ["HOR", "LOK"] },
+    "ISI-HEP": { light: "夢想", shadow: "實踐", code: ["ISI", "HEP"] },
+    "AMA-FRE": { light: "挑戰", shadow: "療癒", code: ["AMA", "FRE"] }
+  }
+};
+
+// 儀式引導文字
+export const RITUAL_TEXTS = {
+  opening: {
+    visual: "黑底微光、呼吸環動畫",
+    breathing: "3秒吸氣、4秒停留、5秒吐氣",
+    mainText: "這不是考試，這是一場召喚。",
+    subText: "在開始之前，請為自己點亮一盞很小的燈。",
+    soundOptions: ["雨聲", "木質聲", "白噪音"],
+    permission: "我允許自己在12分鐘內，暫時把世界放在門外。"
+  },
+  
+  microPausePoems: [
+    "月光在你的背後，替你保管尚未說出的話。",
+    "有些答案不是被想出來的，是在沉默裡被聽見的。",
+    "你選的不是答案，是一直藏在心裡的那個自己。",
+    "每個選擇都是對的，因為那是你此刻的真實。",
+    "不要想太多，讓手指替心說話。",
+    "你正在拼湊一個只有你認得的形狀。"
+  ],
+  
+  ending: {
+    preReveal: "接下來，你會看見三道在你身上最亮的光，以及兩處仍在學會溫柔的影子。",
+    duration: 6000
+  }
+};
+
+// 月之囈語（根據主神顯示）
+export const MOON_WHISPERS = {
+  "ATH": "你總是替世界找答案。今晚，替自己留一個空白。",
+  "APH": "請把眼淚當成一種語言，它想說你其實很勇敢。",
+  "HER": "不是每一步都要前進，有些腳步，是為了等那個人追上來。",
+  "ODI": "你思考的深度，就是你愛的深度。慢一點，愛會追上來。",
+  "PRO": "創造之前先創造自己，最美的作品是完整的你。",
+  "ZEU": "秩序是你的語言，但記得，最美的詩都有點亂。",
+  "HOR": "領導別人之前，先溫柔地領導那個內在的小孩。",
+  "LOK": "自由不是逃離，是knowing exactly where home is。",
+  "ISI": "夢想家最大的勇氣，是允許夢想慢慢實現。",
+  "HEP": "你的雙手很可靠，記得也要為自己建造一個避風港。",
+  "AMA": "戰士最大的勝利，是放下劍的那一刻。",
+  "FRE": "療癒者需要被療癒，你值得你給別人的溫柔。"
+};
+
 export const questions: Question[] = [
-  // 第1-5題：領導與權威
+  // ========== PHASE 1: 詩意題 (Q1-18) ==========
+  
+  // --- 理性ATH vs 感性APH (Q1-3) ---
   {
-    id: 1,
-    text: "當團隊需要做重要決定時，你通常會...",
+    id: "Q1",
+    phase: 1,
+    axis: "ATH-APH",
+    weight: 1.0,
+    text: "晨昏交界，你站在一天的邊緣...",
     options: [
-      {
-        text: "主動承擔領導責任，做最終決定",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ATHENA]: 1 }
-      },
-      {
-        text: "仔細分析各種選項後提出建議",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "傾聽每個人的想法後協調共識",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.DEMETER]: 1 }
-      },
-      {
-        text: "等待別人做決定，然後配合執行",
-        archetypes: { [ARCHETYPES.HERA]: 2, [ARCHETYPES.HEPHAESTUS]: 2 }
-      }
+      { text: "我走向透明的黎明，那裡每一道光都有角度", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "我在晨霧中等待，讓理性慢慢甦醒", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "我站在正中央，晨昏都是我", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "暮色吸引著我，那裡有說不清的什麼", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "我沉入深藍的黃昏，那裡的顏色會呼吸", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
     ]
   },
+  
   {
-    id: 2,
-    text: "面對衝突時，你的第一反應是...",
+    id: "Q2",
+    phase: 1,
+    axis: "ATH-APH",
+    weight: 1.5,
+    text: "你要為靈魂選擇一個容器...",
     options: [
-      {
-        text: "直接面對，用權威解決問題",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 2 }
-      },
-      {
-        text: "冷靜分析問題的根源",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "嘗試調解，尋找雙贏方案",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.DEMETER]: 1 }
-      },
-      {
-        text: "暫時迴避，等情緒冷卻後再處理",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 2, [ARCHETYPES.HEPHAESTUS]: 2 }
-      }
+      { text: "水晶稜鏡，每個切面都折射精確的光譜", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "霧面玻璃，透光但保有朦朧", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "一半是水晶，一半是流水", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "深海的水，透著微光和記憶", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "純粹的光暈，沒有形狀只有感覺", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
     ]
   },
+  
   {
-    id: 3,
-    text: "在工作場合中，你最希望扮演什麼角色？",
+    id: "Q3",
+    phase: 1,
+    axis: "ATH-APH",
+    weight: 2.0,
+    text: "閉上眼，伸手觸碰'真實'...",
     options: [
-      {
-        text: "決策者，制定方向與策略",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ATHENA]: 1 }
-      },
-      {
-        text: "顧問，提供專業建議與分析",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "協調者，維持團隊和諧",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.DEMETER]: 2 }
-      },
-      {
-        text: "執行者，專注完成具體任務",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.ARTEMIS]: 1 }
-      }
+      { text: "冰冷的金屬表面，絕對光滑", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "打磨過的石頭，保有原始紋理", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "水與石的交界，兩種真實", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "絲綢的觸感，真實卻飄渺", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "心跳的震動，純粹的脈動", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
     ]
   },
+  
+  // --- 行動HER vs 思索ODI (Q4-6) ---
   {
-    id: 4,
-    text: "當你擁有權力時，你會...",
+    id: "Q4",
+    phase: 1,
+    axis: "HER-ODI",
+    weight: 1.0,
+    text: "兩扇門：一扇半開透風，一扇緊閉刻著符文...",
     options: [
-      {
-        text: "制定規則，確保秩序與效率",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "用智慧引導他人做正確選擇",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "創造環境讓每個人發揮潛能",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "保持低調，只在必要時才行使",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HEPHAESTUS]: 2 }
-      }
+      { text: "直接推開半開的門走進去", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "快速瞄一眼符文，然後進門", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "一隻腳跨進門，一隻手摸著符文", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "讀了大半符文，門在召喚", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "站著解讀每個符文，門可以等", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
     ]
   },
+  
   {
-    id: 5,
-    text: "你認為一個好領導者最重要的特質是？",
+    id: "Q5",
+    phase: 1,
+    axis: "HER-ODI",
+    weight: 1.5,
+    text: "河邊有木筏，也有橋的設計圖...",
     options: [
-      {
-        text: "權威與決斷力",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 1 }
-      },
-      {
-        text: "智慧與遠見",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "同理心與包容力",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "獨立與自主性",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
+      { text: "跳上木筏立刻出發", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "邊划木筏邊想橋的事", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "先搭一半橋，再用木筏", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "研究完設計圖，改良木筏", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "完美的橋建好前，我不過河", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q6",
+    phase: 1,
+    axis: "HER-ODI",
+    weight: 2.0,
+    text: "腳步聲的節奏...",
+    options: [
+      { text: "快速而堅定，像在追趕什麼", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "輕快但會突然停下", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "時快時慢，隨心而動", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "緩慢謹慎，每步都在思考", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "幾乎聽不見，像在等待", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
+    ]
+  },
+  
+  // --- 創造PRO vs 秩序ZEU (Q7-9) ---
+  {
+    id: "Q7",
+    phase: 1,
+    axis: "PRO-ZEU",
+    weight: 1.0,
+    text: "給'力量'一個形狀...",
+    options: [
+      { text: "不斷變化的火焰，每秒都不同", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "螺旋上升的煙，有跡可循", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "一半是火，一半是金字塔", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "幾何圖形，帶著黃金比例", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "完美的正方體，絕對穩固", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q8",
+    phase: 1,
+    axis: "PRO-ZEU",
+    weight: 1.5,
+    text: "你的創作方式...",
+    options: [
+      { text: "靈感爆發時一氣呵成", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "有大方向但細節即興", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "框架清楚，內容自由", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "先列大綱，按部就班", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "每個細節都預先規劃", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q9",
+    phase: 1,
+    axis: "PRO-ZEU",
+    weight: 2.0,
+    text: "線條在你手中...",
+    options: [
+      { text: "自由流動，像在跳舞", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "曲線優美但有韻律", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "曲直並存，動靜結合", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "工整的弧度，精確的角度", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "筆直如尺，分毫不差", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
+    ]
+  },
+  
+  // --- 領導HOR vs 自由LOK (Q10-12) ---
+  {
+    id: "Q10",
+    phase: 1,
+    axis: "HOR-LOK",
+    weight: 1.0,
+    text: "你變成一隻鳥，看見鳥群...",
+    options: [
+      { text: "我飛到最前方，帶領方向", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "在前排飛行，隨時準備領導", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "時而領飛，時而跟隨", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "在鳥群邊緣，自由進出", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "我飛向另一片天空", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q11",
+    phase: 1,
+    axis: "HOR-LOK",
+    weight: 1.5,
+    text: "道路分歧處...",
+    options: [
+      { text: "我選擇並帶其他人一起走", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "我先走，讓他們看見可能", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "各走各的，約定終點見", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "我選沒人走的那條", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "我不走路，我創造新的", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q12",
+    phase: 1,
+    axis: "HOR-LOK",
+    weight: 2.0,
+    text: "王座與風...",
+    options: [
+      { text: "我坐上王座，承擔一切", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "我站在王座旁，輔佐但不依附", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "有時是王，有時是風", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "我繞過王座，去找窗", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "我就是那陣自由的風", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
+    ]
+  },
+  
+  // --- 夢想ISI vs 實踐HEP (Q13-15) ---
+  {
+    id: "Q13",
+    phase: 1,
+    axis: "ISI-HEP",
+    weight: 1.0,
+    text: "手中的種子...",
+    options: [
+      { text: "我看見它會成為的森林", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "我想像它的花朵顏色", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "一邊想像，一邊找土", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "我在準備最好的土壤", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "我正在測量種植深度", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q14",
+    phase: 1,
+    axis: "ISI-HEP",
+    weight: 1.5,
+    text: "建築藍圖...",
+    options: [
+      { text: "我畫的是雲上的城堡", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "美麗但還不知道怎麼蓋", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "一半在夢裡，一半能實現", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "每個細節都考慮預算", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "地基已經打好了", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q15",
+    phase: 1,
+    axis: "ISI-HEP",
+    weight: 2.0,
+    text: "星星與麵包...",
+    options: [
+      { text: "我伸手摘星，餓著也值得", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "先摘一顆星，再找麵包", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "左手拿星星，右手拿麵包", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "吃飽了才有力氣看星星", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "麵包在手，星星在心就好", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
+    ]
+  },
+  
+  // --- 挑戰AMA vs 療癒FRE (Q16-18) ---
+  {
+    id: "Q16",
+    phase: 1,
+    axis: "AMA-FRE",
+    weight: 1.0,
+    text: "看見自己的傷口...",
+    options: [
+      { text: "這是戰士的印記，我繼續戰鬥", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "纏上繃帶，準備下一戰", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "清理傷口，思考它的意義", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "溫柔地療癒它", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "讓時間慢慢癒合一切", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q17",
+    phase: 1,
+    axis: "AMA-FRE",
+    weight: 1.5,
+    text: "風暴來臨...",
+    options: [
+      { text: "我走進風暴中心", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "我在風暴邊緣試探", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "觀察風暴，等待時機", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "我為他人搭建避風處", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "我成為風暴後的寧靜", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q18",
+    phase: 1,
+    axis: "AMA-FRE",
+    weight: 2.0,
+    text: "破曉時分...",
+    options: [
+      { text: "我撕開黑夜", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "我推動太陽升起", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "我見證光明到來", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "我守護最後的星光", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "我是黎明前最深的寧靜", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+  
+  // ========== PHASE 2: 情境題 (Q19-42) ==========
+  
+  // --- 理性ATH vs 感性APH 情境題 (Q19-22) ---
+  {
+    id: "Q19",
+    phase: 2,
+    axis: "ATH-APH",
+    weight: 2.0,
+    text: "深夜，朋友哭著打電話來...",
+    scene: "你聽見電話那頭的啜泣聲",
+    options: [
+      { text: "我冷靜詢問發生什麼事，幫他理清思緒", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "我先讓他說完，再分析問題", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "我邊安慰邊了解情況", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "我說'我在這裡'，讓他盡情宣洩", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "我什麼都不說，只是陪他一起哭", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q20",
+    phase: 2,
+    axis: "ATH-APH",
+    weight: 2.0,
+    text: "會議上意見分歧...",
+    scene: "氣氛開始緊張",
+    options: [
+      { text: "我拿出數據和報表說話", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "我列出論點1、2、3", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "講道理但也顧及大家情緒", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "我用故事包裝我的觀點", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "我先處理情緒，再談事情", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q21",
+    phase: 2,
+    axis: "ATH-APH",
+    weight: 2.0,
+    text: "選擇生日禮物...",
+    scene: "為重要的人準備",
+    options: [
+      { text: "研究他最需要什麼，買最實用的", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "實用為主，但包裝要美", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "實用與心意並重", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "選會讓他感動的，實不實用其次", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "親手做的，哪怕不完美", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
+    ]
+  },
+  
+  {
+    id: "Q22",
+    phase: 2,
+    axis: "ATH-APH",
+    weight: 2.0,
+    text: "面對分手...",
+    scene: "關係走到盡頭",
+    options: [
+      { text: "理性分析為什麼走到這步", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "列出分手的理由說服自己", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "理智上懂，但心還是會痛", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "我需要時間處理這些情緒", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "我讓眼淚流，不問為什麼", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
+    ]
+  }
+
+  
+  // --- 行動HER vs 思索ODI 情境題 (Q23-26) ---
+  {
+    id: "Q23",
+    phase: 2,
+    axis: "HER-ODI",
+    weight: 2.0,
+    text: "新的工作機會出現...",
+    scene: "薪水比現在高30%，但需要立刻決定",
+    options: [
+      { text: "馬上說好，機會難得", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "當場詢問幾個關鍵問題", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "先說好，回去再仔細考慮", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "要求一週時間考慮", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "需要詳細了解公司文化和發展", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
     ]
   },
 
-  // 第6-10題：人際關係與愛情
   {
-    id: 6,
-    text: "在感情關係中，你最重視什麼？",
+    id: "Q24",
+    phase: 2,
+    axis: "HER-ODI",
+    weight: 2.0,
+    text: "旅遊規劃...",
+    scene: "三天後出國，還沒訂住宿",
     options: [
-      {
-        text: "忠誠與承諾",
-        archetypes: { [ARCHETYPES.HERA]: 3, [ARCHETYPES.DEMETER]: 1 }
-      },
-      {
-        text: "激情與浪漫",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      },
-      {
-        text: "精神層面的契合",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "個人空間與自由",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HERMES]: 1 }
-      }
-    ]
-  },
-  {
-    id: 7,
-    text: "你理想中的伴侶是什麼樣的？",
-    options: [
-      {
-        text: "有權勢地位，能給你安全感",
-        archetypes: { [ARCHETYPES.HERA]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "外表吸引人，充滿魅力",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "聰明有才華，能深度交流",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "獨立自主，不會束縛你",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
-    ]
-  },
-  {
-    id: 8,
-    text: "當感情出現問題時，你會...",
-    options: [
-      {
-        text: "堅持維護這段關係，努力修復",
-        archetypes: { [ARCHETYPES.HERA]: 3, [ARCHETYPES.DEMETER]: 2 }
-      },
-      {
-        text: "理性分析問題，尋找解決方案",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "勇敢面對，直接攤牌",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "果斷離開，不想浪費時間",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HERMES]: 1 }
-      }
-    ]
-  },
-  {
-    id: 9,
-    text: "你如何表達對別人的愛意？",
-    options: [
-      {
-        text: "透過實際行動和照顧",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HEPHAESTUS]: 2 }
-      },
-      {
-        text: "用言語和浪漫的舉動",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "分享智慧和深度對話",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "給予自由和獨立空間",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
-    ]
-  },
-  {
-    id: 10,
-    text: "面對背叛或欺騙，你的反應是？",
-    options: [
-      {
-        text: "感到憤怒，要求對方付出代價",
-        archetypes: { [ARCHETYPES.HERA]: 3, [ARCHETYPES.ARES]: 2 }
-      },
-      {
-        text: "冷靜分析，制定報復計劃",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      },
-      {
-        text: "直接對抗，立即解決",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "默默離開，不再回頭",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      }
+      { text: "直接去當地再找住宿", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "快速訂第一個看起來不錯的", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "花一小時快速比較幾家", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "仔細看評價，比較地理位置", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "研究當地地圖，制定完美計畫", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
     ]
   },
 
-  // 第11-15題：創造力與工作
   {
-    id: 11,
-    text: "你最享受什麼類型的工作？",
+    id: "Q25",
+    phase: 2,
+    axis: "HER-ODI",
+    weight: 2.0,
+    text: "購物時...",
+    scene: "看到喜歡的東西，但有點貴",
     options: [
-      {
-        text: "需要創造和設計的工作",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "需要溝通和說服的工作",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "需要分析和策略的工作",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "需要獨立和自由的工作",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
-    ]
-  },
-  {
-    id: 12,
-    text: "完成一項創作時，你最關心什麼？",
-    options: [
-      {
-        text: "作品的完美和品質",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "作品能否打動人心",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      },
-      {
-        text: "作品的實用性和功能",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.DEMETER]: 1 }
-      },
-      {
-        text: "作品是否體現自己的個性",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      }
-    ]
-  },
-  {
-    id: 13,
-    text: "工作中遇到困難時，你會？",
-    options: [
-      {
-        text: "堅持不懈直到解決",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.ARES]: 1 }
-      },
-      {
-        text: "尋找更聰明的解決方法",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 2 }
-      },
-      {
-        text: "向有經驗的人請教",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "重新考慮是否值得繼續",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
-    ]
-  },
-  {
-    id: 14,
-    text: "你希望你的作品給人什麼感受？",
-    options: [
-      {
-        text: "震撼和敬畏",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      },
-      {
-        text: "美麗和愉悅",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "智慧和啟發",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "真實和純粹",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HEPHAESTUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 15,
-    text: "在團隊合作中，你傾向於？",
-    options: [
-      {
-        text: "負責整體規劃和協調",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ATHENA]: 1 }
-      },
-      {
-        text: "專注於技術執行",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "負責對外溝通聯絡",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "獨立完成自己的部分",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
+      { text: "喜歡就買，不要想太多", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "考慮一下，但很快就決定", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "比較一下價格和需求", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "回家想一晚再決定", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "貨比三家，看評價，考慮替代品", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
     ]
   },
 
-  // 第16-20題：性格與價值觀
   {
-    id: 16,
-    text: "你最不能容忍別人的什麼行為？",
+    id: "Q26",
+    phase: 2,
+    axis: "HER-ODI",
+    weight: 2.0,
+    text: "解決技術問題...",
+    scene: "程式出現bug，專案明天要交",
     options: [
-      {
-        text: "背叛和不忠",
-        archetypes: { [ARCHETYPES.HERA]: 3, [ARCHETYPES.ARES]: 2 }
-      },
-      {
-        text: "愚蠢和無知",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "欺騙和虛假",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "冷漠和殘忍",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      }
-    ]
-  },
-  {
-    id: 17,
-    text: "你認為人生最重要的是什麼？",
-    options: [
-      {
-        text: "權力和成就",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "愛情和關係",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DEMETER]: 2 }
-      },
-      {
-        text: "智慧和真理",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "自由和獨立",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      }
-    ]
-  },
-  {
-    id: 18,
-    text: "面對誘惑時，你會？",
-    options: [
-      {
-        text: "理性分析利弊後決定",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "跟隨內心的感受",
-        archetypes: { [ARCHETYPES.DIONYSUS]: 3, [ARCHETYPES.APHRODITE]: 2 }
-      },
-      {
-        text: "堅持原則，拒絕誘惑",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "適度享受，但有底線",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.APOLLO]: 1 }
-      }
-    ]
-  },
-  {
-    id: 19,
-    text: "你如何看待規則和傳統？",
-    options: [
-      {
-        text: "必須遵守，維護秩序",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "可以改進，但要謹慎",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "應該打破，追求創新",
-        archetypes: { [ARCHETYPES.POSEIDON]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      },
-      {
-        text: "不適合的就應該拋棄",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HERMES]: 1 }
-      }
-    ]
-  },
-  {
-    id: 20,
-    text: "在道德困境中，你會？",
-    options: [
-      {
-        text: "遵循法律和社會規範",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "依據智慧和經驗判斷",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "跟隨內心的道德感",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DEMETER]: 2 }
-      },
-      {
-        text: "選擇對大多數人有利的",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.ATHENA]: 1 }
-      }
+      { text: "立刻開始try各種方法", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "快速google，找類似解法", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "先分析問題，再開始修", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "仔細trace code，找根本原因", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "重新review整個架構", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
     ]
   },
 
-  // 第21-25題：冒險與挑戰
+  // --- 創造PRO vs 秩序ZEU 情境題 (Q27-30) ---
   {
-    id: 21,
-    text: "面對未知的挑戰，你的態度是？",
+    id: "Q27",
+    phase: 2,
+    axis: "PRO-ZEU",
+    weight: 2.0,
+    text: "策劃活動...",
+    scene: "公司尾牙，老闆要求要有創意",
     options: [
-      {
-        text: "興奮期待，躍躍欲試",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      },
-      {
-        text: "謹慎評估，制定計劃",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "觀望等待，看情況發展",
-        archetypes: { [ARCHETYPES.HERMES]: 2, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "能避則避，維持現狀",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HEPHAESTUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 22,
-    text: "你喜歡什麼樣的冒險？",
-    options: [
-      {
-        text: "刺激的極限運動",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      },
-      {
-        text: "探索未知的地方",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      },
-      {
-        text: "智力上的挑戰",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "創造性的實驗",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.HERMES]: 1 }
-      }
-    ]
-  },
-  {
-    id: 23,
-    text: "當別人質疑你的能力時，你會？",
-    options: [
-      {
-        text: "立即證明他們錯了",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.ZEUS]: 2 }
-      },
-      {
-        text: "冷靜展示你的實力",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "用成果說話",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.ARTEMIS]: 2 }
-      },
-      {
-        text: "不需要向他們證明什麼",
-        archetypes: { [ARCHETYPES.POSEIDON]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 24,
-    text: "你如何處理失敗？",
-    options: [
-      {
-        text: "分析原因，重新來過",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HEPHAESTUS]: 2 }
-      },
-      {
-        text: "接受現實，尋找新方向",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "感到沮喪，需要時間恢復",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "憤怒不甘，想要報復",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
-    ]
-  },
-  {
-    id: 25,
-    text: "你認為勇氣是什麼？",
-    options: [
-      {
-        text: "面對危險時不退縮",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "堅持正義和真理",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "保護你所愛的人",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "做真實的自己",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      }
+      { text: "完全原創主題，從零開始設計", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "創新元素加入經典格式", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "參考成功案例，加入自己想法", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "照過往成功模式，微調細節", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "用最穩當的標準流程", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
     ]
   },
 
-  // 第26-30題：社交與溝通
   {
-    id: 26,
-    text: "在聚會中，你通常是？",
+    id: "Q28",
+    phase: 2,
+    axis: "PRO-ZEU",
+    weight: 2.0,
+    text: "裝潢新家...",
+    scene: "預算有限，想要有個性的家",
     options: [
-      {
-        text: "聚會的焦點，吸引眾人",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      },
-      {
-        text: "活躍的參與者，到處聊天",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.APHRODITE]: 2 }
-      },
-      {
-        text: "安靜的觀察者，偶爾發言",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "早早離開，不太參與",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HEPHAESTUS]: 2 }
-      }
-    ]
-  },
-  {
-    id: 27,
-    text: "你如何與陌生人建立關係？",
-    options: [
-      {
-        text: "展現權威和能力",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 1 }
-      },
-      {
-        text: "展現魅力和吸引力",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      },
-      {
-        text: "展現智慧和見解",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "保持距離，慢慢了解",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
-    ]
-  },
-  {
-    id: 28,
-    text: "當朋友需要建議時，你會？",
-    options: [
-      {
-        text: "直接告訴他們該怎麼做",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 1 }
-      },
-      {
-        text: "分析情況，提供理性建議",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "傾聽他們的心聲，給予安慰",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "分享類似經驗，讓他們自己決定",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.ARTEMIS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 29,
-    text: "你喜歡與什麼樣的人交朋友？",
-    options: [
-      {
-        text: "有影響力和地位的人",
-        archetypes: { [ARCHETYPES.HERA]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "有趣風趣，充滿活力的人",
-        archetypes: { [ARCHETYPES.DIONYSUS]: 3, [ARCHETYPES.HERMES]: 2 }
-      },
-      {
-        text: "聰明有深度的人",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "真誠可靠的人",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DEMETER]: 2 }
-      }
-    ]
-  },
-  {
-    id: 30,
-    text: "處理人際衝突時，你的策略是？",
-    options: [
-      {
-        text: "用權威壓制衝突",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "用智慧化解矛盾",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "正面對抗，解決問題",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      },
-      {
-        text: "避免衝突，維持和平",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APOLLO]: 1 }
-      }
+      { text: "DIY所有裝飾，展現獨特風格", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "基本裝潢＋創意小物", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "選定風格，按比例搭配", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "參考室內設計雜誌的配色", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "全部交給設計師處理", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
     ]
   },
 
-  // 第31-35題：慾望與享樂
   {
-    id: 31,
-    text: "你如何看待物質享受？",
+    id: "Q29",
+    phase: 2,
+    axis: "PRO-ZEU",
+    weight: 2.0,
+    text: "準備簡報...",
+    scene: "重要提案，成敗在此一舉",
     options: [
-      {
-        text: "享受是人生的重要組成",
-        archetypes: { [ARCHETYPES.DIONYSUS]: 3, [ARCHETYPES.APHRODITE]: 2 }
-      },
-      {
-        text: "適度享受，不可過度",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.ATHENA]: 1 }
-      },
-      {
-        text: "簡樸生活，專注精神層面",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DEMETER]: 1 }
-      },
-      {
-        text: "享受高品質的東西",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 2 }
-      }
-    ]
-  },
-  {
-    id: 32,
-    text: "在慶祝活動中，你會？",
-    options: [
-      {
-        text: "盡情狂歡，享受快樂",
-        archetypes: { [ARCHETYPES.DIONYSUS]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "適度參與，維持形象",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "負責組織，確保順利",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "早點離開，不太習慣",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HEPHAESTUS]: 2 }
-      }
-    ]
-  },
-  {
-    id: 33,
-    text: "面對美食誘惑時，你會？",
-    options: [
-      {
-        text: "盡情享受，滿足味蕾",
-        archetypes: { [ARCHETYPES.DIONYSUS]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "品嚐美味，但有節制",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "注重營養，健康第一",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.ATHENA]: 1 }
-      },
-      {
-        text: "不太在意食物",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HEPHAESTUS]: 2 }
-      }
-    ]
-  },
-  {
-    id: 34,
-    text: "你對奢華生活的態度是？",
-    options: [
-      {
-        text: "值得追求，代表成功",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "偶爾享受，增添樂趣",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "沒有必要，浪費資源",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DEMETER]: 2 }
-      },
-      {
-        text: "不感興趣，專注其他事物",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HEPHAESTUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 35,
-    text: "休閒時間你喜歡做什麼？",
-    options: [
-      {
-        text: "參加派對和社交活動",
-        archetypes: { [ARCHETYPES.DIONYSUS]: 3, [ARCHETYPES.HERMES]: 2 }
-      },
-      {
-        text: "閱讀學習，充實自己",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "親近自然，戶外活動",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      },
-      {
-        text: "創作或手工藝",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      }
+      { text: "完全客製化，突破性創意提案", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "創新概念＋穩固論述", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "經典架構＋創意包裝", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "參考成功案例的結構", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "使用公司標準簡報格式", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
     ]
   },
 
-  // 第36-40題：家庭與責任
   {
-    id: 36,
-    text: "你對家庭的看法是？",
+    id: "Q30",
+    phase: 2,
+    axis: "PRO-ZEU",
+    weight: 2.0,
+    text: "處理工作流程...",
+    scene: "團隊效率低，需要改善",
     options: [
-      {
-        text: "家庭是最重要的，必須維護",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "家庭重要，但個人發展也很重要",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.ATHENA]: 1 }
-      },
-      {
-        text: "家庭會限制個人自由",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      },
-      {
-        text: "家庭是責任和義務",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HEPHAESTUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 37,
-    text: "面對家庭責任時，你會？",
-    options: [
-      {
-        text: "全心全意承擔責任",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "盡力平衡責任和個人需求",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.ATHENA]: 1 }
-      },
-      {
-        text: "履行義務，但保持獨立",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "以權威方式管理家庭",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      }
-    ]
-  },
-  {
-    id: 38,
-    text: "你希望給孩子什麼樣的教育？",
-    options: [
-      {
-        text: "溫暖關愛，讓他們快樂成長",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "智慧教育，培養獨立思考",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "嚴格管教，建立權威",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "自由發展，不過多干涉",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
-    ]
-  },
-  {
-    id: 39,
-    text: "處理家庭衝突時，你的角色是？",
-    options: [
-      {
-        text: "和事佬，努力調解矛盾",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "仲裁者，公正解決問題",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.ZEUS]: 1 }
-      },
-      {
-        text: "權威者，制定規則",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "旁觀者，讓他們自己解決",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      }
-    ]
-  },
-  {
-    id: 40,
-    text: "你認為婚姻中最重要的是？",
-    options: [
-      {
-        text: "忠誠和承諾",
-        archetypes: { [ARCHETYPES.HERA]: 3, [ARCHETYPES.DEMETER]: 1 }
-      },
-      {
-        text: "理解和溝通",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 2 }
-      },
-      {
-        text: "激情和浪漫",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      },
-      {
-        text: "互相尊重和獨立",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.APOLLO]: 2 }
-      }
+      { text: "重新發明全新工作方法", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "創新工具＋標準流程", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "改良現有流程的關鍵環節", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "引入業界標準做法", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "完全按照SOP執行", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
     ]
   },
 
-  // 第41-45題：競爭與成功
+  // --- 領導HOR vs 自由LOK 情境題 (Q31-34) ---
   {
-    id: 41,
-    text: "面對競爭時，你的策略是？",
+    id: "Q31",
+    phase: 2,
+    axis: "HOR-LOK",
+    weight: 2.0,
+    text: "團隊意見不合...",
+    scene: "會議上大家各持己見，沒有共識",
     options: [
-      {
-        text: "正面對決，用實力取勝",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.ZEUS]: 2 }
-      },
-      {
-        text: "智取，用策略獲勝",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "專注自己，不在意競爭",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.ARTEMIS]: 1 }
-      },
-      {
-        text: "避免競爭，尋找合作",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      }
-    ]
-  },
-  {
-    id: 42,
-    text: "你定義成功的標準是？",
-    options: [
-      {
-        text: "權力和地位",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "智慧和成就",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "自由和獨立",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      },
-      {
-        text: "愛和被愛",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DEMETER]: 2 }
-      }
-    ]
-  },
-  {
-    id: 43,
-    text: "當你成功時，你會？",
-    options: [
-      {
-        text: "享受勝利，展示成就",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 2 }
-      },
-      {
-        text: "保持低調，繼續努力",
-        archetypes: { [ARCHETYPES.APOLLO]: 3, [ARCHETYPES.HEPHAESTUS]: 1 }
-      },
-      {
-        text: "分享喜悅，感謝支持",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "慶祝一下，然後尋找新目標",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 44,
-    text: "你最不能忍受的失敗是？",
-    options: [
-      {
-        text: "在權力鬥爭中失敗",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "因為愚蠢錯誤而失敗",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "在戰鬥中被擊敗",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      },
-      {
-        text: "失去所愛的人",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 2 }
-      }
-    ]
-  },
-  {
-    id: 45,
-    text: "你認為失敗的原因通常是？",
-    options: [
-      {
-        text: "準備不足或策略錯誤",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "運氣不好或時機不對",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      },
-      {
-        text: "敵人太強或被人背叛",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "沒有足夠的支持",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
+      { text: "我做最終決定，承擔責任", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "綜合大家意見，做整合決策", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "分組執行不同方案，看結果", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "讓每個人都嘗試自己的想法", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "沒有標準答案，各做各的", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
     ]
   },
 
-  // 第46-50題：情緒與內在
   {
-    id: 46,
-    text: "你最常體驗到的情緒是？",
+    id: "Q32",
+    phase: 2,
+    axis: "HOR-LOK",
+    weight: 2.0,
+    text: "選擇工作模式...",
+    scene: "新工作可以選擇辦公室或遠距工作",
     options: [
-      {
-        text: "自信和權威感",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "好奇和求知慾",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERMES]: 1 }
-      },
-      {
-        text: "平靜和獨立感",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "溫暖和關愛",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      }
-    ]
-  },
-  {
-    id: 47,
-    text: "當你生氣時，你會？",
-    options: [
-      {
-        text: "大發雷霆，展現怒火",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 2 }
-      },
-      {
-        text: "冷靜計劃報復",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "直接對抗，解決問題",
-        archetypes: { [ARCHETYPES.ARES]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      },
-      {
-        text: "保持距離，冷處理",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      }
-    ]
-  },
-  {
-    id: 48,
-    text: "面對悲傷時，你傾向於？",
-    options: [
-      {
-        text: "獨自承受，不願意讓人看見",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      },
-      {
-        text: "尋求理性分析和解決方案",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "需要他人的陪伴和安慰",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "用創作或工作來轉移注意力",
-        archetypes: { [ARCHETYPES.HEPHAESTUS]: 3, [ARCHETYPES.HERMES]: 1 }
-      }
-    ]
-  },
-  {
-    id: 49,
-    text: "你最害怕什麼？",
-    options: [
-      {
-        text: "失去權力和控制",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 2 }
-      },
-      {
-        text: "變得愚蠢或無知",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "失去自由和獨立",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 2 }
-      },
-      {
-        text: "失去所愛的人",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 2 }
-      }
-    ]
-  },
-  {
-    id: 50,
-    text: "你如何處理內心的矛盾？",
-    options: [
-      {
-        text: "用理性分析找出最佳選擇",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "跟隨內心的直覺",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      },
-      {
-        text: "尋求權威或傳統的指導",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "與信任的人討論",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.HERMES]: 2 }
-      }
+      { text: "辦公室，這樣可以帶領團隊", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "混合模式，在辦公室建立影響力", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "看專案需求決定", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "遠距為主，保持工作彈性", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "完全遠距，追求工作自由", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
     ]
   },
 
-  // 第51-55題：靈性與哲學
   {
-    id: 51,
-    text: "你對生命意義的看法是？",
+    id: "Q33",
+    phase: 2,
+    axis: "HOR-LOK",
+    weight: 2.0,
+    text: "朋友聚會規劃...",
+    scene: "一群人要出去玩，但沒人知道去哪",
     options: [
-      {
-        text: "建立偉大的成就和影響力",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "追求真理和智慧",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "享受生活的美好",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      },
-      {
-        text: "找到內在的平靜",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DEMETER]: 1 }
-      }
-    ]
-  },
-  {
-    id: 52,
-    text: "你相信命運嗎？",
-    options: [
-      {
-        text: "命運由自己掌握",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 2 }
-      },
-      {
-        text: "命運和努力都很重要",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "順其自然，接受安排",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.ARTEMIS]: 1 }
-      },
-      {
-        text: "命運是可以改變的",
-        archetypes: { [ARCHETYPES.HERMES]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 53,
-    text: "面對死亡的想法，你會？",
-    options: [
-      {
-        text: "希望留下偉大的遺產",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "理性思考生死的意義",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "珍惜當下，享受每一天",
-        archetypes: { [ARCHETYPES.DIONYSUS]: 3, [ARCHETYPES.APHRODITE]: 2 }
-      },
-      {
-        text: "平靜接受，這是自然規律",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DEMETER]: 2 }
-      }
-    ]
-  },
-  {
-    id: 54,
-    text: "你認為什麼是真正的智慧？",
-    options: [
-      {
-        text: "了解如何運用權力",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "掌握知識和真理",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "理解人性和情感",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DEMETER]: 2 }
-      },
-      {
-        text: "認識自己的本性",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      }
-    ]
-  },
-  {
-    id: 55,
-    text: "你覺得什麼最能代表你？",
-    options: [
-      {
-        text: "一座雄偉的山峰",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      },
-      {
-        text: "一本充滿智慧的書",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "一朵美麗的花",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DEMETER]: 1 }
-      },
-      {
-        text: "一片寧靜的森林",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DEMETER]: 1 }
-      }
+      { text: "我來規劃整個行程，大家跟著走", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "我提幾個選項，大家投票決定", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "每人負責一個環節", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "不要太詳細計劃，隨興最好", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "我自己決定要不要參加", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
     ]
   },
 
-  // 第56-60題：綜合性格特質
   {
-    id: 56,
-    text: "如果你是一個神祇，你會統治什麼領域？",
+    id: "Q34",
+    phase: 2,
+    axis: "HOR-LOK",
+    weight: 2.0,
+    text: "面對權威...",
+    scene: "上級的決定你不太認同",
     options: [
-      {
-        text: "權力和秩序",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "智慧和戰略",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "愛情和美麗",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      },
-      {
-        text: "自然和自由",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
+      { text: "直接表達不同意見，說服上級", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "提出建設性的替代方案", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "表面配合，暗中按自己方式做", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "消極配合，保持距離", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "如果太違背原則就離開", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
     ]
   },
+
+  // --- 夢想ISI vs 實踐HEP 情境題 (Q35-38) ---
   {
-    id: 57,
-    text: "你最希望別人如何記住你？",
+    id: "Q35",
+    phase: 2,
+    axis: "ISI-HEP",
+    weight: 2.0,
+    text: "職涯規劃...",
+    scene: "30歲了，該選擇穩定還是追夢",
     options: [
-      {
-        text: "偉大的領導者",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 1 }
-      },
-      {
-        text: "智慧的導師",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 2 }
-      },
-      {
-        text: "溫暖的親人",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 1 }
-      },
-      {
-        text: "真實的自己",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DIONYSUS]: 2 }
-      }
+      { text: "追求理想工作，錢不是最重要的", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "找有發展性的工作，慢慢實現理想", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "選擇有挑戰性又穩定的工作", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "先求穩定，業餘時間追求理想", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "選最實際的，能養家糊口最重要", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
     ]
   },
+
   {
-    id: 58,
-    text: "在困難時期，你最需要什麼？",
+    id: "Q36",
+    phase: 2,
+    axis: "ISI-HEP",
+    weight: 2.0,
+    text: "買房考慮...",
+    scene: "存款有限，要選區段還是格局",
     options: [
-      {
-        text: "權力和資源",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.HERA]: 1 }
-      },
-      {
-        text: "智慧和計劃",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "愛和支持",
-        archetypes: { [ARCHETYPES.DEMETER]: 3, [ARCHETYPES.APHRODITE]: 2 }
-      },
-      {
-        text: "空間和時間",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.POSEIDON]: 1 }
-      }
+      { text: "選有潛力的新興區域，投資未來", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "交通便利的區域，格局小一點沒關係", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "在能力範圍內選最好的", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "選實用格局，區位其次", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "買最划算的，房子就是拿來住的", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
     ]
   },
+
   {
-    id: 59,
-    text: "你的人生格言會是什麼？",
+    id: "Q37",
+    phase: 2,
+    axis: "ISI-HEP",
+    weight: 2.0,
+    text: "學習新技能...",
+    scene: "想學程式設計，但不知道有沒有用",
     options: [
-      {
-        text: "征服自己，征服世界",
-        archetypes: { [ARCHETYPES.ZEUS]: 3, [ARCHETYPES.ARES]: 2 }
-      },
-      {
-        text: "知識就是力量",
-        archetypes: { [ARCHETYPES.ATHENA]: 3, [ARCHETYPES.APOLLO]: 1 }
-      },
-      {
-        text: "愛是一切的答案",
-        archetypes: { [ARCHETYPES.APHRODITE]: 3, [ARCHETYPES.DEMETER]: 2 }
-      },
-      {
-        text: "做真實的自己",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 3, [ARCHETYPES.DIONYSUS]: 1 }
-      }
+      { text: "先學了再說，技能不嫌多", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "選最有趣的程式語言開始", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "選就業市場需求大的技能", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "確定對工作有幫助才學", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "評估投資報酬率，值得才學", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
     ]
   },
+
   {
-    id: 60,
-    text: "最後一題：你認為自己最像希臘神話中的哪位神祇？",
+    id: "Q38",
+    phase: 2,
+    axis: "ISI-HEP",
+    weight: 2.0,
+    text: "退休計劃...",
+    scene: "25歲，朋友說要開始理財規劃",
     options: [
-      {
-        text: "宙斯 - 眾神之王，權威領導者",
-        archetypes: { [ARCHETYPES.ZEUS]: 5 }
-      },
-      {
-        text: "雅典娜 - 智慧女神，策略思考者",
-        archetypes: { [ARCHETYPES.ATHENA]: 5 }
-      },
-      {
-        text: "阿爾忒彌斯 - 月神，獨立自由者",
-        archetypes: { [ARCHETYPES.ARTEMIS]: 5 }
-      },
-      {
-        text: "得墨忒耳 - 豐收女神，照顧者",
-        archetypes: { [ARCHETYPES.DEMETER]: 5 }
-      }
+      { text: "先努力實現夢想，錢的事以後再說", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "基本儲蓄，但不要限制現在的生活", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "一邊享受生活，一邊規劃未來", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "開始固定儲蓄，理財很重要", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "越早開始越好，複利效果驚人", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
+    ]
+  },
+
+  // --- 挑戰AMA vs 療癒FRE 情境題 (Q39-42) ---
+  {
+    id: "Q39",
+    phase: 2,
+    axis: "AMA-FRE",
+    weight: 2.0,
+    text: "面對批評...",
+    scene: "你的作品被公開批評",
+    options: [
+      { text: "立刻反駁，為自己辯護", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "分析批評是否有道理，該回應就回應", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "先處理情緒，再理性分析", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "謝謝指教，回去檢討改進", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "默默接受，時間會證明一切", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q40",
+    phase: 2,
+    axis: "AMA-FRE",
+    weight: 2.0,
+    text: "朋友受挫...",
+    scene: "好友工作不順，情緒很低落",
+    options: [
+      { text: "激勵他，告訴他要勇敢面對", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "分析問題，幫他想解決方法", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "陪伴他，需要時再提供建議", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "先讓他發洩情緒，再慢慢開導", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "什麼都不說，靜靜陪著", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q41",
+    phase: 2,
+    axis: "AMA-FRE",
+    weight: 2.0,
+    text: "遇到不公...",
+    scene: "職場上看到同事被不公平對待",
+    options: [
+      { text: "直接站出來替同事發聲", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "私下找主管討論這件事", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "支持同事，給他建議和資源", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "安慰同事，幫他紓解情緒", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "默默關心，避免讓事情更複雜", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q42",
+    phase: 2,
+    axis: "AMA-FRE",
+    weight: 2.0,
+    text: "競爭環境...",
+    scene: "團隊內競爭激烈，氣氛緊張",
+    options: [
+      { text: "全力以赴，要就要做到最好", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "努力表現，但不踩同事", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "做好本分，不刻意競爭", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "試著改善團隊氣氛", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "專注合作，淡化競爭", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+
+  // ========== PHASE 3: 陰影整合題 (Q43-60) ==========
+  // 這些問題旨在探索陰影面和被壓抑的特質
+  
+  // --- 投射整合題 (Q43-48) ---
+  {
+    id: "Q43",
+    phase: 3,
+    axis: "ATH-APH",
+    weight: 1.0,
+    text: "最討厭的人類特質...",
+    projection: true,
+    options: [
+      { text: "時候遷就，沒有措施", value: 0, archetypes: { [ARCHETYPES.APH]: 100, [ARCHETYPES.ATH]: 0 } },
+      { text: "逐利短視，不考慮後果", value: 25, archetypes: { [ARCHETYPES.APH]: 75, [ARCHETYPES.ATH]: 25 } },
+      { text: "不果決，總是在擺盪", value: 50, archetypes: { [ARCHETYPES.APH]: 50, [ARCHETYPES.ATH]: 50 } },
+      { text: "太理理計較，不考慮感受", value: 75, archetypes: { [ARCHETYPES.APH]: 25, [ARCHETYPES.ATH]: 75 } },
+      { text: "冷漠無情，不在乎他人", value: 100, archetypes: { [ARCHETYPES.APH]: 0, [ARCHETYPES.ATH]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q44",
+    phase: 3,
+    axis: "HER-ODI",
+    weight: 1.0,
+    text: "最讓你無法忍受的行為...",
+    projection: true,
+    options: [
+      { text: "什麼都不做，等別人來解決", value: 0, archetypes: { [ARCHETYPES.ODI]: 100, [ARCHETYPES.HER]: 0 } },
+      { text: "想太久，錯過機會", value: 25, archetypes: { [ARCHETYPES.ODI]: 75, [ARCHETYPES.HER]: 25 } },
+      { text: "好高騖遠，不想實作", value: 50, archetypes: { [ARCHETYPES.ODI]: 50, [ARCHETYPES.HER]: 50 } },
+      { text: "緪分不想，轕率去做", value: 75, archetypes: { [ARCHETYPES.ODI]: 25, [ARCHETYPES.HER]: 75 } },
+      { text: "衝動魯莽，完全不考慮", value: 100, archetypes: { [ARCHETYPES.ODI]: 0, [ARCHETYPES.HER]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q45",
+    phase: 3,
+    axis: "PRO-ZEU",
+    weight: 1.0,
+    text: "你最不喜歡的工作方式...",
+    projection: true,
+    options: [
+      { text: "固守成規，不容許任何變化", value: 0, archetypes: { [ARCHETYPES.ZEU]: 100, [ARCHETYPES.PRO]: 0 } },
+      { text: "遵照既定流程，不願嘗試新方法", value: 25, archetypes: { [ARCHETYPES.ZEU]: 75, [ARCHETYPES.PRO]: 25 } },
+      { text: "異想天開，但缺乏執行力", value: 50, archetypes: { [ARCHETYPES.ZEU]: 50, [ARCHETYPES.PRO]: 50 } },
+      { text: "太有創意，但不实際", value: 75, archetypes: { [ARCHETYPES.ZEU]: 25, [ARCHETYPES.PRO]: 75 } },
+      { text: "沒有標準，隨性發揮", value: 100, archetypes: { [ARCHETYPES.ZEU]: 0, [ARCHETYPES.PRO]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q46",
+    phase: 3,
+    axis: "HOR-LOK",
+    weight: 1.0,
+    text: "你最不能接受的人...",
+    projection: true,
+    options: [
+      { text: "不負責任，沒有承擔", value: 0, archetypes: { [ARCHETYPES.LOK]: 100, [ARCHETYPES.HOR]: 0 } },
+      { text: "不受權威，難以管理", value: 25, archetypes: { [ARCHETYPES.LOK]: 75, [ARCHETYPES.HOR]: 25 } },
+      { text: "只顧自己，不考慮團隊", value: 50, archetypes: { [ARCHETYPES.LOK]: 50, [ARCHETYPES.HOR]: 50 } },
+      { text: "太獨裁，不聽意見", value: 75, archetypes: { [ARCHETYPES.LOK]: 25, [ARCHETYPES.HOR]: 75 } },
+      { text: "控制欲強，什麼都要管", value: 100, archetypes: { [ARCHETYPES.LOK]: 0, [ARCHETYPES.HOR]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q47",
+    phase: 3,
+    axis: "ISI-HEP",
+    weight: 1.0,
+    text: "你最看不起的態度...",
+    projection: true,
+    options: [
+      { text: "只會空想，什麼都不做", value: 0, archetypes: { [ARCHETYPES.HEP]: 100, [ARCHETYPES.ISI]: 0 } },
+      { text: "夠理想但不實際", value: 25, archetypes: { [ARCHETYPES.HEP]: 75, [ARCHETYPES.ISI]: 25 } },
+      { text: "哪邊都不徹底", value: 50, archetypes: { [ARCHETYPES.HEP]: 50, [ARCHETYPES.ISI]: 50 } },
+      { text: "太現實，沒有夢想", value: 75, archetypes: { [ARCHETYPES.HEP]: 25, [ARCHETYPES.ISI]: 75 } },
+      { text: "太僵化，不敢冒險", value: 100, archetypes: { [ARCHETYPES.HEP]: 0, [ARCHETYPES.ISI]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q48",
+    phase: 3,
+    axis: "AMA-FRE",
+    weight: 1.0,
+    text: "你最不屑的特質...",
+    projection: true,
+    options: [
+      { text: "過度包容，沒有原則", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "太於温和，不敢堅持", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "中庸無奇，沒有特色", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "太競爭，不考慮他人", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "過於激進，傷害他人", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+
+  // --- 陰影整合題 (Q49-54) ---
+  {
+    id: "Q49",
+    phase: 3,
+    axis: "ATH-APH",
+    weight: 1.5,
+    text: "在深夜，你的陰影說...",
+    options: [
+      { text: "你想太多了，放縱自己吧", value: 0, archetypes: { [ARCHETYPES.APH]: 100, [ARCHETYPES.ATH]: 0 } },
+      { text: "偶爾也要陪伴自己的想法", value: 25, archetypes: { [ARCHETYPES.APH]: 75, [ARCHETYPES.ATH]: 25 } },
+      { text: "有時候理性也需要休息", value: 50, archetypes: { [ARCHETYPES.APH]: 50, [ARCHETYPES.ATH]: 50 } },
+      { text: "别總是跟著感覺走", value: 75, archetypes: { [ARCHETYPES.APH]: 25, [ARCHETYPES.ATH]: 75 } },
+      { text: "你太軟弱了，該硬起來", value: 100, archetypes: { [ARCHETYPES.APH]: 0, [ARCHETYPES.ATH]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q50",
+    phase: 3,
+    axis: "HER-ODI",
+    weight: 1.5,
+    text: "你內心的另一個聲音...",
+    options: [
+      { text: "停下來，你需要思考", value: 0, archetypes: { [ARCHETYPES.ODI]: 100, [ARCHETYPES.HER]: 0 } },
+      { text: "有時候慢一點比較好", value: 25, archetypes: { [ARCHETYPES.ODI]: 75, [ARCHETYPES.HER]: 25 } },
+      { text: "不是每件事都要加速", value: 50, archetypes: { [ARCHETYPES.ODI]: 50, [ARCHETYPES.HER]: 50 } },
+      { text: "別總是退縮，該行動了", value: 75, archetypes: { [ARCHETYPES.ODI]: 25, [ARCHETYPES.HER]: 75 } },
+      { text: "你算得太多，勇敢一點", value: 100, archetypes: { [ARCHETYPES.ODI]: 0, [ARCHETYPES.HER]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q51",
+    phase: 3,
+    axis: "PRO-ZEU",
+    weight: 1.5,
+    text: "你的反面人格住耐你...",
+    options: [
+      { text: "你太下正了，需要紀律", value: 0, archetypes: { [ARCHETYPES.ZEU]: 100, [ARCHETYPES.PRO]: 0 } },
+      { text: "偉在按照規則比較安全", value: 25, archetypes: { [ARCHETYPES.ZEU]: 75, [ARCHETYPES.PRO]: 25 } },
+      { text: "不要既要安穩又要創新", value: 50, archetypes: { [ARCHETYPES.ZEU]: 50, [ARCHETYPES.PRO]: 50 } },
+      { text: "別總是依賴既有系統", value: 75, archetypes: { [ARCHETYPES.ZEU]: 25, [ARCHETYPES.PRO]: 75 } },
+      { text: "你太僵化了，該放手了", value: 100, archetypes: { [ARCHETYPES.ZEU]: 0, [ARCHETYPES.PRO]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q52",
+    phase: 3,
+    axis: "HOR-LOK",
+    weight: 1.5,
+    text: "你內在的反叛者說...",
+    options: [
+      { text: "你太逃避責任了", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "需要你的時候你要站出來", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "自由和責任都很重要", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "別總是想要控制別人", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "你控制欲太強了", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q53",
+    phase: 3,
+    axis: "ISI-HEP",
+    weight: 1.5,
+    text: "你的點為上相輿囁...",
+    options: [
+      { text: "你都不面對現實", value: 0, archetypes: { [ARCHETYPES.HEP]: 100, [ARCHETYPES.ISI]: 0 } },
+      { text: "偵爾也要實際一點", value: 25, archetypes: { [ARCHETYPES.HEP]: 75, [ARCHETYPES.ISI]: 25 } },
+      { text: "理想和現實都需要", value: 50, archetypes: { [ARCHETYPES.HEP]: 50, [ARCHETYPES.ISI]: 50 } },
+      { text: "別總是計較小利益", value: 75, archetypes: { [ARCHETYPES.HEP]: 25, [ARCHETYPES.ISI]: 75 } },
+      { text: "你太現實，缺乏美感", value: 100, archetypes: { [ARCHETYPES.HEP]: 0, [ARCHETYPES.ISI]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q54",
+    phase: 3,
+    axis: "AMA-FRE",
+    weight: 1.5,
+    text: "你被壓抑的一面譱責你...",
+    options: [
+      { text: "你太懇弱，該做就要做", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "有時候需要堅強一點", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "温柔和堅強都有價值", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "別總是想要與人爭鬥", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "你太有攻擊性了", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
+    ]
+  },
+
+  // --- 最終整合題 (Q55-60) ---
+  {
+    id: "Q55",
+    phase: 3,
+    axis: "ATH-APH",
+    weight: 2.0,
+    text: "在人生的十字路口，你最需要的智慧...",
+    relationship: true,
+    options: [
+      { text: "策略理性，分析利弊得失", value: 0, archetypes: { [ARCHETYPES.ATH]: 100, [ARCHETYPES.APH]: 0 } },
+      { text: "理性分析，但也聽心的聲音", value: 25, archetypes: { [ARCHETYPES.ATH]: 75, [ARCHETYPES.APH]: 25 } },
+      { text: "平衡理性與直覺", value: 50, archetypes: { [ARCHETYPES.ATH]: 50, [ARCHETYPES.APH]: 50 } },
+      { text: "直覺感受，再用理性驗證", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
+      { text: "完全相信內在的感覺", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q56",
+    phase: 3,
+    axis: "HER-ODI",
+    weight: 2.0,
+    text: "面對重大決定，你的智慧是...",
+    relationship: true,
+    options: [
+      { text: "立刻行動，用結果調整方向", value: 0, archetypes: { [ARCHETYPES.HER]: 100, [ARCHETYPES.ODI]: 0 } },
+      { text: "快速決定，但也要想清楚", value: 25, archetypes: { [ARCHETYPES.HER]: 75, [ARCHETYPES.ODI]: 25 } },
+      { text: "有計畫的行動", value: 50, archetypes: { [ARCHETYPES.HER]: 50, [ARCHETYPES.ODI]: 50 } },
+      { text: "先深入思考，再謹慎行動", value: 75, archetypes: { [ARCHETYPES.HER]: 25, [ARCHETYPES.ODI]: 75 } },
+      { text: "全面思考各種後果和可能性", value: 100, archetypes: { [ARCHETYPES.HER]: 0, [ARCHETYPES.ODI]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q57",
+    phase: 3,
+    axis: "PRO-ZEU",
+    weight: 2.0,
+    text: "你的創造智慧是...",
+    relationship: true,
+    options: [
+      { text: "突破一切，重新定義遊戲規則", value: 0, archetypes: { [ARCHETYPES.PRO]: 100, [ARCHETYPES.ZEU]: 0 } },
+      { text: "在結構裡注入創新元素", value: 25, archetypes: { [ARCHETYPES.PRO]: 75, [ARCHETYPES.ZEU]: 25 } },
+      { text: "穩固基礎上的創新", value: 50, archetypes: { [ARCHETYPES.PRO]: 50, [ARCHETYPES.ZEU]: 50 } },
+      { text: "按認證的標準，加上精緻優化", value: 75, archetypes: { [ARCHETYPES.PRO]: 25, [ARCHETYPES.ZEU]: 75 } },
+      { text: "完全依據經驗和系統", value: 100, archetypes: { [ARCHETYPES.PRO]: 0, [ARCHETYPES.ZEU]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q58",
+    phase: 3,
+    axis: "HOR-LOK",
+    weight: 2.0,
+    text: "你的領導智慧是...",
+    relationship: true,
+    options: [
+      { text: "絕對的責任和使命", value: 0, archetypes: { [ARCHETYPES.HOR]: 100, [ARCHETYPES.LOK]: 0 } },
+      { text: "導引不勉強，啟發不控制", value: 25, archetypes: { [ARCHETYPES.HOR]: 75, [ARCHETYPES.LOK]: 25 } },
+      { text: "想要協作還是獨立", value: 50, archetypes: { [ARCHETYPES.HOR]: 50, [ARCHETYPES.LOK]: 50 } },
+      { text: "讓每個人發揮自主性", value: 75, archetypes: { [ARCHETYPES.HOR]: 25, [ARCHETYPES.LOK]: 75 } },
+      { text: "完全自由，不受任何束縛", value: 100, archetypes: { [ARCHETYPES.HOR]: 0, [ARCHETYPES.LOK]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q59",
+    phase: 3,
+    axis: "ISI-HEP",
+    weight: 2.0,
+    text: "你的生命智慧是...",
+    relationship: true,
+    options: [
+      { text: "相信奇蹟，追求不可能的夢", value: 0, archetypes: { [ARCHETYPES.ISI]: 100, [ARCHETYPES.HEP]: 0 } },
+      { text: "在實際中實現美麗的想像", value: 25, archetypes: { [ARCHETYPES.ISI]: 75, [ARCHETYPES.HEP]: 25 } },
+      { text: "讓理想和現實相互滋養", value: 50, archetypes: { [ARCHETYPES.ISI]: 50, [ARCHETYPES.HEP]: 50 } },
+      { text: "實際為主，但保持對美的整悳", value: 75, archetypes: { [ARCHETYPES.ISI]: 25, [ARCHETYPES.HEP]: 75 } },
+      { text: "完全實際，用双手創造價值", value: 100, archetypes: { [ARCHETYPES.ISI]: 0, [ARCHETYPES.HEP]: 100 } }
+    ]
+  },
+
+  {
+    id: "Q60",
+    phase: 3,
+    axis: "AMA-FRE",
+    weight: 2.0,
+    text: "你的癒療智慧是...",
+    relationship: true,
+    options: [
+      { text: "直面所有挑戰，永不放棄", value: 0, archetypes: { [ARCHETYPES.AMA]: 100, [ARCHETYPES.FRE]: 0 } },
+      { text: "為現在奇駟，為未來繁殖", value: 25, archetypes: { [ARCHETYPES.AMA]: 75, [ARCHETYPES.FRE]: 25 } },
+      { text: "戰鬥與寇靜的完美平衡", value: 50, archetypes: { [ARCHETYPES.AMA]: 50, [ARCHETYPES.FRE]: 50 } },
+      { text: "用温柔的力量化解衝突", value: 75, archetypes: { [ARCHETYPES.AMA]: 25, [ARCHETYPES.FRE]: 75 } },
+      { text: "純粹的慈悲，接納一切美好", value: 100, archetypes: { [ARCHETYPES.AMA]: 0, [ARCHETYPES.FRE]: 100 } }
     ]
   }
 ];
+
+// 計分和分析函數
+export function calculateResult(answers: { [key: number]: number }) {
+  const scores: { [key: string]: number } = {};
+  
+  Object.values(ARCHETYPES).forEach(archetype => {
+    scores[archetype] = 0;
+  });
+
+  questions.forEach((question, questionIndex) => {
+    const answerIndex = answers[questionIndex];
+    if (answerIndex !== undefined) {
+      const selectedOption = question.options[answerIndex];
+      Object.entries(selectedOption.archetypes).forEach(([archetype, score]) => {
+        scores[archetype] = (scores[archetype] || 0) + (score * question.weight);
+      });
+    }
+  });
+
+  // 找出三高二低
+  const sortedScores = Object.entries(scores)
+    .map(([code, value]) => ({ code, value }))
+    .sort((a, b) => b.value - a.value);
+
+  return {
+    threeHighs: sortedScores.slice(0, 3),
+    twoLows: sortedScores.slice(-2),
+    rawScores: scores,
+    patternId: generatePatternId(sortedScores)
+  };
+}
+
+// 擴展編號系統：包含三高二低的完整資訊
+function generateFullPatternId(
+  threeHighs: Array<{code: string, value: number}>, 
+  twoLows: Array<{code: string, value: number}>
+): number {
+  const archetypeIndices = Object.values(ARCHETYPES);
+  
+  // 三高編碼 (12 × 11 × 10 = 1320)
+  const mainIndex = archetypeIndices.indexOf(threeHighs[0].code as any);
+  const secondIndex = archetypeIndices.indexOf(threeHighs[1].code as any);
+  const thirdIndex = archetypeIndices.indexOf(threeHighs[2].code as any);
+  
+  // 調整索引避免重複
+  let adjustedSecond = secondIndex;
+  if (adjustedSecond >= mainIndex) adjustedSecond--;
+  
+  let adjustedThird = thirdIndex;
+  if (adjustedThird >= mainIndex) adjustedThird--;
+  if (adjustedThird >= (secondIndex < mainIndex ? secondIndex : secondIndex - 1)) adjustedThird--;
+  
+  const threeHighId = (mainIndex * 110) + (adjustedSecond * 10) + adjustedThird;
+  
+  // 二低編碼 (剩餘9個神中選2個 = 9 × 8 = 72種可能)
+  const usedIndices = new Set([mainIndex, secondIndex, thirdIndex]);
+  const remainingIndices = archetypeIndices
+    .map((_, i) => i)
+    .filter(i => !usedIndices.has(i));
+  
+  const lowMainIndex = remainingIndices.indexOf(archetypeIndices.indexOf(twoLows[0].code as any));
+  const lowSecondIndex = remainingIndices.indexOf(archetypeIndices.indexOf(twoLows[1].code as any));
+  
+  // 調整二低索引
+  let adjustedLowSecond = lowSecondIndex;
+  if (adjustedLowSecond >= lowMainIndex) adjustedLowSecond--;
+  
+  const twoLowId = (lowMainIndex * 8) + adjustedLowSecond;
+  
+  // 組合成完整ID (1320 × 72 = 95040種可能)
+  return (threeHighId * 72) + twoLowId;
+}
+
+// 舊版1320系統（向後相容）
+function generate1320Id(threeHighs: Array<{code: string, value: number}>): number {
+  const archetypeIndices = Object.values(ARCHETYPES);
+  
+  const mainIndex = archetypeIndices.indexOf(threeHighs[0].code as any);
+  const secondIndex = archetypeIndices.indexOf(threeHighs[1].code as any);
+  const thirdIndex = archetypeIndices.indexOf(threeHighs[2].code as any);
+  
+  let adjustedSecond = secondIndex;
+  if (adjustedSecond >= mainIndex) adjustedSecond--;
+  
+  let adjustedThird = thirdIndex;
+  if (adjustedThird >= mainIndex) adjustedThird--;
+  if (adjustedThird >= (secondIndex < mainIndex ? secondIndex : secondIndex - 1)) adjustedThird--;
+  
+  const id = (mainIndex * 110) + (adjustedSecond * 10) + adjustedThird;
+  return Math.min(Math.max(id, 0), 1319);
+}
+
+// 代號加密系統
+const SALT = 'SHADOWLIGHT2024';
+const CHARS = 'ABCDEFGHIJKLMNPQRSTUVWXYZ123456789'; // 移除容易混淆的字符
+
+// 新版加密系統：支援完整三高二低編碼
+function encryptFullCode(
+  fullId: number, 
+  threeHighs: Array<{code: string, value: number}>, 
+  twoLows: Array<{code: string, value: number}>
+): string {
+  const seed = (fullId * 37 + 1337) % 99991; // 更大的種子空間
+  
+  // 第一段：主神提示 + 隨機字符
+  const mainGod = threeHighs[0].code.toUpperCase();
+  const firstChar = mainGod[0];
+  const randomNum = (seed % 9) + 1;
+  const randomChar1 = CHARS[(seed * 7) % CHARS.length];
+  const segment1 = `${firstChar}${randomNum}${randomChar1}`;
+  
+  // 第二段：加密的編號（支援更大範圍）
+  const encodedId = ((fullId * 73 + 521) % 9999).toString().padStart(3, '0');
+  const segment2 = `Q${encodedId}`;
+  
+  // 第三段：二低提示 + 校驗碼
+  const lowGod = twoLows[0].code.toUpperCase();
+  const lowChar = lowGod[0];
+  const checksum = ((fullId + seed) % CHARS.length);
+  const checksumChar = CHARS[checksum];
+  const segment3 = `${lowChar}${checksumChar}`;
+  
+  return `${segment1}-${segment2}-${segment3}`;
+}
+
+// 舊版加密系統（向後相容）
+function encryptCode(id1320: number, threeHighs: Array<{code: string, value: number}>): string {
+  const seed = (id1320 * 37 + 1337) % 9973;
+  
+  const mainGod = threeHighs[0].code.toUpperCase();
+  const firstChar = mainGod[0];
+  const randomNum = (seed % 9) + 1;
+  const randomChar1 = CHARS[(seed * 7) % CHARS.length];
+  const segment1 = `${firstChar}${randomNum}${randomChar1}`;
+  
+  const encodedId = ((id1320 * 73 + 521) % 999).toString().padStart(2, '0');
+  const segment2 = `Q${encodedId}`;
+  
+  const checksum = ((id1320 + seed) % CHARS.length);
+  const checksumChar = CHARS[checksum];
+  const randomChar2 = CHARS[(seed * 13) % CHARS.length];
+  const strengthIndicator = Math.floor(threeHighs[0].value / 20);
+  const segment3 = `${checksumChar}${strengthIndicator}${randomChar2}`;
+  
+  return `${segment1}-${segment2}-${segment3}`;
+}
+
+// 新版解密系統：支援完整三高二低
+function decryptFullCode(encryptedCode: string): { fullId: number; isValid: boolean } {
+  try {
+    const parts = encryptedCode.split('-');
+    if (parts.length !== 3) return { fullId: -1, isValid: false };
+    
+    const [segment1, segment2, segment3] = parts;
+    
+    // 檢查格式：第二段應該是Q+3位數字，第三段應該是2個字符
+    if (!segment2.startsWith('Q') || segment3.length !== 2) {
+      return { fullId: -1, isValid: false };
+    }
+    
+    const encodedId = parseInt(segment2.substring(1));
+    
+    // 反向計算原始ID（搜索範圍擴大到95040）
+    for (let testId = 0; testId < 95040; testId++) {
+      const testEncoded = ((testId * 73 + 521) % 9999);
+      if (testEncoded === encodedId) {
+        // 驗證校驗碼
+        const seed = (testId * 37 + 1337) % 99991;
+        const expectedChecksum = ((testId + seed) % CHARS.length);
+        const actualChecksum = CHARS.indexOf(segment3[1]); // 第二個字符是校驗碼
+        
+        if (expectedChecksum === actualChecksum) {
+          return { fullId: testId, isValid: true };
+        }
+      }
+    }
+    
+    return { fullId: -1, isValid: false };
+  } catch {
+    return { fullId: -1, isValid: false };
+  }
+}
+
+// 舊版解密系統（向後相容）
+function decryptCode(encryptedCode: string): { id1320: number; isValid: boolean } {
+  try {
+    const parts = encryptedCode.split('-');
+    if (parts.length !== 3) return { id1320: -1, isValid: false };
+    
+    const [segment1, segment2, segment3] = parts;
+    
+    // 舊格式檢查：第二段是Q+2位數字，第三段是3個字符
+    if (!segment2.startsWith('Q') || segment3.length !== 3) {
+      return { id1320: -1, isValid: false };
+    }
+    
+    const encodedId = parseInt(segment2.substring(1));
+    
+    for (let testId = 0; testId < 1320; testId++) {
+      const testEncoded = ((testId * 73 + 521) % 999);
+      if (testEncoded === encodedId) {
+        const seed = (testId * 37 + 1337) % 9973;
+        const expectedChecksum = ((testId + seed) % CHARS.length);
+        const actualChecksum = CHARS.indexOf(segment3[0]);
+        
+        if (expectedChecksum === actualChecksum) {
+          return { id1320: testId, isValid: true };
+        }
+      }
+    }
+    
+    return { id1320: -1, isValid: false };
+  } catch {
+    return { id1320: -1, isValid: false };
+  }
+}
+
+// 根據完整ID反推三高二低（新版）
+function reconstructFullPattern(fullId: number): {
+  threeHighs: Array<string>;
+  twoLows: Array<string>;
+} {
+  const archetypeKeys = Object.keys(ARCHETYPES);
+  
+  // 分離三高和二低的ID
+  const threeHighId = Math.floor(fullId / 72);
+  const twoLowId = fullId % 72;
+  
+  // 重建三高
+  const mainIndex = Math.floor(threeHighId / 110);
+  const secondIndex = Math.floor((threeHighId % 110) / 10);
+  const thirdIndex = threeHighId % 10;
+  
+  let actualSecond = secondIndex;
+  if (actualSecond >= mainIndex) actualSecond++;
+  
+  let actualThird = thirdIndex;
+  if (actualThird >= mainIndex) actualThird++;
+  if (actualThird >= actualSecond) actualThird++;
+  
+  const threeHighs = [
+    archetypeKeys[mainIndex],
+    archetypeKeys[actualSecond],
+    archetypeKeys[actualThird]
+  ];
+  
+  // 重建二低
+  const usedIndices = new Set([mainIndex, actualSecond, actualThird]);
+  const remainingIndices = archetypeKeys
+    .map((_, i) => i)
+    .filter(i => !usedIndices.has(i));
+  
+  const lowMainIndex = Math.floor(twoLowId / 8);
+  const lowSecondIndex = twoLowId % 8;
+  
+  let actualLowSecond = lowSecondIndex;
+  if (actualLowSecond >= lowMainIndex) actualLowSecond++;
+  
+  const twoLows = [
+    archetypeKeys[remainingIndices[lowMainIndex]],
+    archetypeKeys[remainingIndices[actualLowSecond]]
+  ];
+  
+  return { threeHighs, twoLows };
+}
+
+// 根據ID反推三高組合（舊版，向後相容）
+function reconstruct1320Pattern(id1320: number): Array<string> {
+  const archetypeKeys = Object.keys(ARCHETYPES);
+  
+  const mainIndex = Math.floor(id1320 / 110);
+  const secondIndex = Math.floor((id1320 % 110) / 10);
+  const thirdIndex = id1320 % 10;
+  
+  let actualSecond = secondIndex;
+  if (actualSecond >= mainIndex) actualSecond++;
+  
+  let actualThird = thirdIndex;
+  if (actualThird >= mainIndex) actualThird++;
+  if (actualThird >= actualSecond) actualThird++;
+  
+  return [
+    archetypeKeys[mainIndex],
+    archetypeKeys[actualSecond], 
+    archetypeKeys[actualThird]
+  ];
+}
+
+function generatePatternId(sortedScores: Array<{code: string, value: number}>): string {
+  const threeHighs = sortedScores.slice(0, 3);
+  const twoLows = sortedScores.slice(-2);
+  const fullId = generateFullPatternId(threeHighs, twoLows);
+  return encryptFullCode(fullId, threeHighs, twoLows);
+}
+
+// 導出給後台使用的工具函數
+export const PatternCodeUtils = {
+  // 新版完整功能
+  generateFullPatternId,
+  encryptFullCode,
+  decryptFullCode,
+  reconstructFullPattern,
+  
+  // 舊版向後相容
+  generate1320Id,
+  encryptCode,
+  decryptCode,
+  reconstruct1320Pattern,
+  
+  // 智能解析函數：自動判斷新舊格式
+  analyzeCode: (encryptedCode: string) => {
+    const archetypeNames = {
+      'ATH': '理性之神', 'APH': '感性之神',
+      'HER': '行動之神', 'ODI': '思索之神', 
+      'PRO': '創造之神', 'ZEU': '秩序之神',
+      'HOR': '領導之神', 'LOK': '自由之神',
+      'ISI': '夢想之神', 'HEP': '實踐之神',
+      'AMA': '挑戰之神', 'FRE': '療癒之神'
+    };
+    
+    // 嘗試新版解析（有二低資訊）
+    const fullDecryptResult = decryptFullCode(encryptedCode);
+    if (fullDecryptResult.isValid) {
+      const fullPattern = reconstructFullPattern(fullDecryptResult.fullId);
+      return {
+        isValid: true,
+        version: 'full',
+        fullId: fullDecryptResult.fullId,
+        threeHighs: fullPattern.threeHighs.map(key => archetypeNames[key as keyof typeof archetypeNames]),
+        twoLows: fullPattern.twoLows.map(key => archetypeNames[key as keyof typeof archetypeNames]),
+        rawThreeHighs: fullPattern.threeHighs,
+        rawTwoLows: fullPattern.twoLows,
+        encryptedCode
+      };
+    }
+    
+    // 回退到舊版解析（只有三高）
+    const legacyDecryptResult = decryptCode(encryptedCode);
+    if (legacyDecryptResult.isValid) {
+      const pattern = reconstruct1320Pattern(legacyDecryptResult.id1320);
+      return {
+        isValid: true,
+        version: 'legacy',
+        id1320: legacyDecryptResult.id1320,
+        threeHighs: pattern.map(key => archetypeNames[key as keyof typeof archetypeNames]),
+        twoLows: ['未知', '未知'], // 舊版無法得知二低
+        rawThreeHighs: pattern,
+        rawTwoLows: ['unknown', 'unknown'],
+        encryptedCode
+      };
+    }
+    
+    return { isValid: false, error: '無效代號' };
+  }
+};
+
+// 測試範例（開發時使用）
+export const SAMPLE_PATTERNS = [
+  // 新版格式（包含二低資訊）
+  { code: "A3K-Q125-AF", description: "理性主導型（新版）", version: "full" },
+  { code: "H5L-Q842-PL", description: "行動創造型（新版）", version: "full" }, 
+  { code: "I7M-Q317-ZH", description: "夢想療癒型（新版）", version: "full" },
+  
+  // 舊版格式（僅三高）
+  { code: "A3K-Q25-M7X", description: "理性主導型（舊版）", version: "legacy" },
+  { code: "H5L-Q42-N8P", description: "行動創造型（舊版）", version: "legacy" },
+  { code: "I7M-Q17-K9V", description: "夢想療癒型（舊版）", version: "legacy" }
+];
+
+// 系統資訊
+export const SYSTEM_INFO = {
+  name: '光影1320測驗系統',
+  version: '2.0',
+  totalPatterns: 95040, // 1320 × 72 (三高組合 × 二低組合)
+  legacyPatterns: 1320, // 向後相容
+  features: {
+    fullPattern: '完整三高二低識別',
+    encryption: '防偽造校驗碼',
+    backwardCompatible: '向後相容舊版格式'
+  },
+  codeFormats: {
+    new: 'XXX-QYYY-ZW (如: A3K-Q125-AF)',
+    legacy: 'XXX-QYY-ZWV (如: A3K-Q25-M7X)'
+  }
+};
