@@ -294,16 +294,24 @@ function DashboardLayoutContent({ children }: SidebarProps) {
           <div className="logo-text">VENTURO</div>
         </div>
         
-        {/* 模式切換按鈕 */}
-        <div className="mode-switcher" style={{ transform: 'translateY(-10px)' }}>
-          <div className="toggle-container" onClick={toggleMode}>
-            <div className={`toggle-slider ${currentMode}`}></div>
-            <div className="toggle-labels">
-            <span className={`toggle-label ${currentMode === 'game' ? 'active' : ''}`}>冒險</span>
-            <span className={`toggle-label ${currentMode === 'corner' ? 'active' : ''}`}>角落</span>
+        {/* 模式切換按鈕或模式顯示 */}
+        {currentUser?.role === 'CORNER_EMPLOYEE' ? (
+          <div className="mode-switcher" style={{ transform: 'translateY(-10px)' }}>
+            <div className="toggle-container" onClick={toggleMode}>
+              <div className={`toggle-slider ${currentMode}`}></div>
+              <div className="toggle-labels">
+                <span className={`toggle-label ${currentMode === 'game' ? 'active' : ''}`}>冒險</span>
+                <span className={`toggle-label ${currentMode === 'corner' ? 'active' : ''}`}>角落</span>
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="mode-display" style={{ transform: 'translateY(-10px)' }}>
+            <div className="adventure-mode-label">
+              🏔️ 冒險人生
+            </div>
+          </div>
+        )}
         
         <nav className="flex-1 flex flex-col">
           <ul className="nav-menu">
@@ -493,6 +501,28 @@ function DashboardLayoutContent({ children }: SidebarProps) {
           color: white;
           font-weight: 600;
           text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 模式顯示樣式（非角落員工用戶） */
+        .mode-display {
+          margin-bottom: 20px;
+          flex-shrink: 0;
+        }
+
+        .adventure-mode-label {
+          width: 100%;
+          height: 44px;
+          background: linear-gradient(135deg, #c9a961, #e4d4a8);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: 600;
+          color: white;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 2px 8px rgba(201, 169, 97, 0.3);
+          border: 1px solid rgba(201, 169, 97, 0.2);
         }
 
         .nav-menu {
