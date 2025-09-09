@@ -15,3 +15,8 @@ export class InvitationSystem {
     return { exists: false }
   }
 }
+
+// 導出認證服務實例
+export function getAuthService() {
+  return InvitationSystem
+}

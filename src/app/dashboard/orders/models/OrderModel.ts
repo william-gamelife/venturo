@@ -78,6 +78,12 @@ export interface Order {
   salesPerson: string;      // 業務員
   opId?: string;           // OP員
   
+  // 財務欄位
+  totalAmount?: number;     // 總金額
+  paidAmount?: number;      // 已付金額
+  remainingAmount?: number; // 剩餘金額
+  paymentStatus?: PaymentStatus; // 付款狀態
+  
   // 系統欄位
   createdAt: Date;
   createdBy: string;
@@ -100,6 +106,10 @@ export function createDefaultOrder(partial?: Partial<Order>): Order {
     orderType: '',
     salesPerson: '',
     opId: '',
+    totalAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 0,
+    paymentStatus: PaymentStatus.PENDING,
     createdAt: new Date(),
     createdBy: '',
     modifiedAt: new Date(),
@@ -107,4 +117,38 @@ export function createDefaultOrder(partial?: Partial<Order>): Order {
   };
   
   return { ...defaults, ...partial };
+}
+
+/**
+ * 計算剩餘金額
+ */
+export function calculateRemainingAmount(order: Order): number {
+  const total = order.totalAmount || 0;
+  const paid = order.paidAmount || 0;
+  return Math.max(0, total - paid);
+}
+
+/**
+ * 更新付款狀態
+ */
+export function updatePaymentStatus(order: Order): PaymentStatus {
+  const total = order.totalAmount || 0;
+  const paid = order.paidAmount || 0;
+  
+  if (paid <= 0) {
+    return PaymentStatus.PENDING;
+  } else if (paid >= total) {
+    return PaymentStatus.PAID;
+  } else {
+    return PaymentStatus.PARTIAL;
+  }
+}
+
+/**
+ * 檢查付款是否逾期
+ */
+export function isPaymentOverdue(order: Order, dueDate?: Date): boolean {
+  if (!dueDate) return false;
+  if (order.paymentStatus === PaymentStatus.PAID) return false;
+  return new Date() > dueDate;
 }

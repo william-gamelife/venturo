@@ -20,3 +20,8 @@ export class ServerDB {
     return { success: true }
   }
 }
+
+// 導出伺服器數據服務實例
+export function getServerDataService() {
+  return ServerDB
+}
