@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ModuleLayout } from '@/components/ModuleLayout'
-import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/Button'
+import { Icons } from '@/components/icons'
 import { useQuotationStore } from '@/lib/stores/quotation-store'
 import { useProjectStore } from '@/lib/stores/project-store'
 
@@ -29,12 +29,12 @@ export default function QuotationsPage() {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      '草稿': 'bg-gray-100 text-gray-800',
-      '已報價': 'bg-blue-100 text-blue-800',
-      '成交': 'bg-green-100 text-green-800',
-      '失敗': 'bg-red-100 text-red-800'
+      '草稿': 'badge-primary',
+      '已報價': 'badge-info', 
+      '成交': 'badge-success',
+      '失敗': 'badge-danger'
     }
-    return styles[status as keyof typeof styles] || 'bg-gray-100 text-gray-800'
+    return styles[status as keyof typeof styles] || 'badge-primary'
   }
 
   const formatDate = (date: Date) => {
@@ -80,32 +80,32 @@ export default function QuotationsPage() {
   }
 
   return (
-    <ModuleLayout>
-      <PageHeader 
-        title="報價單管理"
-        subtitle="管理所有報價單，包含報價、成本與利潤分析"
-        icon="📋"
-        actions={
+    <ModuleLayout
+      header={{
+        icon: Icons.quotations,
+        title: "報價單管理",
+        subtitle: "管理所有報價單，包含報價、成本與利潤分析",
+        actions: (
           <>
             <div className="quotation-stats">
               <div className="stat-item">
-                <span className="stat-number">{quotations.length}</span>
+                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "var(--primary)" }}>{quotations.length}</span>
                 <span className="stat-label">總報價單數</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number text-green-600">
+                <span className="stat-number text-success">
                   {quotations.filter(q => q.status === '成交').length}
                 </span>
                 <span className="stat-label">已成交</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number text-blue-600">
+                <span className="stat-number text-info">
                   {quotations.filter(q => q.status === '已報價').length}
                 </span>
                 <span className="stat-label">報價中</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number text-[#c9a961]">
+                <span className="stat-number text-primary">
                   {formatCurrency(
                     quotations
                       .filter(q => q.status === '成交')
@@ -117,28 +117,29 @@ export default function QuotationsPage() {
             </div>
             <Button
               onClick={() => router.push('/dashboard/quotations/new')}
-              className="bg-[#c9a961] hover:bg-[#b39555] text-white"
+              className="btn-primary"
             >
               + 新增報價單
             </Button>
           </>
-        }
-      />
+        )
+      }}
+    >
 
       {/* 搜尋和篩選區 */}
-      <div className="filter-section">
+      <div className="card">
         <div className="flex-1 flex gap-2">
           <input
             type="text"
             placeholder="搜尋客戶名稱或報價單號..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c9a961]"
+            className="input"
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#c9a961]"
+            className="input"
           >
             <option value="all">所有狀態</option>
             <option value="草稿">草稿</option>
@@ -150,41 +151,41 @@ export default function QuotationsPage() {
       </div>
 
       {/* 報價單列表 */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="card">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="table">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   報價單號
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   客戶名稱
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   出團日期
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   天數
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   報價金額
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   預估利潤
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   狀態
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th>
                   操作
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody>
               {filteredQuotations.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="p-lg text-center text-muted">
                     {searchTerm || statusFilter !== 'all' 
                       ? '沒有符合條件的報價單' 
                       : '尚無報價單，點擊上方按鈕新增第一筆報價單'}
@@ -192,43 +193,43 @@ export default function QuotationsPage() {
                 </tr>
               ) : (
                 filteredQuotations.map((quotation) => (
-                  <tr key={quotation.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={quotation.id}>
+                    <td className="p-md">
                       {quotation.id}
                       {quotation.version > 1 && (
-                        <span className="ml-1 text-xs text-gray-500">v{quotation.version}</span>
+                        <span className="m-sm text-muted">v{quotation.version}</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="p-md">
                       {quotation.clientName}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="p-md text-muted">
                       {formatDate(quotation.dateRange.start)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="p-md text-muted">
                       {quotation.tripDays} 天
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="p-md">
                       {formatCurrency(quotation.totalPrice)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={quotation.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                    <td className="p-md">
+                      <span className={quotation.profit >= 0 ? 'text-success' : 'text-danger'}>
                         {formatCurrency(quotation.profit)}
-                        <span className="text-xs ml-1">
+                        <span className="text-muted m-sm">
                           ({quotation.profitRate.toFixed(1)}%)
                         </span>
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(quotation.status)}`}>
+                    <td className="p-md">
+                      <span className={`badge ${getStatusBadge(quotation.status)}`}>
                         {quotation.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <td className="p-md">
                       <div className="flex gap-2">
                         <button
                           onClick={() => router.push(`/dashboard/quotations/${quotation.id}`)}
-                          className="text-[#c9a961] hover:text-[#b39555]"
+                          className="text-primary hover:text-primary-hover"
                         >
                           查看
                         </button>
@@ -238,7 +239,7 @@ export default function QuotationsPage() {
                               setSelectedQuotationId(quotation.id)
                               setShowDealModal(true)
                             }}
-                            className="text-green-600 hover:text-green-700"
+                            className="text-success hover:text-success"
                           >
                             成交
                           </button>
@@ -255,31 +256,31 @@ export default function QuotationsPage() {
 
       {/* 成交確認彈窗 */}
       {showDealModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">確認成交</h3>
-            <p className="text-gray-600 mb-6">
+        <div className="modal-overlay">
+          <div className="modal-content card">
+            <h3 className="modal-title">確認成交</h3>
+            <p className="modal-description text-secondary">
               確認將此報價單標記為成交嗎？系統將自動：
             </p>
-            <ul className="list-disc list-inside space-y-2 mb-6 text-sm text-gray-600">
+            <ul className="modal-list">
               <li>標記報價單狀態為「成交」</li>
               <li>建立專案並生成預設任務清單</li>
               <li>根據報價內容自動產生相關待辦事項</li>
             </ul>
             
-            <div className="mb-6">
+            <div className="modal-checkbox">
               <label className="flex items-center">
                 <input
                   type="checkbox"
                   checked={autoCreateGroup}
                   onChange={(e) => setAutoCreateGroup(e.target.checked)}
-                  className="mr-2"
+                  className="modal-input"
                 />
-                <span className="text-sm">同時開立團體</span>
+                <span>同時開立團體</span>
               </label>
             </div>
             
-            <div className="flex gap-3 justify-end">
+            <div className="modal-actions">
               <Button
                 variant="secondary"
                 onClick={() => {
@@ -291,7 +292,7 @@ export default function QuotationsPage() {
               </Button>
               <Button
                 onClick={handleDealConfirm}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="btn-success"
               >
                 確認成交
               </Button>
@@ -326,13 +327,59 @@ export default function QuotationsPage() {
           white-space: nowrap;
         }
         
-        .filter-section {
-          background: white;
-          border-radius: 0.5rem;
-          padding: 1rem;
-          margin-bottom: 1.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-          border: 1px solid #e5e7eb;
+        /* 彈窗樣式 */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.5);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+        }
+        
+        .modal-content {
+          max-width: 400px;
+          width: 100%;
+          margin: 16px;
+        }
+        
+        .modal-title {
+          font-size: 18px;
+          font-weight: 600;
+          margin-bottom: 16px;
+        }
+        
+        .modal-description {
+          margin-bottom: 24px;
+        }
+        
+        .modal-list {
+          list-style: disc;
+          padding-left: 20px;
+          margin-bottom: 24px;
+          color: var(--text-secondary);
+        }
+        
+        .modal-list li {
+          margin-bottom: 8px;
+        }
+        
+        .modal-checkbox {
+          margin-bottom: 24px;
+        }
+        
+        .modal-input {
+          margin-right: 8px;
+        }
+        
+        .modal-actions {
+          display: flex;
+          gap: 12px;
+          justify-content: flex-end;
         }
         
         @media (max-width: 768px) {

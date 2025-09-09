@@ -1,62 +1,33 @@
-// 統一的認證檢查工具，支援開發模式
-import { supabase } from '@/lib/supabase/client'
+// 統一的認證檢查工具，完全本地化版本
+import { localAuth } from '@/lib/local-auth'
 
 export interface AuthUser {
   id: string
   email: string
   username?: string
   display_name?: string
-  role?: 'admin' | 'corner' | 'user'
+  role?: 'admin' | 'corner' | 'user' | string
 }
 
 export async function checkAuth(): Promise<{ user: AuthUser | null, isDevMode: boolean }> {
-  // 1. 檢查開發模式
-  if (typeof window !== 'undefined' && localStorage.getItem('dev_mode') === 'true') {
-    const devUser = JSON.parse(localStorage.getItem('dev_user') || '{}')
-    if (devUser.id) {
-      console.log('🔧 開發模式認證')
-      return {
-        user: {
-          id: devUser.id,
-          email: devUser.email,
-          username: devUser.user_metadata?.username || 'dev_user',
-          display_name: devUser.user_metadata?.display_name || '開發測試員',
-          role: 'admin' // 開發模式給予管理員權限
-        },
-        isDevMode: true
-      }
-    }
-  }
-
-  // 2. 正常 Supabase 認證
-  try {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    
-    if (error || !user) {
-      return { user: null, isDevMode: false }
-    }
-
-    // 獲取 profile 資料
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .maybeSingle()
-
+  // 使用本地認證系統
+  const user = localAuth.getCurrentUser()
+  
+  if (user) {
+    console.log('✅ 本地認證成功')
     return {
       user: {
         id: user.id,
-        email: user.email!,
-        username: profile?.username || user.email?.split('@')[0],
-        display_name: profile?.settings?.display_name || profile?.username,
-        role: profile?.role || 'user'
+        email: user.email,
+        username: user.username,
+        display_name: user.display_name,
+        role: user.role || 'user'
       },
-      isDevMode: false
+      isDevMode: true // 目前都是開發模式
     }
-  } catch (error) {
-    console.error('認證檢查失敗:', error)
-    return { user: null, isDevMode: false }
   }
+
+  return { user: null, isDevMode: false }
 }
 
 // 模擬的待辦事項數據（開發模式用）
@@ -132,11 +103,12 @@ export function getMockTodos() {
 
 // 模擬的用戶資料（開發模式用）
 export function getMockUserProfile() {
+  const user = localAuth.getCurrentUser()
   return {
-    id: 'dev-user-001',
-    email: 'dev@venturo.app',
-    username: 'dev_user',
-    role: 'admin' as const,
+    id: user?.id || 'dev-user-001',
+    email: user?.email || 'dev@venturo.app',
+    username: user?.username || 'dev_user',
+    role: (user?.role || 'admin') as 'admin' | 'corner' | 'user',
     level: 5,
     experience: 342,
     experience_lifetime: 1842

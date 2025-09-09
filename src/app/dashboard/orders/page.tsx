@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ModuleLayout } from '@/components/ModuleLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { Icons } from '@/components/icons';
 import { 
   Order, 
   OrderStatus, 
@@ -20,6 +21,7 @@ import { GroupApi } from '../groups/GroupApi';
 import { Group } from '../groups/models/GroupModel';
 
 export default function OrdersPage() {
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<Order[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -27,6 +29,14 @@ export default function OrdersPage() {
   const [groupFilter, setGroupFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [paymentFilter, setPaymentFilter] = useState<PaymentStatus | 'all'>('all');
+
+  // 處理 URL 參數
+  useEffect(() => {
+    const groupCode = searchParams.get('groupCode');
+    if (groupCode) {
+      setGroupFilter(groupCode);
+    }
+  }, [searchParams]);
 
   // 載入資料
   const loadData = async () => {
@@ -93,21 +103,21 @@ export default function OrdersPage() {
   // 取得狀態標籤樣式
   const getStatusBadgeClass = (status: OrderStatus) => {
     const colors = {
-      'warning': 'bg-yellow-100 text-yellow-800',
-      'info': 'bg-blue-100 text-blue-800',
-      'primary': 'bg-indigo-100 text-indigo-800',
-      'success': 'bg-green-100 text-green-800',
-      'error': 'bg-red-100 text-red-800'
+      'warning': 'badge-warning',
+      'info': 'badge-info',
+      'primary': 'badge-primary',
+      'success': 'badge-success',
+      'error': 'badge-danger'
     };
     return colors[ORDER_STATUS_COLORS[status] as keyof typeof colors];
   };
 
   const getPaymentBadgeClass = (status: PaymentStatus) => {
     const colors = {
-      'error': 'bg-red-100 text-red-800',
-      'warning': 'bg-yellow-100 text-yellow-800',
-      'info': 'bg-blue-100 text-blue-800',
-      'success': 'bg-green-100 text-green-800'
+      'error': 'badge-danger',
+      'warning': 'badge-warning',
+      'info': 'badge-info',
+      'success': 'badge-success'
     };
     return colors[PAYMENT_STATUS_COLORS[status] as keyof typeof colors];
   };
@@ -121,50 +131,51 @@ export default function OrdersPage() {
   };
 
   return (
-    <ModuleLayout>
-      <PageHeader 
-        title="訂單管理"
-        subtitle="管理所有訂單資訊與付款狀態"
-        icon="📄"
-        actions={
+    <ModuleLayout
+      header={{
+        icon: Icons.orders,
+        title: "訂單管理",
+        subtitle: "管理所有訂單資訊與付款狀態",
+        actions: (
           <>
             <div className="order-stats">
               <div className="stat-item">
-                <span className="stat-number">{stats.totalOrders}</span>
+                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{stats.totalOrders}</span>
                 <span className="stat-label">總訂單數</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number">{formatCurrency(stats.totalAmount)}</span>
+                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{formatCurrency(stats.totalAmount)}</span>
                 <span className="stat-label">總金額</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number text-green-600">{formatCurrency(stats.paidAmount)}</span>
+                <span className="stat-number text-success">{formatCurrency(stats.paidAmount)}</span>
                 <span className="stat-label">已收款</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number text-red-600">{formatCurrency(stats.unpaidAmount)}</span>
+                <span className="stat-number text-danger">{formatCurrency(stats.unpaidAmount)}</span>
                 <span className="stat-label">待收款</span>
               </div>
             </div>
             <Link
               href="/dashboard/orders/new"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="btn-primary"
             >
               + 新增訂單
             </Link>
           </>
-        }
-      />
+        )
+      }}
+    >
 
       {/* 搜尋和篩選區 */}
-      <div className="filter-section">
+      <div className="filter-section" style={{ background: "rgba(255, 255, 255, 0.9)", borderRadius: 16, padding: 24, border: "1px solid rgba(201, 169, 97, 0.2)", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)", backdropFilter: "blur(10px)", marginBottom: 24 }}>
         <div className="flex flex-wrap gap-4">
           {/* 搜尋框 */}
           <div className="flex-1 min-w-[200px]">
             <input
               type="text"
               placeholder="搜尋訂單號、聯絡人、電話..."
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -172,7 +183,7 @@ export default function OrdersPage() {
 
           {/* 團號篩選 */}
           <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
             value={groupFilter}
             onChange={(e) => setGroupFilter(e.target.value)}
           >
@@ -186,7 +197,7 @@ export default function OrdersPage() {
 
           {/* 訂單狀態篩選 */}
           <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as OrderStatus | 'all')}
           >
@@ -200,7 +211,7 @@ export default function OrdersPage() {
 
           {/* 付款狀態篩選 */}
           <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value as PaymentStatus | 'all')}
           >
@@ -215,7 +226,7 @@ export default function OrdersPage() {
       </div>
 
       {/* 訂單列表 */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="unified-table" style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)", border: "1px solid rgba(201, 169, 97, 0.2)" }}>
         {loading ? (
           <div className="p-8 text-center text-gray-500">載入中...</div>
         ) : orders.length === 0 ? (
@@ -225,7 +236,7 @@ export default function OrdersPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead style={{ background: "linear-gradient(135deg, #c9a961 0%, #b8975a 100%)" }}>
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     訂單編號

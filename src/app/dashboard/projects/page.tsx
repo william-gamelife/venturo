@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ModuleLayout } from '@/components/ModuleLayout'
-import { PageHeader } from '@/components/PageHeader'
 import { Button } from '@/components/ui/button'
+import { Icons } from '@/components/icons'
 import { useProjectStore, PROJECT_PHASES } from '@/lib/stores/project-store'
 
 export default function ProjectsPage() {
@@ -40,40 +40,39 @@ export default function ProjectsPage() {
   }
 
   return (
-    <ModuleLayout>
-      <PageHeader 
-        title="專案管理"
-        subtitle="管理所有進行中的旅遊專案"
-        icon="📋"
-        actions={
-          <>
-            <div className="project-stats">
-              <div className="stat-item">
-                <span className="stat-number">{projects.length}</span>
-                <span className="stat-label">總專案數</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number text-blue-600">
-                  {projects.filter(p => p.status === '執行中').length}
-                </span>
-                <span className="stat-label">執行中</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number text-yellow-600">
-                  {projects.filter(p => p.status === '規劃中').length}
-                </span>
-                <span className="stat-label">規劃中</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number text-green-600">
-                  {projects.filter(p => p.status === '已完成').length}
-                </span>
-                <span className="stat-label">已完成</span>
-              </div>
+    <ModuleLayout
+      header={{
+        icon: Icons.projects,
+        title: "專案管理",
+        subtitle: "管理所有進行中的旅遊專案",
+        actions: (
+          <div className="project-stats">
+            <div className="stat-item">
+              <span className="stat-number">{projects.length}</span>
+              <span className="stat-label">總專案數</span>
             </div>
-          </>
-        }
-      />
+            <div className="stat-item">
+              <span className="stat-number text-info">
+                {projects.filter(p => p.status === '執行中').length}
+              </span>
+              <span className="stat-label">執行中</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number text-warning">
+                {projects.filter(p => p.status === '規劃中').length}
+              </span>
+              <span className="stat-label">規劃中</span>
+            </div>
+            <div className="stat-item">
+              <span className="stat-number text-success">
+                {projects.filter(p => p.status === '已完成').length}
+              </span>
+              <span className="stat-label">已完成</span>
+            </div>
+          </div>
+        )
+      }}
+    >
 
       {/* 搜尋和篩選區 */}
       <div className="filter-section">
@@ -103,7 +102,7 @@ export default function ProjectsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredProjects.length === 0 ? (
           <div className="col-span-full bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-            <p className="text-gray-500">
+            <p className="text-muted">
               {searchTerm || statusFilter !== 'all' 
                 ? '沒有符合條件的專案' 
                 : '尚無專案，從報價單成交後會自動建立專案'}
@@ -124,19 +123,19 @@ export default function ProjectsPage() {
                 {/* 專案卡片頭部 */}
                 <div className="p-4 border-b border-gray-100">
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-lg text-gray-900">
+                    <h3 className="font-semibold text-lg text-primary">
                       {project.name}
                     </h3>
                     <span className={`px-2 py-1 text-xs rounded-full ${
-                      project.status === '執行中' ? 'bg-blue-100 text-blue-700' :
-                      project.status === '規劃中' ? 'bg-yellow-100 text-yellow-700' :
-                      project.status === '已完成' ? 'bg-green-100 text-green-700' :
-                      'bg-gray-100 text-gray-700'
+                      project.status === '執行中' ? 'badge-info' :
+                      project.status === '規劃中' ? 'badge-warning' :
+                      project.status === '已完成' ? 'badge-success' :
+                      'badge-primary'
                     }`}>
                       {project.status}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-muted">
                     {project.clientName}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">

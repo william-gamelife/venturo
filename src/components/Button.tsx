@@ -44,7 +44,7 @@ export function Button({ variant = 'primary', size = 'md', icon, children, onCli
         }
         
         .btn-primary {
-          background: linear-gradient(135deg, #f4a460, #2f4f2f);
+          background: linear-gradient(135deg, var(--primary), var(--primary-dark));
           color: white;
         }
         
@@ -55,7 +55,7 @@ export function Button({ variant = 'primary', size = 'md', icon, children, onCli
         
         .btn-secondary {
           background: white;
-          color: #f4a460;
+          color: var(--primary);
           border: 1px solid rgba(244, 164, 96, 0.3);
         }
         
@@ -66,12 +66,12 @@ export function Button({ variant = 'primary', size = 'md', icon, children, onCli
         
         .btn-ghost {
           background: transparent;
-          color: #6d685f;
+          color: var(--text-secondary);
         }
         
         .btn-ghost:hover {
           background: rgba(244, 164, 96, 0.1);
-          color: #f4a460;
+          color: var(--primary);
         }
         
         .btn-icon {

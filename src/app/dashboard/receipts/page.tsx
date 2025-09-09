@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ModuleLayout } from '@/components/ModuleLayout';
-import { PageHeader } from '@/components/PageHeader';
+import { Icons } from '@/components/icons';
 import { 
   Receipt,
   RECEIPT_STATUS,
@@ -83,10 +83,10 @@ export default function ReceiptsPage() {
   // 取得狀態標籤樣式
   const getStatusBadgeClass = (status: number) => {
     const colors = {
-      'warning': 'bg-yellow-100 text-yellow-800',
-      'info': 'bg-blue-100 text-blue-800',
-      'success': 'bg-green-100 text-green-800',
-      'error': 'bg-red-100 text-red-800'
+      'warning': 'badge-warning',
+      'info': 'badge-info',
+      'success': 'badge-success',
+      'error': 'badge-danger'
     };
     return colors[RECEIPT_STATUS_COLORS[status as keyof typeof RECEIPT_STATUS_COLORS] as keyof typeof colors];
   };
@@ -102,55 +102,56 @@ export default function ReceiptsPage() {
   };
 
   return (
-    <ModuleLayout>
-      <PageHeader 
-        title="收款單管理"
-        subtitle="管理所有客戶付款記錄"
-        icon="💰"
-        actions={
+    <ModuleLayout
+      header={{
+        icon: Icons.receipts,
+        title: "收款單管理",
+        subtitle: "管理所有客戶付款記錄",
+        actions: (
           <>
             <div className="receipt-stats">
               <div className="stat-item">
-                <span className="stat-number">{stats.count}</span>
+                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{stats.count}</span>
                 <span className="stat-label">收款單數</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number">{formatCurrency(stats.totalAmount)}</span>
+                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{formatCurrency(stats.totalAmount)}</span>
                 <span className="stat-label">應收總額</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number text-green-600">{formatCurrency(stats.actualAmount)}</span>
+                <span className="stat-number text-success">{formatCurrency(stats.actualAmount)}</span>
                 <span className="stat-label">已收金額</span>
               </div>
               <div className="stat-item">
-                <span className="stat-number text-orange-600">{formatCurrency(stats.pendingAmount)}</span>
+                <span className="stat-number text-warning">{formatCurrency(stats.pendingAmount)}</span>
                 <span className="stat-label">待收金額</span>
               </div>
             </div>
             <div className="action-buttons">
               <Link
                 href="/dashboard/receipts/new"
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="btn-primary"
               >
                 + 新增收款單
               </Link>
               <Link
                 href="/dashboard/receipts/batch-create"
-                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="btn-primary"
               >
                 批次建立
               </Link>
             </div>
           </>
-        }
-      />
+        )
+      }}
+    >
 
       {/* 篩選區 */}
-      <div className="filter-section">
+      <div className="filter-section" style={{ background: "rgba(255, 255, 255, 0.9)", borderRadius: 16, padding: 24, border: "1px solid rgba(201, 169, 97, 0.2)", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)", backdropFilter: "blur(10px)", marginBottom: 24 }}>
         <div className="flex flex-wrap gap-4">
           {/* 狀態篩選 */}
           <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
           >
@@ -164,7 +165,7 @@ export default function ReceiptsPage() {
 
           {/* 訂單篩選 */}
           <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
             value={orderFilter}
             onChange={(e) => setOrderFilter(e.target.value)}
           >
@@ -179,7 +180,7 @@ export default function ReceiptsPage() {
       </div>
 
       {/* 收款單列表 */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="unified-table" style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)", border: "1px solid rgba(201, 169, 97, 0.2)" }}>
         {loading ? (
           <div className="p-8 text-center text-gray-500">載入中...</div>
         ) : receipts.length === 0 ? (
@@ -189,7 +190,7 @@ export default function ReceiptsPage() {
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead style={{ background: "linear-gradient(135deg, #c9a961 0%, #b8975a 100%)" }}>
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     收款單號

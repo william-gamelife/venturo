@@ -3,21 +3,20 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { authManager } from '@/lib/auth'
-import { GameDebugGrid } from '@/components/GameDebugGrid'
-import { SimpleGridHelper } from '@/components/SimpleGridHelper'
+
 import { Icons } from '@/components/icons'
 import { Button } from '@/components/Button'
+import { ModeProvider, useMode } from '@/contexts/ModeContext'
 
 interface SidebarProps {
   children: React.ReactNode
 }
 
-export default function DashboardLayout({ children }: SidebarProps) {
+function DashboardLayoutContent({ children }: SidebarProps) {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isMobile, setIsMobile] = useState(false)
-  const [currentMode, setCurrentMode] = useState<'game' | 'corner'>('game')
-  const [showDebugGrid, setShowDebugGrid] = useState(false)
-  const [showSimpleGrid, setShowSimpleGrid] = useState(false)
+
+  const { currentMode, toggleMode } = useMode()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -36,16 +35,11 @@ export default function DashboardLayout({ children }: SidebarProps) {
   useEffect(() => {
     const user = authManager.getCurrentUser()
     if (!user) {
-      router.push('/')
+      // router.push('/') // 🔓 已停用登入重定向
       return
     }
     setCurrentUser(user)
     
-    // 載入用戶的模式偏好
-    const savedMode = localStorage.getItem(`gamelife_mode_${user.id}`)
-    if (savedMode === 'corner' || savedMode === 'game') {
-      setCurrentMode(savedMode)
-    }
 
     return () => {
       // Cleanup function
@@ -53,19 +47,17 @@ export default function DashboardLayout({ children }: SidebarProps) {
   }, [router])
 
   const handleLogout = async () => {
+    // 清除新角色登入系統的資料
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('dev_mode')
+      localStorage.removeItem('dev_user')
+      localStorage.removeItem('venturo_last_character')
+    }
+    
+    // 也清除舊系統的資料
     await authManager.logout()
   }
 
-  const toggleMode = () => {
-    const newMode = currentMode === 'game' ? 'corner' : 'game'
-    setCurrentMode(newMode)
-    
-    if (currentUser) {
-      localStorage.setItem(`gamelife_mode_${currentUser.id}`, newMode)
-    }
-    
-    // React 狀態更新會自動觸發重新渲染，不需要頁面重載
-  }
 
   const isActive = (href: string) => {
     if (href === '/dashboard') {
@@ -202,6 +194,21 @@ export default function DashboardLayout({ children }: SidebarProps) {
       )
     },
     {
+      id: 'contracts',
+      name: '合約管理',
+      href: '/dashboard/contracts',
+      modes: ['corner'], // 只在角落模式顯示
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14,2 14,8 20,8"/>
+          <path d="M16 10h-2"/>
+          <path d="M16 14h-2"/>
+          <path d="M16 18h-2"/>
+        </svg>
+      )
+    },
+    {
       id: 'invoices',
       name: '請款單',
       href: '/dashboard/invoices',
@@ -244,18 +251,6 @@ export default function DashboardLayout({ children }: SidebarProps) {
       ),
       roles: ['SUPER_ADMIN', 'BUSINESS_ADMIN']
     },
-    {
-      id: 'settings',
-      name: '系統設定',
-      href: '/dashboard/settings',
-      modes: ['game', 'corner'],
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/>
-        </svg>
-      )
-    }
   ]
 
   // 根據當前模式和用戶權限過濾菜單
@@ -283,13 +278,13 @@ export default function DashboardLayout({ children }: SidebarProps) {
     <div className="dashboard-layout">
       {/* 側邊欄 */}
       <div className="sidebar">
-        <div className="sidebar-logo" data-debug-pos="sidebar-logo">
+        <div className="sidebar-logo">
           <div className="logo-icon">V</div>
           <div className="logo-text">VENTURO</div>
         </div>
         
         {/* 模式切換按鈕 */}
-        <div className="mode-switcher" data-debug-pos="mode-switcher" style={{ transform: 'translateY(-10px)' }}>
+        <div className="mode-switcher" style={{ transform: 'translateY(-10px)' }}>
           <div className="toggle-container" onClick={toggleMode}>
             <div className={`toggle-slider ${currentMode}`}></div>
             <div className="toggle-labels">
@@ -306,7 +301,6 @@ export default function DashboardLayout({ children }: SidebarProps) {
                 <a
                   href={item.href}
                   className={`nav-link ${isActive(item.href) ? 'active' : ''}`}
-                  data-debug-pos={`nav-${item.id}`}
                   onClick={(e) => {
                     e.preventDefault()
                     router.push(item.href)
@@ -321,52 +315,12 @@ export default function DashboardLayout({ children }: SidebarProps) {
           
           {/* 用戶資訊和登出按鈕 */}
           <div className="sidebar-footer">
-            <div className="user-info-sidebar">
-              <div className="user-name">{currentUser.display_name || currentUser.username}</div>
-              <div className="user-role">
-                {currentUser.role === 'SUPER_ADMIN' ? '系統管理員' : 
-                 currentUser.role === 'BUSINESS_ADMIN' ? '業務管理員' : '一般使用者'}
-              </div>
+            <div className="user-info-compact">
+              <span className="user-nickname">{currentUser.display_name || currentUser.username}</span>
+              <button className="logout-btn" onClick={handleLogout}>
+                登出
+              </button>
             </div>
-            <button 
-              className="simple-grid-btn" 
-              onClick={() => setShowSimpleGrid(!showSimpleGrid)}
-              title="簡單視覺網格 (Ctrl+G)"
-              data-debug-pos="simple-grid-btn"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 3h18v18H3z"/>
-                <path d="M9 3v18"/>
-                <path d="M15 3v18"/>
-                <path d="M3 9h18"/>
-                <path d="M3 15h18"/>
-              </svg>
-              {showSimpleGrid ? '關閉網格' : '顯示網格'}
-            </button>
-            
-            <button 
-              className="debug-grid-btn" 
-              onClick={() => setShowDebugGrid(!showDebugGrid)}
-              title="完整調試模式"
-              data-debug-pos="debug-btn"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <path d="M9 3v18"/>
-                <path d="M15 3v18"/>
-                <path d="M3 9h18"/>
-                <path d="M3 15h18"/>
-              </svg>
-              {showDebugGrid ? '關閉調試' : '調試模式'}
-            </button>
-            <Button 
-              variant="primary" 
-              icon={Icons.logoutSmall}
-              onClick={handleLogout}
-              fullWidth={true}
-            >
-              登出
-            </Button>
           </div>
         </nav>
       </div>
@@ -378,17 +332,7 @@ export default function DashboardLayout({ children }: SidebarProps) {
         </div>
       </div>
 
-      {/* 全域遊戲調試網格 */}
-      <GameDebugGrid 
-        isEnabled={showDebugGrid}
-        onToggle={() => setShowDebugGrid(!showDebugGrid)}
-      />
-      
-      {/* 簡單視覺網格 */}
-      <SimpleGridHelper
-        isEnabled={showSimpleGrid}
-        onToggle={() => setShowSimpleGrid(!showSimpleGrid)}
-      />
+
 
       <style jsx>{`
         .dashboard-layout {
@@ -405,13 +349,14 @@ export default function DashboardLayout({ children }: SidebarProps) {
           height: 100vh;
           background: rgba(255, 253, 250, 0.95);
           backdrop-filter: blur(20px);
-          padding: 24px 20px 280px 20px;
-          border-right: 1px solid rgba(201, 169, 97, 0.2);
+          padding: 24px 20px 80px 20px; /* 減少底部間距 */
+          /* border-right: 隱藏了醇髙的邊框 */
           display: flex;
           flex-direction: column;
           z-index: 100;
           overflow-y: auto;
           overflow-x: hidden;
+          transition: all 0.3s ease; /* 添加動畫效果 */
         }
 
         .sidebar-logo {
@@ -606,91 +551,59 @@ export default function DashboardLayout({ children }: SidebarProps) {
           width: 100%;
         }
 
-        /* 側邊欄底部區域 */
+        /* 緊密版底部區域 */
         .sidebar-footer {
           position: fixed;
           bottom: 0;
           left: 0;
           width: 200px;
-          padding: 20px;
-          padding-top: 20px;
-          border-top: 1px solid rgba(201, 169, 97, 0.2);
-          background: linear-gradient(to top, 
-            rgba(255, 253, 250, 1) 0%,
-            rgba(255, 253, 250, 1) 90%,
-            rgba(255, 253, 250, 0.95) 100%);
+          padding: 12px 16px; /* 減少間距 */
+          /* border-top: 隱藏了醇髙的上邊框 */
+          background: rgba(255, 253, 250, 0.98);
           backdrop-filter: blur(20px);
-          box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
           z-index: 101;
         }
 
-        .user-info-sidebar {
-          padding: 16px 0;
-          text-align: center;
+        /* 緊密版用戶信息 */
+        .user-info-compact {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 0;
         }
 
-        .user-name {
-          font-weight: 600;
-          color: #3a3833;
-          font-size: 14px;
-          margin-bottom: 4px;
-        }
-
-        .user-role {
-          color: #6d685f;
-          font-size: 12px;
-        }
-
-
-        .simple-grid-btn {
-          width: 100%;
-          padding: 8px 16px;
-          background: rgba(255, 165, 0, 0.1);
-          color: #ffa500;
-          border: 1px solid rgba(255, 165, 0, 0.3);
-          border-radius: 8px;
-          cursor: pointer;
+        .user-nickname {
           font-weight: 500;
-          font-size: 12px;
-          transition: all 0.2s ease;
+          color: var(--text-primary);
+          font-size: 13px;
+          flex: 1;
+          text-align: left;
+        }
+
+        .logout-btn {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 6px;
-          margin-bottom: 8px;
-        }
-
-        .simple-grid-btn:hover {
-          background: rgba(255, 165, 0, 0.2);
-          border-color: rgba(255, 165, 0, 0.5);
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(255, 165, 0, 0.2);
-        }
-
-        .debug-grid-btn {
-          width: 100%;
-          padding: 8px 16px;
-          background: rgba(0, 255, 255, 0.1);
-          color: #00ffff;
-          border: 1px solid rgba(0, 255, 255, 0.3);
-          border-radius: 8px;
-          cursor: pointer;
+          padding: 6px 10px;
+          background: var(--primary);
+          color: white;
+          border: none;
+          border-radius: var(--radius-sm);
+          font-size: 11px;
           font-weight: 500;
-          font-size: 12px;
+          cursor: pointer;
           transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 6px;
-          margin-bottom: 8px;
+          min-width: 60px;
         }
 
-        .debug-grid-btn:hover {
-          background: rgba(0, 255, 255, 0.2);
-          border-color: rgba(0, 255, 255, 0.5);
+        .logout-btn:hover {
+          background: var(--primary-hover);
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 255, 255, 0.2);
         }
+
+
+
+
 
 
         .loading-spinner {
@@ -814,5 +727,14 @@ export default function DashboardLayout({ children }: SidebarProps) {
         }
       `}</style>
     </div>
+  )
+}
+
+// Wrapper 組件提供 ModeProvider
+export default function DashboardLayout({ children }: SidebarProps) {
+  return (
+    <ModeProvider>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </ModeProvider>
   )
 }

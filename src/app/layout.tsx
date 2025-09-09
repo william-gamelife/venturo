@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/lib/theme";
 import { Notifications } from "@/components/ui/Notifications";
-import { DevTools } from "@/components/dev/DevTools";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "VENTURO | 智能生活管理平台",
@@ -33,12 +26,16 @@ export default function RootLayout({
         )}
       </head>
       <body
-        className={`${inter.variable} antialiased min-h-screen transition-colors duration-300`}
+        style={{
+          fontFamily: 'var(--font-system)',
+          minHeight: '100vh',
+          transition: 'all 0.3s ease',
+          background: 'var(--background)'
+        }}
       >
         <ThemeProvider>
           {children}
           <Notifications />
-          <DevTools />
         </ThemeProvider>
       </body>
     </html>

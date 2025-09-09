@@ -1,6 +1,7 @@
 /**
  * BaseAPI - 統一的 API 抽象層
- * 參考 cornerERP 架構設計，減少重複程式碼
+ * 完全本地化版本，使用 LocalStorage 作為資料儲存
+ * 包含快取機制和錯誤處理
  */
 
 // 基礎資料模型介面
@@ -41,6 +42,47 @@ export interface BulkOperation<T> {
  * BaseAPI 類別 - 提供統一的 CRUD 操作
  */
 export class BaseAPI {
+  // 快取機制
+  private static cache = new Map<string, { data: any, timestamp: number }>()
+  private static CACHE_DURATION = 5 * 60 * 1000 // 5分鐘快取
+
+  /**
+   * 取得快取資料
+   */
+  private static getCache<T>(key: string): T[] | null {
+    const cached = this.cache.get(key)
+    if (!cached) return null
+    
+    const now = Date.now()
+    if (now - cached.timestamp > this.CACHE_DURATION) {
+      this.cache.delete(key)
+      return null
+    }
+    
+    return cached.data
+  }
+
+  /**
+   * 設定快取
+   */
+  private static setCache(key: string, data: any): void {
+    this.cache.set(key, {
+      data,
+      timestamp: Date.now()
+    })
+  }
+
+  /**
+   * 清除快取
+   */
+  static clearCache(module?: string, userId?: string): void {
+    if (module && userId) {
+      const key = `gamelife_${module}_${userId}`
+      this.cache.delete(key)
+    } else {
+      this.cache.clear()
+    }
+  }
   /**
    * 載入模組資料
    */
@@ -51,10 +93,20 @@ export class BaseAPI {
   ): Promise<T[]> {
     try {
       const key = `gamelife_${module}_${userId}`
+      
+      // 先檢查快取
+      const cached = this.getCache<T>(key)
+      if (cached) {
+        console.log(`⚡ 從快取載入 ${module}:`, cached.length, '筆')
+        return cached
+      }
+      
+      // 從 LocalStorage 載入
       const localData = localStorage.getItem(key)
       
       if (localData) {
         const parsed = JSON.parse(localData)
+        this.setCache(key, parsed) // 存入快取
         console.log(`✅ 載入 ${module} 資料:`, parsed.length, '筆')
         return parsed
       }
@@ -88,7 +140,10 @@ export class BaseAPI {
       
       localStorage.setItem(key, JSON.stringify(dataWithTimestamp))
       
-      // 記錄同步狀態
+      // 清除快取，確保下次載入最新資料
+      this.clearCache(module, userId)
+      
+      // 記錄同步狀態（保留給未來雲端同步用）
       this.markForSync(module, userId)
       
       console.log(`✅ 儲存 ${module} 成功:`, data.length, '筆')
@@ -361,8 +416,13 @@ export class BaseAPI {
    * 產生唯一 ID
    */
   private static generateId(): string {
-    return `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const timestamp = Date.now().toString(36)
+    const randomStr = Math.random().toString(36).substr(2, 9)
+    const counter = (this.idCounter = (this.idCounter || 0) + 1)
+    return `${timestamp}_${randomStr}_${counter}`
   }
+  
+  private static idCounter = 0
 
   /**
    * 取得同步狀態
@@ -390,12 +450,99 @@ export class BaseAPI {
    * 清除指定用戶的所有資料
    */
   static clearAllData(userId: string): void {
-    const modules = ['todos', 'projects', 'timebox', 'settings', 'users']
+    const modules = ['todos', 'projects', 'timebox', 'settings', 'users', 'groups', 'receipts', 'invoices', 'orders']
     modules.forEach(module => {
       const key = `gamelife_${module}_${userId}`
       localStorage.removeItem(key)
     })
+    this.clearCache() // 清除所有快取
     console.log(`🗑️ 已清除用戶 ${userId} 的所有資料`)
+  }
+
+  /**
+   * 取得資料統計
+   */
+  static getDataStats(userId: string): Record<string, number> {
+    const stats: Record<string, number> = {}
+    const modules = ['todos', 'projects', 'timebox', 'settings', 'users', 'groups', 'receipts', 'invoices', 'orders']
+    
+    modules.forEach(module => {
+      const key = `gamelife_${module}_${userId}`
+      const data = localStorage.getItem(key)
+      if (data) {
+        try {
+          const parsed = JSON.parse(data)
+          stats[module] = Array.isArray(parsed) ? parsed.length : 0
+        } catch {
+          stats[module] = 0
+        }
+      } else {
+        stats[module] = 0
+      }
+    })
+    
+    return stats
+  }
+
+  /**
+   * 匯出所有資料（備份用）
+   */
+  static exportAllData(userId: string): string {
+    const exportData: Record<string, any> = {
+      userId,
+      exportDate: new Date().toISOString(),
+      version: '1.0',
+      data: {}
+    }
+    
+    const modules = ['todos', 'projects', 'timebox', 'settings', 'users', 'groups', 'receipts', 'invoices', 'orders']
+    
+    modules.forEach(module => {
+      const key = `gamelife_${module}_${userId}`
+      const data = localStorage.getItem(key)
+      if (data) {
+        try {
+          exportData.data[module] = JSON.parse(data)
+        } catch {
+          exportData.data[module] = []
+        }
+      }
+    })
+    
+    return JSON.stringify(exportData, null, 2)
+  }
+
+  /**
+   * 匯入資料（還原用）
+   */
+  static importData(jsonString: string, userId: string): ApiResponse<void> {
+    try {
+      const importData = JSON.parse(jsonString)
+      
+      if (!importData.data) {
+        return {
+          success: false,
+          error: '無效的匯入格式'
+        }
+      }
+      
+      Object.entries(importData.data).forEach(([module, data]) => {
+        const key = `gamelife_${module}_${userId}`
+        localStorage.setItem(key, JSON.stringify(data))
+      })
+      
+      this.clearCache() // 清除快取
+      
+      return {
+        success: true,
+        message: '資料匯入成功'
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : '匯入失敗'
+      }
+    }
   }
 }
 

@@ -1,19 +1,36 @@
 /**
- * API 統一匯出點
- * 所有 API 模組從這裡匯出
+ * API 統一導出
+ * 所有 API 端點和工具從這裡導出
  */
 
-// 基礎 API
-export { BaseAPI } from '@/lib/base-api'
-export type { BaseModel, ApiResponse, QueryParams, BulkOperation } from '@/lib/base-api'
+// 導出 API 客戶端
+export { APIClient, apiClient } from './client'
+export type { RequestOptions } from './client'
 
-// 模組 API
-export { TodoAPI } from './TodoAPI'
-export type { Todo, TodoStats } from './TodoAPI'
-export { UnifiedTodoAPI } from './UnifiedTodoAPI'
-export type { UnifiedTodo } from './UnifiedTodoAPI'
+// 導出所有 API 端點
+export { todosAPI } from './endpoints/todos'
+export { projectsAPI } from './endpoints/projects'
+export { groupsAPI } from './endpoints/groups'
+export { ordersAPI } from './endpoints/orders'
 
-// 未來可以加入更多模組 API
-// export { ProjectAPI } from './ProjectAPI'
-// export { TimeboxAPI } from './TimeboxAPI'
-// export { FinanceAPI } from './FinanceAPI'
+// 導出 API 類型
+export type { TodoQueryParams, TodoStats } from './endpoints/todos'
+export type { ProjectQueryParams, ProjectStats } from './endpoints/projects'
+export type { Group, GroupStatus, GroupQueryParams } from './endpoints/groups'
+export type { Order, OrderType, OrderQueryParams } from './endpoints/orders'
+
+// 統一的 API 物件（方便使用）
+import { todosAPI } from './endpoints/todos'
+import { projectsAPI } from './endpoints/projects'
+import { groupsAPI } from './endpoints/groups'
+import { ordersAPI } from './endpoints/orders'
+
+export const api = {
+  todos: todosAPI,
+  projects: projectsAPI,
+  groups: groupsAPI,
+  orders: ordersAPI,
+} as const
+
+// 預設導出
+export default api

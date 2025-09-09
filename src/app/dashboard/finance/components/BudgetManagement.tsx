@@ -28,99 +28,11 @@ export function BudgetManagement() {
   const [selectedPeriod, setSelectedPeriod] = useState('current')
   const [showAddBudget, setShowAddBudget] = useState(false)
 
-  // 預算分類資料
-  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([
-    {
-      id: '1',
-      name: '飲食',
-      icon: '🍽',
-      color: '#EF4444',
-      budgeted: 15000,
-      spent: 12500,
-      remaining: 2500,
-      alertThreshold: 0.8
-    },
-    {
-      id: '2',
-      name: '交通',
-      icon: '🚗',
-      color: '#3B82F6',
-      budgeted: 8000,
-      spent: 6200,
-      remaining: 1800,
-      alertThreshold: 0.8
-    },
-    {
-      id: '3',
-      name: '娛樂',
-      icon: '',
-      color: '#8B5CF6',
-      budgeted: 5000,
-      spent: 3800,
-      remaining: 1200,
-      alertThreshold: 0.8
-    },
-    {
-      id: '4',
-      name: '購物',
-      icon: '',
-      color: '#F59E0B',
-      budgeted: 10000,
-      spent: 11500,
-      remaining: -1500,
-      alertThreshold: 0.8
-    },
-    {
-      id: '5',
-      name: '生活用品',
-      icon: '',
-      color: '#10B981',
-      budgeted: 3000,
-      spent: 2100,
-      remaining: 900,
-      alertThreshold: 0.8
-    }
-  ])
+  // TODO: 載入實際預算分類資料
+  const [budgetCategories, setBudgetCategories] = useState<BudgetCategory[]>([])
 
-  // 成就系統
-  const [achievements, setAchievements] = useState<Achievement[]>([
-    {
-      id: '1',
-      title: '預算新手',
-      description: '完成第一次預算設定',
-      icon: '',
-      unlocked: true,
-      progress: 1,
-      target: 1
-    },
-    {
-      id: '2',
-      title: '節約達人',
-      description: '連續3個月未超預算',
-      icon: '',
-      unlocked: false,
-      progress: 2,
-      target: 3
-    },
-    {
-      id: '3',
-      title: '理財高手',
-      description: '儲蓄率達到30%以上',
-      icon: '',
-      unlocked: true,
-      progress: 1,
-      target: 1
-    },
-    {
-      id: '4',
-      title: '記帳勇者',
-      description: '連續記帳30天',
-      icon: '',
-      unlocked: false,
-      progress: 18,
-      target: 30
-    }
-  ])
+  // TODO: 載入實際成就資料
+  const [achievements, setAchievements] = useState<Achievement[]>([])
 
   const totalBudgeted = budgetCategories.reduce((sum, cat) => sum + cat.budgeted, 0)
   const totalSpent = budgetCategories.reduce((sum, cat) => sum + cat.spent, 0)

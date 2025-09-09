@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation'
 import { checkAuth, getMockTodos, getMockUserProfile } from '@/lib/auth-utils'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Icons } from '@/components/icons'
+import TaskDetailDialog from '@/components/TaskDetailDialog'
+import { useMode } from '@/contexts/ModeContext'
 
 // 型別定義
 interface Todo {
@@ -39,11 +41,16 @@ export default function TodosPage() {
   const [draggedTask, setDraggedTask] = useState<Todo | null>(null)
   const [showCompletedDrawer, setShowCompletedDrawer] = useState(false)
   const [hoveredCard, setHoveredCard] = useState<string | null>(null)
+  const [selectedTask, setSelectedTask] = useState<Todo | null>(null)
+  const [showTaskDialog, setShowTaskDialog] = useState(false)
+  const [dialogPosition, setDialogPosition] = useState({ x: 0, y: 0 })
+  const { currentMode } = useMode()
 
   // 載入使用者資料和待辦事項
   useEffect(() => {
     loadUserAndTodos()
   }, [])
+
 
   const loadUserAndTodos = async () => {
     try {
@@ -154,6 +161,43 @@ export default function TodosPage() {
   const handleDeleteTodo = async (id: string) => {
     setTodos(todos.filter(todo => todo.id !== id))
     showNotification('任務已刪除', 'info')
+  }
+
+  // 打開任務詳細對話框
+  const handleTaskClick = (task: Todo, event: React.MouseEvent) => {
+    const rect = event.currentTarget.getBoundingClientRect()
+    const x = rect.left + rect.width / 2  // 卡片中心X座標
+    const y = rect.top + rect.height / 2  // 卡片中心Y座標
+    
+    setDialogPosition({ x, y })
+    setSelectedTask(task)
+    setShowTaskDialog(true)
+  }
+
+  // 關閉任務詳細對話框
+  const handleCloseTaskDialog = () => {
+    setShowTaskDialog(false)
+    setSelectedTask(null)
+  }
+
+  // 儲存任務變更
+  const handleSaveTask = (updatedData: Partial<Todo>) => {
+    if (!selectedTask) return
+
+    setTodos(todos.map(todo => 
+      todo.id === selectedTask.id 
+        ? { ...todo, ...updatedData }
+        : todo
+    ))
+
+    showNotification('任務已更新！', 'success')
+    handleCloseTaskDialog()
+  }
+
+  // 從對話框刪除任務
+  const handleDeleteFromDialog = (id: string) => {
+    handleDeleteTodo(id)
+    handleCloseTaskDialog()
   }
 
   // 拖曳處理函數
@@ -267,7 +311,9 @@ export default function TodosPage() {
                 onClick={(e) => openAddPopover('pending', e)}
                 title="新增任務"
               >
-                +
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </button>
             </div>
             <div 
@@ -284,13 +330,16 @@ export default function TodosPage() {
                   onDragEnd={handleDragEnd}
                   onMouseEnter={() => setHoveredCard(todo.id)}
                   onMouseLeave={() => setHoveredCard(null)}
+                  onClick={(e) => handleTaskClick(todo, e)}
                 >
-                  <h4 className="task-title">
-                    {todo.title}
-                  </h4>
-                  {todo.description && (
-                    <p className="task-desc">{todo.description}</p>
-                  )}
+                  <div className="task-content-layout">
+                    <h4 className="task-title">
+                      {todo.title}
+                    </h4>
+                    {todo.description && (
+                      <p className="task-desc">{todo.description}</p>
+                    )}
+                  </div>
                   
                   {/* Hover 時顯示的快捷按鈕 - 準備區也可以直接完成 */}
                   {hoveredCard === todo.id && (
@@ -326,7 +375,10 @@ export default function TodosPage() {
                           e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
                           e.currentTarget.style.color = '#10b981';
                         }}
-                        onClick={() => handleUpdateStatus(todo.id, 'completed')}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleUpdateStatus(todo.id, 'completed')
+                        }}
                         title="標記完成"
                       >
                         ✓
@@ -355,7 +407,10 @@ export default function TodosPage() {
                           e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
                           e.currentTarget.style.color = '#ef4444';
                         }}
-                        onClick={() => handleDeleteTodo(todo.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteTodo(todo.id)
+                        }}
                         title="刪除"
                       >
                         ✕
@@ -379,7 +434,9 @@ export default function TodosPage() {
                 onClick={(e) => openAddPopover('in_progress', e)}
                 title="新增任務"
               >
-                +
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
               </button>
             </div>
             <div 
@@ -396,13 +453,16 @@ export default function TodosPage() {
                   onDragEnd={handleDragEnd}
                   onMouseEnter={() => setHoveredCard(todo.id)}
                   onMouseLeave={() => setHoveredCard(null)}
+                  onClick={(e) => handleTaskClick(todo, e)}
                 >
-                  <h4 className="task-title">
-                    {todo.title}
-                  </h4>
-                  {todo.description && (
-                    <p className="task-desc">{todo.description}</p>
-                  )}
+                  <div className="task-content-layout">
+                    <h4 className="task-title">
+                      {todo.title}
+                    </h4>
+                    {todo.description && (
+                      <p className="task-desc">{todo.description}</p>
+                    )}
+                  </div>
                   
                   {/* Hover 時顯示的快捷按鈕 - 等待區也可以直接完成 */}
                   {hoveredCard === todo.id && (
@@ -438,7 +498,10 @@ export default function TodosPage() {
                           e.currentTarget.style.background = 'rgba(16, 185, 129, 0.1)';
                           e.currentTarget.style.color = '#10b981';
                         }}
-                        onClick={() => handleUpdateStatus(todo.id, 'completed')}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleUpdateStatus(todo.id, 'completed')
+                        }}
                         title="標記完成"
                       >
                         ✓
@@ -467,7 +530,10 @@ export default function TodosPage() {
                           e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)';
                           e.currentTarget.style.color = '#ef4444';
                         }}
-                        onClick={() => handleDeleteTodo(todo.id)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteTodo(todo.id)
+                        }}
                         title="刪除"
                       >
                         ✕
@@ -607,6 +673,17 @@ export default function TodosPage() {
         </div>
       </div>
 
+      {/* 任務詳細資訊對話框 */}
+      <TaskDetailDialog
+        isOpen={showTaskDialog}
+        onClose={handleCloseTaskDialog}
+        task={selectedTask}
+        onSave={handleSaveTask}
+        onDelete={handleDeleteFromDialog}
+        position={dialogPosition}
+        isCornerMode={currentMode === 'corner'}
+      />
+
       <style jsx>{`
         .loading {
           display: flex;
@@ -624,23 +701,28 @@ export default function TodosPage() {
         }
 
         .completed-btn {
-          padding: 8px 16px;
-          background: rgba(16, 185, 129, 0.1);
-          color: #10b981;
-          border: 1px solid rgba(16, 185, 129, 0.3);
-          border-radius: 8px;
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: var(--success-bg);
+          color: var(--success);
+          border: 1px solid var(--success);
+          border-radius: var(--radius-sm);
           cursor: pointer;
           font-weight: 500;
-          transition: all 0.2s ease;
+          transition: var(--animation-fast);
+          font-size: var(--font-size-sm);
         }
 
         .completed-btn:hover {
-          background: rgba(16, 185, 129, 0.2);
+          background: var(--success-hover);
+          color: var(--text-white);
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-sm);
         }
 
         .completed-btn.active {
-          background: #10b981;
-          color: white;
+          background: var(--success);
+          color: var(--text-white);
+          box-shadow: var(--shadow-md);
         }
 
         .view-toggles {
@@ -727,11 +809,11 @@ export default function TodosPage() {
         }
 
         .column-header.pending {
-          background: linear-gradient(135deg, #fbbf24, #f59e0b);
+          background: linear-gradient(135deg, var(--primary), var(--primary-hover));
         }
 
         .column-header.in-progress {
-          background: linear-gradient(135deg, #a78bfa, #8b5cf6);
+          background: linear-gradient(135deg, var(--secondary), var(--secondary-hover));
         }
 
         .column-header h3 {
@@ -766,26 +848,27 @@ export default function TodosPage() {
         }
 
         .tasks-container::-webkit-scrollbar-track {
-          background: rgba(201, 169, 97, 0.1);
+          background: var(--primary-bg);
           border-radius: 3px;
         }
 
         .tasks-container::-webkit-scrollbar-thumb {
-          background: rgba(201, 169, 97, 0.3);
+          background: var(--primary);
+          opacity: 0.3;
           border-radius: 3px;
         }
 
         .tasks-container::-webkit-scrollbar-thumb:hover {
-          background: rgba(201, 169, 97, 0.5);
+          background: var(--primary-hover);
+          opacity: 0.5;
         }
 
         .task-card {
-          background: white;
           border-radius: 12px;
           padding: 16px;
-          border: 1px solid rgba(201, 169, 97, 0.15);
+          border: 1px solid var(--border);
           transition: all 0.3s ease;
-          cursor: grab;
+          cursor: pointer;
           user-select: none;
           position: relative;
           flex-shrink: 0;
@@ -807,12 +890,20 @@ export default function TodosPage() {
           z-index: 1000;
         }
 
+        .task-content-layout {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          padding-right: 70px;
+          min-height: 40px;
+        }
+
         .task-title {
-          margin: 0 0 8px 0;
+          margin: 0;
           font-size: 15px;
           font-weight: 600;
           color: #3a3833;
-          padding-right: 70px;
+          line-height: 1.3;
         }
 
         .task-desc {
@@ -820,6 +911,7 @@ export default function TodosPage() {
           color: #6d685f;
           margin: 0;
           line-height: 1.4;
+          opacity: 0.8;
         }
 
         /* Popover 新增介面 */
@@ -994,19 +1086,21 @@ export default function TodosPage() {
           gap: 8px;
         }
 
-        /* 已完成抽屜 */
+        /* 已完成抽屜 - Venturo 風格 */
         .completed-drawer {
           position: fixed;
           top: 0;
           right: -400px;
           width: 400px;
           height: 100vh;
-          background: white;
-          box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
-          transition: right 0.3s ease;
+          background: var(--surface);
+          backdrop-filter: blur(20px);
+          box-shadow: var(--shadow-xl);
+          transition: right var(--animation-normal);
           z-index: 999;
           display: flex;
           flex-direction: column;
+          border-left: 1px solid var(--border);
         }
 
         .completed-drawer.open {
@@ -1017,41 +1111,57 @@ export default function TodosPage() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 20px;
-          border-bottom: 1px solid rgba(201, 169, 97, 0.2);
-          background: linear-gradient(135deg, #34d399, #10b981);
-          color: white;
+          padding: var(--spacing-lg);
+          border-bottom: 1px solid var(--border);
+          background: var(--gradient-card-bg);
+          color: var(--text-primary);
         }
 
         .drawer-header h3 {
           margin: 0;
-          font-size: 18px;
+          font-size: var(--font-size-lg);
+          font-weight: 600;
+          color: var(--primary-dark);
         }
 
         .close-drawer {
           width: 32px;
           height: 32px;
           border: none;
-          background: rgba(255, 255, 255, 0.2);
-          color: white;
-          border-radius: 8px;
+          background: var(--primary-bg);
+          color: var(--primary);
+          border-radius: var(--radius-sm);
           cursor: pointer;
-          font-size: 20px;
+          font-size: 16px;
           line-height: 1;
+          transition: var(--animation-fast);
+        }
+
+        .close-drawer:hover {
+          background: var(--primary);
+          color: var(--text-white);
+          transform: scale(1.05);
         }
 
         .drawer-content {
           flex: 1;
           overflow-y: auto;
-          padding: 20px;
+          padding: var(--spacing-lg);
         }
 
         .completed-task {
-          background: rgba(16, 185, 129, 0.05);
-          border-radius: 12px;
-          padding: 16px;
-          margin-bottom: 12px;
-          border: 1px solid rgba(16, 185, 129, 0.2);
+          background: var(--gradient-card-subtle-bg);
+          border-radius: var(--radius-md);
+          padding: var(--spacing-md);
+          margin-bottom: var(--spacing-sm);
+          border: var(--gradient-card-border);
+          box-shadow: var(--shadow-xs);
+          transition: var(--animation-fast);
+        }
+
+        .completed-task:hover {
+          transform: translateY(-1px);
+          box-shadow: var(--shadow-sm);
         }
 
         .task-info h4 {
@@ -1068,14 +1178,16 @@ export default function TodosPage() {
         }
 
         .complete-time {
-          font-size: 11px;
-          color: #10b981;
+          font-size: var(--font-size-xs);
+          color: var(--success);
+          font-weight: 500;
         }
 
         .empty-message {
           text-align: center;
-          color: #6d685f;
-          margin-top: 40px;
+          color: var(--text-secondary);
+          margin-top: var(--spacing-2xl);
+          font-size: var(--font-size-base);
         }
 
         @media (max-width: 768px) {

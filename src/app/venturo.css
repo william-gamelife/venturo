@@ -1,0 +1,758 @@
+/**
+ * 🎨 VENTURO 統一樣式系統 v3.0
+ * 整合所有樣式定義，消除重複
+ * 
+ * 結構：
+ * 1. 設計令牌 (Design Tokens)
+ * 2. 基礎樣式 (Base Styles)
+ * 3. 組件樣式 (Component Styles)
+ * 4. 主題系統 (Theme System)
+ * 5. 工具類別 (Utilities)
+ */
+
+/* ========================================
+   1. 設計令牌 - 單一來源
+   ======================================== */
+:root {
+  /* 🎨 核心色彩 - 莫蘭迪色系擴展 */
+  --primary: #D4C4A0;          /* 莫蘭迪金 */
+  --primary-hover: #c9a961;
+  --primary-light: #e8ddc4;
+  --primary-dark: #b8975a;
+  --primary-bg: rgba(212, 196, 160, 0.1);
+  
+  --secondary: #C4A4A7;        /* 灰玫瑰 */
+  --secondary-hover: #b8969a;
+  --secondary-bg: rgba(196, 164, 167, 0.1);
+  
+  /* 🎨 擴展莫蘭迪色彩 */
+  --sage-green: #9CAF88;       /* 鼠尾草綠 */
+  --sage-green-hover: #8a9c78;
+  --sage-green-bg: rgba(156, 175, 136, 0.1);
+  
+  --warm-gray: #B8B0A0;        /* 暖灰 */
+  --warm-gray-hover: #a69d8c;
+  --warm-gray-bg: rgba(184, 176, 160, 0.1);
+  
+  --fog-blue: #8B95A7;         /* 霧藍 */
+  --fog-blue-hover: #7a8497;
+  --fog-blue-bg: rgba(139, 149, 167, 0.1);
+  
+  --terracotta: #C4866B;       /* 赤陶色 */
+  --terracotta-hover: #b37659;
+  --terracotta-bg: rgba(196, 134, 107, 0.1);
+  
+  /* 🎨 功能色彩 - 莫蘭迪調色 */
+  --success: #8FA68E;          /* 苔綠 */
+  --success-hover: #7f967e;
+  --success-bg: rgba(143, 166, 142, 0.1);
+  
+  --warning: #D4A574;          /* 琥珀 */
+  --warning-hover: #c99564;
+  --warning-bg: rgba(212, 165, 116, 0.1);
+  
+  --danger: #C48B8B;           /* 褪紅 */
+  --danger-hover: #b57b7b;
+  --danger-bg: rgba(196, 139, 139, 0.1);
+  
+  --info: #8B9DC3;             /* 灰藍 */
+  --info-hover: #7a8cb3;
+  --info-bg: rgba(139, 157, 195, 0.1);
+  
+  /* 🎨 中性色 - 莫蘭迪暖調 */
+  --background: #f8f5f0;
+  --background-alt: linear-gradient(135deg, #f0ebe4 0%, #e8ddd2 100%);
+  --surface: rgba(248, 245, 240, 0.9);
+  --surface-hover: rgba(248, 245, 240, 0.95);
+  --surface-glass: rgba(248, 245, 240, 0.6);
+  
+  --text-primary: #3a3833;
+  --text-secondary: #6d685f;
+  --text-light: #a09b8c;
+  --text-muted: #9b9688;
+  --text-white: #ffffff;
+  
+  --border: rgba(212, 196, 160, 0.2);
+  --border-hover: rgba(212, 196, 160, 0.3);
+  --border-focus: rgba(212, 196, 160, 0.5);
+  
+  /* 🎨 陰影 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.15);
+  
+  /* 🎨 圓角 */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  
+  /* 🎨 間距 */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  
+  /* 🎨 動畫 */
+  --animation-fast: 0.2s ease;
+  --animation-normal: 0.3s ease;
+  --animation-slow: 0.5s ease;
+  
+  /* 🎨 字體 - 使用系統字體，避免預載入問題 */
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 24px;
+  --font-size-2xl: 32px;
+
+  /* 🎨 專用漸變卡片設計概念 - 靈感來自 AssetManagement */
+  --gradient-card-bg: linear-gradient(135deg, rgba(201, 169, 97, 0.1), rgba(255, 255, 255, 0.8));
+  --gradient-card-border: 1px solid rgba(201, 169, 97, 0.2);
+  --gradient-card-shadow: 0 4px 16px rgba(201, 169, 97, 0.08);
+  --gradient-card-radius: 16px;
+  
+  /* 變化版本 */
+  --gradient-card-subtle-bg: linear-gradient(135deg, rgba(201, 169, 97, 0.05), rgba(255, 255, 255, 0.9));
+  --gradient-card-warm-bg: linear-gradient(135deg, rgba(201, 169, 97, 0.15), rgba(248, 245, 240, 0.9));
+  --gradient-card-soft-bg: linear-gradient(135deg, rgba(212, 196, 160, 0.08), rgba(255, 255, 255, 0.85));
+}
+
+/* ========================================
+   2. 基礎樣式
+   ======================================== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-system);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+  color: var(--text-primary);
+  background: var(--background);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* 選取文字 */
+::selection {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+/* 自訂滾動條 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+  border-radius: var(--radius-sm);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: var(--radius-sm);
+  opacity: 0.3;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover);
+  opacity: 0.5;
+}
+
+/* ========================================
+   3. 組件樣式
+   ======================================== */
+
+/* 🔘 按鈕 */
+.btn,
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--animation-fast);
+  text-decoration: none;
+  outline: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-secondary {
+  background: var(--surface);
+  color: var(--primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  background: var(--primary-bg);
+  color: var(--primary);
+}
+
+/* 🎨 莫蘭迪色彩按鈕變體 */
+.btn-sage {
+  background: linear-gradient(135deg, var(--sage-green), var(--sage-green-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-sage:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-fog {
+  background: linear-gradient(135deg, var(--fog-blue), var(--fog-blue-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-fog:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-terracotta {
+  background: linear-gradient(135deg, var(--terracotta), var(--terracotta-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-terracotta:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-warm {
+  background: linear-gradient(135deg, var(--warm-gray), var(--warm-gray-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-warm:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, var(--success), var(--success-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, var(--danger), var(--danger-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-danger:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, var(--warning), var(--warning-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-warning:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.btn-info {
+  background: linear-gradient(135deg, var(--info), var(--info-hover));
+  color: var(--text-white);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-info:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* 📦 卡片 */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+  transition: all var(--animation-normal);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+}
+
+/* 📝 輸入框 */
+.input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  color: var(--text-primary);
+  transition: all var(--animation-fast);
+}
+
+.input:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-bg);
+}
+
+/* 🏷️ 標籤 */
+.badge {
+  display: inline-block;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border: 1px solid currentColor;
+}
+
+.badge-primary {
+  background: var(--primary-bg);
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border-color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border-color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.badge-info {
+  background: var(--info-bg);
+  color: var(--info);
+  border-color: var(--info);
+}
+
+/* 📊 表格 */
+.table {
+  width: 100%;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border-collapse: collapse;
+}
+
+.table thead {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+}
+
+.table thead th {
+  padding: var(--spacing-md);
+  text-align: left;
+  color: var(--text-white);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: all var(--animation-fast);
+}
+
+.table tbody tr:hover {
+  background: var(--primary-bg);
+}
+
+.table tbody td {
+  padding: var(--spacing-md);
+  color: var(--text-primary);
+  font-size: var(--font-size-base);
+}
+
+/* 📋 任務卡片（特定業務組件）*/
+.task-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--spacing-md);
+  transition: all var(--animation-normal);
+  position: relative;
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+}
+
+.task-card.selected {
+  border-color: var(--info);
+  background: var(--info-bg);
+}
+
+.task-card.project-card {
+  border-left: 4px solid var(--primary);
+  background: linear-gradient(135deg, var(--primary-bg), var(--surface));
+}
+
+/* ========================================
+   4. 主題系統（可選主題）
+   ======================================== */
+
+/* 🌙 暗色主題 */
+body.dark-theme {
+  --background: #1a1a1a;
+  --surface: rgba(30, 30, 30, 0.9);
+  --text-primary: #e5e5e5;
+  --text-secondary: #a0a0a0;
+  --border: rgba(255, 255, 255, 0.1);
+}
+
+/* 🎨 莫蘭迪主題 */
+body.theme-morandi {
+  --primary: #9CAF88;
+  --primary-hover: #8B9E77;
+  --primary-light: #B8C4A8;
+  --background: #F8F6F3;
+  --text-primary: #4A4843;
+}
+
+/* 🌸 禪境主題 */
+body.theme-zen {
+  --primary: #B8975A;
+  --primary-hover: #A08650;
+  --background: #E8DCC4;
+  --surface: #F2EBE0;
+}
+
+/* ========================================
+   5. 工具類別
+   ======================================== */
+
+/* 文字顏色 */
+.text-primary { color: var(--primary) !important; }
+.text-secondary { color: var(--secondary) !important; }
+.text-success { color: var(--success) !important; }
+.text-danger { color: var(--danger) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-info { color: var(--info) !important; }
+.text-muted { color: var(--text-muted) !important; }
+
+/* 🎨 莫蘭迪色彩文字 */
+.text-sage { color: var(--sage-green) !important; }
+.text-fog { color: var(--fog-blue) !important; }
+.text-terracotta { color: var(--terracotta) !important; }
+.text-warm { color: var(--warm-gray) !important; }
+
+/* 背景顏色 */
+.bg-primary { background: var(--primary) !important; }
+.bg-secondary { background: var(--secondary) !important; }
+.bg-success { background: var(--success) !important; }
+.bg-danger { background: var(--danger) !important; }
+.bg-warning { background: var(--warning) !important; }
+.bg-info { background: var(--info) !important; }
+
+/* 🎨 莫蘭迪色彩背景 */
+.bg-sage { background: var(--sage-green) !important; }
+.bg-fog { background: var(--fog-blue) !important; }
+.bg-terracotta { background: var(--terracotta) !important; }
+.bg-warm { background: var(--warm-gray) !important; }
+
+/* 🎨 莫蘭迪色彩淡背景 */
+.bg-primary-light { background: var(--primary-bg) !important; }
+.bg-secondary-light { background: var(--secondary-bg) !important; }
+.bg-sage-light { background: var(--sage-green-bg) !important; }
+.bg-fog-light { background: var(--fog-blue-bg) !important; }
+.bg-terracotta-light { background: var(--terracotta-bg) !important; }
+.bg-warm-light { background: var(--warm-gray-bg) !important; }
+
+/* 陰影 */
+.shadow-sm { box-shadow: var(--shadow-sm) !important; }
+.shadow-md { box-shadow: var(--shadow-md) !important; }
+.shadow-lg { box-shadow: var(--shadow-lg) !important; }
+
+/* 圓角 */
+.rounded-sm { border-radius: var(--radius-sm) !important; }
+.rounded-md { border-radius: var(--radius-md) !important; }
+.rounded-lg { border-radius: var(--radius-lg) !important; }
+.rounded-full { border-radius: var(--radius-full) !important; }
+
+/* 間距 */
+.p-sm { padding: var(--spacing-sm) !important; }
+.p-md { padding: var(--spacing-md) !important; }
+.p-lg { padding: var(--spacing-lg) !important; }
+
+.m-sm { margin: var(--spacing-sm) !important; }
+.m-md { margin: var(--spacing-md) !important; }
+.m-lg { margin: var(--spacing-lg) !important; }
+
+/* 特效 */
+.glass-effect {
+  background: var(--surface-glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+}
+
+/* 🎨 專用漸變卡片類別 - 靈感來自 AssetManagement */
+.gradient-card {
+  background: var(--gradient-card-bg);
+  border: var(--gradient-card-border);
+  border-radius: var(--gradient-card-radius);
+  box-shadow: var(--gradient-card-shadow);
+  padding: 24px;
+  transition: var(--animation-fast);
+}
+
+.gradient-card:hover {
+  box-shadow: 0 6px 20px rgba(201, 169, 97, 0.12);
+  transform: translateY(-1px);
+}
+
+.gradient-card-subtle {
+  background: var(--gradient-card-subtle-bg);
+  border: var(--gradient-card-border);
+  border-radius: var(--gradient-card-radius);
+  box-shadow: var(--shadow-xs);
+  padding: 20px;
+}
+
+.gradient-card-warm {
+  background: var(--gradient-card-warm-bg);
+  border: var(--gradient-card-border);
+  border-radius: var(--gradient-card-radius);
+  box-shadow: var(--shadow-sm);
+  padding: 24px;
+}
+
+.gradient-card-soft {
+  background: var(--gradient-card-soft-bg);
+  border: var(--gradient-card-border);
+  border-radius: var(--gradient-card-radius);
+  box-shadow: var(--shadow-xs);
+  padding: 18px;
+}
+
+/* 動畫 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.animate-fade-in { animation: fadeIn var(--animation-normal); }
+.animate-slide-in { animation: slideIn var(--animation-normal); }
+.animate-pulse { animation: pulse 2s infinite; }
+
+/* ========================================
+   6. 統一輸入框樣式 (unified-input)
+   ======================================== */
+.unified-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid rgba(201, 169, 97, 0.3);
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  background: white;
+  color: var(--text-primary);
+}
+
+.unified-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-bg);
+}
+
+.unified-input:hover {
+  border-color: var(--primary-hover);
+}
+
+/* ========================================
+   7. 統一表格樣式 (unified-table)
+   ======================================== */
+.unified-table {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(201, 169, 97, 0.2);
+}
+
+.unified-table .overflow-x-auto {
+  overflow-x: auto;
+}
+
+.unified-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.unified-table thead {
+  background: linear-gradient(135deg, #c9a961 0%, #b8975a 100%);
+}
+
+.unified-table thead th {
+  padding: 12px 24px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.unified-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+
+.unified-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.unified-table tbody td {
+  padding: 16px 24px;
+  color: var(--text-primary);
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+/* ========================================
+   8. Venturo 工具類別補充
+   ======================================== */
+
+/* Flexbox utilities */
+.flex { display: flex !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.flex-1 { flex: 1 1 0% !important; }
+.items-center { align-items: center !important; }
+.justify-center { justify-content: center !important; }
+.justify-end { justify-content: flex-end !important; }
+.gap-2 { gap: 8px !important; }
+.gap-4 { gap: 16px !important; }
+
+/* Width utilities */
+.w-full { width: 100% !important; }
+.min-w-200 { min-width: 200px !important; }
+
+/* Text utilities */
+.text-center { text-align: center !important; }
+.text-left { text-align: left !important; }
+.font-medium { font-weight: 500 !important; }
+.font-semibold { font-weight: 600 !important; }
+.uppercase { text-transform: uppercase !important; }
+.tracking-wider { letter-spacing: 0.05em !important; }
+.whitespace-nowrap { white-space: nowrap !important; }
+
+/* Display utilities */
+.inline-flex { display: inline-flex !important; }
+
+/* Position utilities */
+.relative { position: relative !important; }
+
+/* 響應式 */
+@media (max-width: 768px) {
+  :root {
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 24px;
+  }
+  
+  .card {
+    padding: var(--spacing-md);
+  }
+  
+  .unified-table thead th,
+  .unified-table tbody td {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+/* Venturo CSS 設計系統完成 */

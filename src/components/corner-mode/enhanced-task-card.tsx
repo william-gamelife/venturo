@@ -84,25 +84,29 @@ export function EnhancedTaskCard({
   };
 
   return (
-    <Card className={`transition-all duration-200 hover:shadow-md ${
+    <Card className={`task-card transition-all duration-200 hover:shadow-md ${
       worldMode === 'corner' ? 'border-blue-200' : 'border-gray-200'
     }`}>
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h3 className="font-medium text-gray-900 mb-1">
+        <div className="flex justify-between items-center">
+          <div className="flex-1 flex items-center">
+            <h3 className="font-medium text-gray-900">
               {todo.title}
             </h3>
             
             {todo.description && (
-              <p className="text-sm text-gray-600 mb-2">
+              <p className="text-sm text-gray-600 opacity-80 ml-4">
                 {todo.description}
               </p>
             )}
-            
-            {/* 標籤顯示 */}
-            {worldMode === 'corner' && <TaskCardTags task={todo} />}
           </div>
+          
+          {/* 標籤顯示 */}
+          {worldMode === 'corner' && (
+            <div className="ml-2">
+              <TaskCardTags task={todo} />
+            </div>
+          )}
           
           {/* 世界模式指示器 */}
           <Badge 

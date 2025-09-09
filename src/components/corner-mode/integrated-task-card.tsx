@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TodoItem } from '../../../Venturo/src/lib/types';
+import { TodoItem } from '@/types';
 import { SmartGroupOrderService } from '../../lib/services/smart-group-order-service';
 import { AutoSaveService } from '../../lib/services/auto-save-service';
 import CornerActionButtons from './corner-action-buttons';
@@ -267,7 +267,6 @@ export function IntegratedTaskCard({
 
       <style jsx>{`
         .task-card {
-          background: rgba(255, 255, 255, 0.9);
           border-radius: 8px;
           padding: 16px 12px;
           border: 1px solid rgba(201, 169, 97, 0.2);
@@ -282,12 +281,12 @@ export function IntegratedTaskCard({
 
         .task-card.corner-mode {
           border-left: 4px solid #3b82f6;
-          background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(255, 255, 255, 0.9));
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), var(--surface));
         }
 
         .task-card.game-mode {
           border-left: 4px solid #10b981;
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(255, 255, 255, 0.9));
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), var(--surface));
         }
 
         .task-card:hover {

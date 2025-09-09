@@ -1,8 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd'
-import { authManager } from '@/lib/auth'
+import { useEffect, useState, useRef } from 'react'
+import { localAuth } from '@/lib/local-auth'
 import { DEFAULT_MODULES } from '@/lib/modules'
 import { BaseAPI } from '@/lib/base-api'
 import { ModuleLayout } from '@/components/ModuleLayout'
@@ -23,22 +22,22 @@ export default function SettingsPage() {
   })
   const [activeTab, setActiveTab] = useState<'desktop' | 'mobile'>('desktop')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [draggedItem, setDraggedItem] = useState<string | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   useEffect(() => {
-    const user = authManager.getCurrentUser()
+    const user = localAuth.getCurrentUser()
     setCurrentUser(user)
     
-    if (user?.permissions) {
-      // 取得使用者有權限的模組
-      const userModules = Object.entries(user.permissions)
-        .filter(([_, perms]) => {
-          if (typeof perms === 'object' && 'read' in perms) {
-            return perms.read === true
-          }
-          return false
-        })
-        .map(([moduleId, _]) => moduleId)
+    if (user) {
+      // 根據角色設定可用模組
+      const roleModules: Record<string, string[]> = {
+        'SUPER_ADMIN': ['users', 'todos', 'projects', 'calendar', 'finance', 'timebox', 'settings'],
+        'BUSINESS_ADMIN': ['todos', 'projects', 'calendar', 'finance', 'timebox'],
+        'GENERAL_USER': ['todos', 'calendar', 'timebox']
+      }
       
+      const userModules = roleModules[user.role] || roleModules['GENERAL_USER']
       setAvailableModules(userModules)
       
       // 載入已儲存的排序設定
@@ -123,18 +122,46 @@ export default function SettingsPage() {
     }
   }
 
-  const handleDragEnd = (result: DropResult) => {
-    if (!result.destination) return
+  // HTML5 原生拖放處理
+  const handleDragStart = (e: React.DragEvent, moduleId: string, index: number) => {
+    setDraggedItem(moduleId)
+    e.dataTransfer.effectAllowed = 'move'
+    e.dataTransfer.setData('text/plain', index.toString())
+  }
 
-    const items = Array.from(sidebarOrder[activeTab])
-    const [reorderedItem] = items.splice(result.source.index, 1)
-    items.splice(result.destination.index, 0, reorderedItem)
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setDragOverIndex(index)
+  }
 
-    setSidebarOrder({
-      ...sidebarOrder,
-      [activeTab]: items
-    })
-    setHasUnsavedChanges(true)
+  const handleDragLeave = () => {
+    setDragOverIndex(null)
+  }
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault()
+    const dragIndex = parseInt(e.dataTransfer.getData('text/plain'))
+    
+    if (dragIndex !== dropIndex && draggedItem) {
+      const items = Array.from(sidebarOrder[activeTab])
+      const [removed] = items.splice(dragIndex, 1)
+      items.splice(dropIndex, 0, removed)
+      
+      setSidebarOrder({
+        ...sidebarOrder,
+        [activeTab]: items
+      })
+      setHasUnsavedChanges(true)
+    }
+    
+    setDraggedItem(null)
+    setDragOverIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggedItem(null)
+    setDragOverIndex(null)
   }
 
   const getModuleName = (moduleId: string) => {
@@ -238,7 +265,7 @@ export default function SettingsPage() {
                 儲存變更
               </Button>
             )}
-            <Button variant="ghost">
+            <Button variant="ghost" onClick={resetToDefault}>
               重設預設值
             </Button>
           </>
@@ -382,45 +409,38 @@ export default function SettingsPage() {
             
             <div className="drag-section">
               <h3 className="drag-title">拖放排序</h3>
-              <DragDropContext onDragEnd={handleDragEnd}>
-                <Droppable droppableId="sidebar-items">
-                  {(provided) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="drag-list"
-                    >
-                      {sidebarOrder[activeTab].map((moduleId, index) => (
-                        <Draggable key={moduleId} draggableId={moduleId} index={index}>
-                          {(provided, snapshot) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className={`drag-item ${snapshot.isDragging ? 'dragging' : ''}`}
-                            >
-                              <div className="drag-handle">
-                                <svg viewBox="0 0 24 24" fill="currentColor">
-                                  <circle cx="9" cy="7" r="1"/>
-                                  <circle cx="15" cy="7" r="1"/>
-                                  <circle cx="9" cy="12" r="1"/>
-                                  <circle cx="15" cy="12" r="1"/>
-                                  <circle cx="9" cy="17" r="1"/>
-                                  <circle cx="15" cy="17" r="1"/>
-                                </svg>
-                              </div>
-                              {getModuleIcon(moduleId)}
-                              <span className="drag-text">{getModuleName(moduleId)}</span>
-                              <span className="drag-order">#{index + 1}</span>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
+              <div className="drag-list">
+                {sidebarOrder[activeTab].map((moduleId, index) => (
+                  <div
+                    key={moduleId}
+                    className={`drag-item ${
+                      draggedItem === moduleId ? 'dragging' : ''
+                    } ${
+                      dragOverIndex === index ? 'drag-over' : ''
+                    }`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, moduleId, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <div className="drag-handle">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="9" cy="7" r="1"/>
+                        <circle cx="15" cy="7" r="1"/>
+                        <circle cx="9" cy="12" r="1"/>
+                        <circle cx="15" cy="12" r="1"/>
+                        <circle cx="9" cy="17" r="1"/>
+                        <circle cx="15" cy="17" r="1"/>
+                      </svg>
                     </div>
-                  )}
-                </Droppable>
-              </DragDropContext>
+                    {getModuleIcon(moduleId)}
+                    <span className="drag-text">{getModuleName(moduleId)}</span>
+                    <span className="drag-order">#{index + 1}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           
@@ -451,13 +471,13 @@ export default function SettingsPage() {
         .settings-title {
           font-size: 28px;
           font-weight: 700;
-          color: #3a3833;
+          color: var(--text-primary);
           margin: 0 0 8px 0;
         }
 
         .settings-subtitle {
           font-size: 16px;
-          color: #6d685f;
+          color: var(--text-secondary);
           margin: 0;
         }
 
@@ -475,12 +495,12 @@ export default function SettingsPage() {
         .section-title {
           font-size: 20px;
           font-weight: 600;
-          color: #3a3833;
+          color: var(--text-primary);
           margin: 0 0 8px 0;
         }
 
         .section-description {
-          color: #6d685f;
+          color: var(--text-secondary);
           margin: 0 0 24px 0;
           line-height: 1.5;
         }
@@ -505,12 +525,12 @@ export default function SettingsPage() {
           border-radius: 8px;
           cursor: pointer;
           font-weight: 500;
-          color: #6d685f;
+          color: var(--text-secondary);
           transition: all 0.2s ease;
         }
 
         .tab.active {
-          background: #c9a961;
+          background: var(--primary);
           color: white;
           box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
         }
@@ -539,7 +559,7 @@ export default function SettingsPage() {
         .drag-title {
           font-size: 16px;
           font-weight: 600;
-          color: #3a3833;
+          color: var(--text-primary);
           margin: 0 0 16px 0;
         }
 
@@ -570,7 +590,7 @@ export default function SettingsPage() {
           background: rgba(255, 255, 255, 0.7);
           border-bottom: 1px solid rgba(201, 169, 97, 0.1);
           font-size: 14px;
-          color: #3a3833;
+          color: var(--text-primary);
         }
 
         .sidebar-preview.mobile .preview-item {
@@ -607,6 +627,7 @@ export default function SettingsPage() {
           margin-bottom: 8px;
           cursor: grab;
           transition: all 0.2s ease;
+          user-select: none;
         }
 
         .drag-item:hover {
@@ -615,27 +636,33 @@ export default function SettingsPage() {
         }
 
         .drag-item.dragging {
+          opacity: 0.5;
           box-shadow: 0 8px 24px rgba(201, 169, 97, 0.3);
           transform: rotate(2deg);
           cursor: grabbing;
         }
 
+        .drag-item.drag-over {
+          background: rgba(201, 169, 97, 0.1);
+          border-color: var(--primary);
+        }
+
         .drag-handle {
           width: 16px;
           height: 16px;
-          color: #6d685f;
+          color: var(--text-secondary);
           cursor: grab;
         }
 
         .drag-text {
           flex: 1;
           font-weight: 500;
-          color: #3a3833;
+          color: var(--text-primary);
         }
 
         .drag-order {
           font-size: 12px;
-          color: #6d685f;
+          color: var(--text-secondary);
           background: rgba(201, 169, 97, 0.1);
           padding: 4px 8px;
           border-radius: 12px;
@@ -645,7 +672,7 @@ export default function SettingsPage() {
         .icon {
           width: 16px;
           height: 16px;
-          color: #c9a961;
+          color: var(--primary);
         }
 
         .setting-actions {
@@ -662,7 +689,7 @@ export default function SettingsPage() {
           background: white;
           border-radius: 8px;
           cursor: pointer;
-          color: #6d685f;
+          color: var(--text-secondary);
           font-weight: 500;
           transition: all 0.2s ease;
         }
@@ -674,7 +701,7 @@ export default function SettingsPage() {
 
         .btn-primary {
           padding: 12px 20px;
-          background: linear-gradient(135deg, #c9a961, #e4d4a8);
+          background: linear-gradient(135deg, var(--primary), var(--primary-light));
           color: white;
           border: none;
           border-radius: 8px;
@@ -709,223 +736,8 @@ export default function SettingsPage() {
           align-items: center;
           justify-content: center;
           min-height: 400px;
-          color: #6d685f;
+          color: var(--text-secondary);
           font-size: 16px;
-        }
-
-        /* 設定區塊標題 */
-        .section-header {
-          display: flex;
-          align-items: flex-start;
-          gap: 16px;
-          margin-bottom: 24px;
-        }
-
-        .section-icon {
-          width: 48px;
-          height: 48px;
-          background: linear-gradient(135deg, #c9a961, #e4d4a8);
-          border-radius: 12px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          flex-shrink: 0;
-          box-shadow: 0 4px 16px rgba(201, 169, 97, 0.3);
-        }
-
-        .section-icon svg {
-          width: 24px;
-          height: 24px;
-        }
-
-        /* 個人資料卡片 */
-        .profile-card {
-          background: rgba(255, 253, 250, 0.9);
-          border-radius: 20px;
-          padding: 32px;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-          box-shadow: 0 8px 32px rgba(201, 169, 97, 0.1);
-          backdrop-filter: blur(15px);
-          position: relative;
-        }
-
-        .profile-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(45deg,
-            rgba(201, 169, 97, 0.03) 0%,
-            transparent 50%,
-            rgba(201, 169, 97, 0.02) 100%
-          );
-          border-radius: 20px;
-          pointer-events: none;
-        }
-
-        .profile-main {
-          display: grid;
-          grid-template-columns: auto 1fr;
-          gap: 32px;
-          margin-bottom: 32px;
-          align-items: center;
-        }
-
-        .avatar-section {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-
-        .current-avatar {
-          position: relative;
-        }
-
-        .avatar-placeholder {
-          width: 96px;
-          height: 96px;
-          background: linear-gradient(135deg, #c9a961, #e4d4a8);
-          border-radius: 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 36px;
-          font-weight: 700;
-          box-shadow: 0 8px 32px rgba(201, 169, 97, 0.3);
-          border: 4px solid rgba(255, 255, 255, 0.8);
-        }
-
-        .avatar-status {
-          position: absolute;
-          bottom: 4px;
-          right: 4px;
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          border: 3px solid white;
-        }
-
-        .avatar-status.online {
-          background: #22c55e;
-        }
-
-        .avatar-info {
-          flex: 1;
-        }
-
-        .user-display-name {
-          margin: 0 0 4px 0;
-          font-size: 24px;
-          font-weight: 700;
-          color: #3a3833;
-        }
-
-        .user-title {
-          margin: 0 0 8px 0;
-          font-size: 16px;
-          color: #6d685f;
-        }
-
-        .role-badge {
-          display: inline-block;
-          padding: 4px 12px;
-          border-radius: 20px;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-        }
-
-        .role-badge.admin {
-          background: rgba(168, 85, 247, 0.1);
-          color: #a855f7;
-          border: 1px solid rgba(168, 85, 247, 0.2);
-        }
-
-        .profile-stats {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 16px;
-        }
-
-        .stat-card {
-          background: rgba(201, 169, 97, 0.05);
-          border: 1px solid rgba(201, 169, 97, 0.1);
-          border-radius: 12px;
-          padding: 16px;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-
-        .stat-icon {
-          width: 40px;
-          height: 40px;
-          background: linear-gradient(135deg, #c9a961, #e4d4a8);
-          border-radius: 10px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-        }
-
-        .stat-icon svg {
-          width: 20px;
-          height: 20px;
-        }
-
-        .stat-info {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .stat-number {
-          font-size: 20px;
-          font-weight: 700;
-          color: #c9a961;
-        }
-
-        .stat-label {
-          font-size: 12px;
-          color: #6d685f;
-          font-weight: 500;
-        }
-
-        .profile-fields {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 16px;
-        }
-
-        .field-group {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-        }
-
-        .field-group label {
-          font-size: 14px;
-          font-weight: 600;
-          color: #3a3833;
-        }
-
-        .field-group input {
-          padding: 12px 16px;
-          border: 1px solid rgba(201, 169, 97, 0.3);
-          border-radius: 8px;
-          font-size: 14px;
-          background: white;
-          color: #3a3833;
-        }
-
-        .field-group input:disabled {
-          background: rgba(201, 169, 97, 0.05);
-          color: #6d685f;
-          cursor: not-allowed;
         }
 
         /* 安全設定區塊 */
@@ -948,13 +760,13 @@ export default function SettingsPage() {
           margin: 0 0 4px 0;
           font-size: 16px;
           font-weight: 600;
-          color: #3a3833;
+          color: var(--text-primary);
         }
 
         .security-info p {
           margin: 0;
           font-size: 14px;
-          color: #6d685f;
+          color: var(--text-secondary);
         }
 
         /* 主題設定區塊 */
@@ -998,7 +810,7 @@ export default function SettingsPage() {
         }
 
         .theme-option input[type="radio"]:checked + .theme-card {
-          border-color: #c9a961;
+          border-color: var(--primary);
           background: rgba(201, 169, 97, 0.05);
           box-shadow: 0 4px 12px rgba(201, 169, 97, 0.2);
         }
@@ -1012,15 +824,15 @@ export default function SettingsPage() {
         }
 
         .theme-preview.light {
-          background: #f8f9fa;
+          background: var(--surface);
         }
 
         .theme-preview.dark {
-          background: #2d3748;
+          background: var(--text-primary);
         }
 
         .theme-preview.auto {
-          background: linear-gradient(45deg, #f8f9fa 50%, #2d3748 50%);
+          background: linear-gradient(45deg, var(--surface) 50%, var(--text-primary) 50%);
         }
 
         .preview-header {
@@ -1056,7 +868,7 @@ export default function SettingsPage() {
         .theme-card span {
           text-align: center;
           font-weight: 500;
-          color: #3a3833;
+          color: var(--text-primary);
           font-size: 14px;
         }
 
@@ -1066,12 +878,12 @@ export default function SettingsPage() {
           background: rgba(255, 193, 7, 0.1);
           border: 1px solid rgba(255, 193, 7, 0.3);
           border-radius: 8px;
-          color: #856404;
+          color: var(--warning);
         }
 
         .coming-soon {
           font-size: 12px;
-          color: #856404;
+          color: var(--warning);
           background: rgba(255, 193, 7, 0.2);
           padding: 2px 8px;
           border-radius: 12px;
@@ -1087,7 +899,7 @@ export default function SettingsPage() {
 
         .btn-danger {
           padding: 12px 20px;
-          background: linear-gradient(135deg, #ef4444, #dc2626);
+          background: linear-gradient(135deg, var(--danger), var(--danger));
           color: white;
           border: none;
           border-radius: 8px;
@@ -1102,7 +914,7 @@ export default function SettingsPage() {
         .btn-danger:hover {
           transform: translateY(-1px);
           box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
-          background: linear-gradient(135deg, #dc2626, #b91c1c);
+          background: linear-gradient(135deg, var(--danger), var(--danger));
         }
 
         .security-item.danger {
@@ -1111,7 +923,7 @@ export default function SettingsPage() {
         }
 
         .security-item.danger .security-info h4 {
-          color: #dc2626;
+          color: var(--danger);
         }
 
         @media (max-width: 768px) {
@@ -1131,11 +943,6 @@ export default function SettingsPage() {
 
           .setting-actions {
             flex-direction: column;
-          }
-
-          .profile-section {
-            grid-template-columns: 1fr;
-            text-align: center;
           }
 
           .security-item {

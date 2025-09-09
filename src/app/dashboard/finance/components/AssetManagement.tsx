@@ -31,68 +31,18 @@ export function AssetManagement() {
 
   // 資產分類
   const categories: AssetCategory[] = [
-    { id: 'all', name: '全部', type: 'cash', icon: '', color: '#8B5CF6', description: '所有資產' },
-    { id: 'cash', name: '現金', type: 'cash', icon: '', color: '#10B981', description: '現金與錢包' },
-    { id: 'bank_account', name: '銀行帳戶', type: 'bank_account', icon: '', color: '#3B82F6', description: '銀行存款帳戶' },
-    { id: 'credit_card', name: '信用卡', type: 'credit_card', icon: '', color: '#F59E0B', description: '信用卡額度' },
-    { id: 'investment', name: '投資', type: 'investment', icon: '', color: '#EF4444', description: '股票、基金、債券' },
-    { id: 'insurance', name: '保險', type: 'insurance', icon: '', color: '#6366F1', description: '保險產品' },
-    { id: 'property', name: '房地產', type: 'property', icon: '', color: '#EC4899', description: '不動產資產' },
-    { id: 'other', name: '其他', type: 'other', icon: '', color: '#6B7280', description: '其他資產' }
+    { id: 'all', name: '全部', type: 'cash', icon: '📊', color: '#8B5CF6', description: '所有資產' },
+    { id: 'cash', name: '現金', type: 'cash', icon: '💵', color: '#10B981', description: '現金與錢包' },
+    { id: 'bank_account', name: '銀行帳戶', type: 'bank_account', icon: '🏦', color: '#3B82F6', description: '銀行存款帳戶' },
+    { id: 'credit_card', name: '信用卡', type: 'credit_card', icon: '💳', color: '#F59E0B', description: '信用卡額度' },
+    { id: 'investment', name: '投資', type: 'investment', icon: '📈', color: '#EF4444', description: '股票、基金、債券' },
+    { id: 'insurance', name: '保險', type: 'insurance', icon: '🚑', color: '#6366F1', description: '保險產品' },
+    { id: 'property', name: '房地產', type: 'property', icon: '🏠', color: '#EC4899', description: '不動產資產' },
+    { id: 'other', name: '其他', type: 'other', icon: '💼', color: '#6B7280', description: '其他資產' }
   ]
 
-  // 模擬資產資料
-  const [assets, setAssets] = useState<Asset[]>([
-    {
-      id: '1',
-      name: '現金錢包',
-      type: 'cash',
-      balance: 12500,
-      description: '隨身現金',
-      isHidden: false,
-      lastUpdated: '2025-01-08'
-    },
-    {
-      id: '2',
-      name: '中信銀行活存',
-      type: 'bank_account',
-      balance: 85000,
-      bankName: '中國信託銀行',
-      description: '薪資帳戶',
-      isHidden: false,
-      lastUpdated: '2025-01-08'
-    },
-    {
-      id: '3',
-      name: '玉山信用卡',
-      type: 'credit_card',
-      balance: 15000,
-      bankName: '玉山銀行',
-      creditLimit: 200000,
-      availableCredit: 185000,
-      description: '主要消費卡',
-      isHidden: false,
-      lastUpdated: '2025-01-07'
-    },
-    {
-      id: '4',
-      name: '台積電股票',
-      type: 'investment',
-      balance: 325000,
-      description: '100股 @ NT$650',
-      isHidden: false,
-      lastUpdated: '2025-01-08'
-    },
-    {
-      id: '5',
-      name: '富邦人壽保險',
-      type: 'insurance',
-      balance: 120000,
-      description: '終身壽險',
-      isHidden: false,
-      lastUpdated: '2025-01-01'
-    }
-  ])
+  // TODO: 載入實際資產資料
+  const [assets, setAssets] = useState<Asset[]>([])
 
   const filteredAssets = selectedCategory === 'all' 
     ? assets 
@@ -307,23 +257,42 @@ export function AssetManagement() {
           align-items: center;
           gap: 12px;
           padding: 16px 20px;
-          background: rgba(255, 255, 255, 0.9);
+          background: rgba(255, 255, 255, 0.8);
           border: 2px solid transparent;
-          border-radius: 16px;
+          border-radius: 18px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           min-width: max-content;
+          backdrop-filter: blur(5px);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .category-tab::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.5s ease;
         }
 
         .category-tab:hover {
-          background: rgba(255, 255, 255, 1);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          background: rgba(255, 255, 255, 0.95);
+          transform: translateY(-3px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .category-tab:hover::before {
+          left: 100%;
         }
 
         .category-tab.active {
-          background: rgba(255, 255, 255, 1);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9));
           border-color: currentColor;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
 
         .category-icon {
@@ -369,22 +338,42 @@ export function AssetManagement() {
 
         .assets-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          gap: 20px;
+          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+          gap: 24px;
         }
 
         .asset-card {
-          background: rgba(255, 255, 255, 0.95);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
           border: 1px solid rgba(201, 169, 97, 0.15);
-          border-left: 4px solid;
-          border-radius: 16px;
-          padding: 20px;
-          transition: all 0.2s ease;
+          border-left: 6px solid;
+          border-radius: 20px;
+          padding: 24px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          backdrop-filter: blur(10px);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .asset-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.1) 50%, transparent 100%);
+          opacity: 0;
+          transition: opacity 0.3s ease;
         }
 
         .asset-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(201, 169, 97, 0.15);
+          transform: translateY(-6px) scale(1.02);
+          box-shadow: 0 20px 40px rgba(201, 169, 97, 0.2), 0 8px 16px rgba(0, 0, 0, 0.05);
+          border-color: rgba(201, 169, 97, 0.3);
+        }
+
+        .asset-card:hover::before {
+          opacity: 1;
         }
 
         .asset-header-card {
@@ -395,13 +384,21 @@ export function AssetManagement() {
         }
 
         .asset-icon {
-          width: 40px;
-          height: 40px;
+          width: 56px;
+          height: 56px;
           display: flex;
           align-items: center;
           justify-content: center;
-          border-radius: 12px;
-          font-size: 20px;
+          border-radius: 16px;
+          font-size: 24px;
+          transition: all 0.3s ease;
+          position: relative;
+          z-index: 1;
+        }
+
+        .asset-card:hover .asset-icon {
+          transform: scale(1.1);
+          filter: brightness(1.1);
         }
 
         .asset-info {
@@ -471,16 +468,42 @@ export function AssetManagement() {
         }
 
         .action-btn {
-          background: none;
-          border: none;
+          background: rgba(255, 255, 255, 0.8);
+          border: 1px solid rgba(201, 169, 97, 0.2);
           cursor: pointer;
-          padding: 4px;
-          border-radius: 4px;
-          transition: background 0.2s ease;
+          padding: 8px 10px;
+          border-radius: 10px;
+          transition: all 0.3s ease;
+          font-size: 14px;
+          backdrop-filter: blur(5px);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .action-btn::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 0;
+          height: 0;
+          background: rgba(201, 169, 97, 0.1);
+          border-radius: 50%;
+          transform: translate(-50%, -50%);
+          transition: all 0.3s ease;
         }
 
         .action-btn:hover {
-          background: rgba(201, 169, 97, 0.1);
+          background: rgba(255, 255, 255, 1);
+          border-color: rgba(201, 169, 97, 0.4);
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btn:hover::before {
+          width: 100%;
+          height: 100%;
+          border-radius: 10px;
         }
 
         .empty-state {

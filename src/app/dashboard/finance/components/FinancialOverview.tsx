@@ -29,17 +29,17 @@ export function FinancialOverview() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // 模擬載入財務資料
+    // TODO: 實際載入財務資料
     setTimeout(() => {
       setStats({
-        totalAssets: 850000,
-        totalCash: 125000,
-        totalInvestment: 325000,
-        monthlyIncome: 65000,
-        monthlyExpense: 42000,
-        monthlyBudget: 50000,
-        monthlySpent: 38500,
-        savingsRate: 35.4
+        totalAssets: 0,
+        totalCash: 0,
+        totalInvestment: 0,
+        monthlyIncome: 0,
+        monthlyExpense: 0,
+        monthlyBudget: 0,
+        monthlySpent: 0,
+        savingsRate: 0
       })
       setIsLoading(false)
     }, 1000)
@@ -90,7 +90,7 @@ export function FinancialOverview() {
           <div className="stat-content">
             <h3>總資產</h3>
             <div className="stat-value">NT$ {stats.totalAssets.toLocaleString()}</div>
-            <div className="stat-trend positive">+8.5% 本月</div>
+            <div className="stat-trend">-- %</div>
           </div>
         </div>
 
@@ -99,7 +99,7 @@ export function FinancialOverview() {
           <div className="stat-content">
             <h3>現金資產</h3>
             <div className="stat-value">NT$ {stats.totalCash.toLocaleString()}</div>
-            <div className="stat-trend positive">+12.3% 本月</div>
+            <div className="stat-trend">-- %</div>
           </div>
         </div>
 
@@ -108,7 +108,7 @@ export function FinancialOverview() {
           <div className="stat-content">
             <h3>投資資產</h3>
             <div className="stat-value">NT$ {stats.totalInvestment.toLocaleString()}</div>
-            <div className="stat-trend positive">+5.7% 本月</div>
+            <div className="stat-trend">-- %</div>
           </div>
         </div>
 
@@ -117,7 +117,7 @@ export function FinancialOverview() {
           <div className="stat-content">
             <h3>儲蓄率</h3>
             <div className="stat-value">{stats.savingsRate}%</div>
-            <div className="stat-trend positive">超棒！</div>
+            <div className="stat-trend">-- %</div>
           </div>
         </div>
       </div>
@@ -125,7 +125,7 @@ export function FinancialOverview() {
       <div className="monthly-overview">
         <div className="section-header">
           <h3> 本月財務概況</h3>
-          <span className="month-indicator">2025年1月</span>
+          <span className="month-indicator">{new Date().getFullYear()}年{new Date().getMonth() + 1}月</span>
         </div>
         
         <div className="monthly-stats">

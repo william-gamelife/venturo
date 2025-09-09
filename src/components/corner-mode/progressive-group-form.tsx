@@ -71,7 +71,7 @@ export function ProgressiveGroupForm({
       skeleton: { variant: 'secondary' as const, className: 'bg-gray-100 text-gray-700' },
       basic: { variant: 'default' as const, className: 'bg-blue-100 text-blue-700' },
       detailed: { variant: 'default' as const, className: 'bg-green-100 text-green-700' },
-      complete: { variant: 'default' as const, className: 'bg-emerald-100 text-emerald-700' }
+      complete: { variant: 'default' as const, className: 'badge badge-success' }
     };
     
     return styles[level as keyof typeof styles] || styles.skeleton;
@@ -385,7 +385,7 @@ export function ProgressiveGroupForm({
 
           {/* 缺少欄位提醒 */}
           {dataCompleteness.missingFields.length > 0 && (
-            <div className="mt-3 p-2 bg-amber-50 border border-amber-200 rounded-md">
+            <div className="mt-3 p-2 badge badge-warning">
               <div className="text-amber-800 text-xs font-medium">
                 💡 還可以補充的資訊：
               </div>

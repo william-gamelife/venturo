@@ -26,11 +26,11 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
       <style jsx>{`
         .page-header {
           background: white;
-          border: 1px solid rgba(244, 164, 96, 0.2);
+          border: 1px solid rgba(201, 169, 97, 0.2);
           border-radius: 16px;
           padding: 24px 24px;
           margin: 0 0 32px 0;
-          box-shadow: 0 2px 12px rgba(244, 164, 96, 0.08);
+          box-shadow: 0 2px 12px rgba(201, 169, 97, 0.08);
           position: relative;
           width: 100%;
         }
@@ -39,7 +39,7 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
           content: '';
           position: absolute;
           inset: -1px;
-          background: linear-gradient(135deg, rgba(244, 164, 96, 0.15), rgba(47, 79, 47, 0.05), rgba(244, 164, 96, 0.15));
+          background: linear-gradient(135deg, rgba(201, 169, 97, 0.15), rgba(47, 79, 47, 0.05), rgba(201, 169, 97, 0.15));
           border-radius: 16px;
           z-index: -1;
         }

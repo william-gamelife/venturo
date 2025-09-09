@@ -1,422 +1,527 @@
-'use client'
+'use client';
 
-import { useState, useMemo } from 'react'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, addMonths, subMonths, startOfWeek, endOfWeek } from 'date-fns'
-import { zhTW } from 'date-fns/locale'
-import { CalendarEvent, CalendarViewProps } from '@/types/calendar'
-import { Button } from '@/components/Button'
-import { Icons } from '@/components/icons'
+// 直接從 corner-src 移植的 CalendarView，使用 Venturo UI 樣式
 
-export default function CalendarView({ 
-  events, 
-  onEventClick, 
-  onDateClick,
-  onEventUpdate,
-  onEventDelete 
-}: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date())
-  const [view, setView] = useState<'month' | 'week' | 'day'>('month')
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { EventClickArg, DateClickArg } from '@fullcalendar/core';
+import { format } from 'date-fns';
+import { CalendarEvent } from '../calendar/CalendarEventModel';
 
-  const monthStart = startOfMonth(currentDate)
-  const monthEnd = endOfMonth(currentDate)
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 })
+interface CalendarViewProps {
+	events?: CalendarEvent[];
+	onEventClick?: (event: CalendarEvent) => void;
+	onDateClick?: (date: string) => void;
+}
 
-  const calendarDays = eachDayOfInterval({
-    start: calendarStart,
-    end: calendarEnd
-  })
+export default function CalendarView({ events = [], onEventClick, onDateClick }: CalendarViewProps) {
+	const router = useRouter();
+	const calendarRef = useRef<FullCalendar>(null);
+	const [dateRange, setDateRange] = useState({
+		start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+		end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+	});
 
-  const getEventsForDay = (date: Date): CalendarEvent[] => {
-    return events.filter(event => {
-      const eventDate = new Date(event.start_date)
-      return isSameDay(eventDate, date)
-    })
-  }
+	// 對話框狀態管理
+	const [moreEventsDialog, setMoreEventsDialog] = useState<{
+		open: boolean;
+		date: string;
+		events: any[];
+	}>({
+		open: false,
+		date: '',
+		events: []
+	});
 
-  const goToPrevious = () => {
-    setCurrentDate(subMonths(currentDate, 1))
-  }
+	// 事件類型過濾狀態
+	const [eventFilter, setEventFilter] = useState<'all' | 'groups' | 'birthdays' | 'tasks'>('all');
 
-  const goToNext = () => {
-    setCurrentDate(addMonths(currentDate, 1))
-  }
+	// 計算事件日期區間長度的函數
+	const getEventDuration = (event: any): number => {
+		// 生日事件沒有區間，視為 0 天（排在最前面）
+		if (!event.end || event.extendedProps?.type === 'birthday') {
+			return 0;
+		}
 
-  const goToToday = () => {
-    setCurrentDate(new Date())
-  }
+		const start = new Date(event.start);
+		const end = new Date(event.end);
+		const duration = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+		return duration;
+	};
 
-  const handleDateClick = (date: Date) => {
-    if (onDateClick) {
-      onDateClick(date)
-    }
-  }
+	// 事件排序比較函數
+	const compareEvents = (a: any, b: any): number => {
+		const durationA = getEventDuration(a);
+		const durationB = getEventDuration(b);
 
-  const getEventTypeColor = (type?: string) => {
-    switch (type) {
-      case 'meeting': return '#3B82F6'
-      case 'task': return '#EF4444'
-      case 'reminder': return '#F59E0B'
-      case 'personal': return '#10B981'
-      case 'work': return '#8B5CF6'
-      default: return '#6B7280'
-    }
-  }
+		// 先按照區間長度排序（短的在前）
+		if (durationA !== durationB) {
+			return durationA - durationB;
+		}
 
-  return (
-    <div className="calendar-container">
-      {/* 行事曆標題和控制項 */}
-      <div className="calendar-header">
-        <div className="calendar-navigation">
-          <Button variant="ghost" onClick={goToPrevious}>
-            ← 上個月
-          </Button>
-          <h2 className="calendar-title">
-            {format(currentDate, 'yyyy年 M月', { locale: zhTW })}
-          </h2>
-          <Button variant="ghost" onClick={goToNext}>
-            下個月 →
-          </Button>
-        </div>
-        
-        <div className="calendar-actions">
-          <Button variant="ghost" onClick={goToToday}>
-            今天
-          </Button>
-          <div className="view-switcher">
-            <button 
-              className={`view-btn ${view === 'month' ? 'active' : ''}`}
-              onClick={() => setView('month')}
-            >
-              月
-            </button>
-            <button 
-              className={`view-btn ${view === 'week' ? 'active' : ''}`}
-              onClick={() => setView('week')}
-            >
-              周
-            </button>
-            <button 
-              className={`view-btn ${view === 'day' ? 'active' : ''}`}
-              onClick={() => setView('day')}
-            >
-              日
-            </button>
-          </div>
-        </div>
-      </div>
+		// 如果區間長度相同，按照開始日期排序
+		const getDateString = (date: any): string => {
+			if (typeof date === 'string') {
+				return date;
+			} else if (date instanceof Date) {
+				return date.toISOString().split('T')[0];
+			} else if (date && typeof date.toISOString === 'function') {
+				return date.toISOString().split('T')[0];
+			}
+			return String(date);
+		};
 
-      {/* 月視圖 */}
-      {view === 'month' && (
-        <div className="calendar-grid">
-          {/* 星期標題 */}
-          <div className="weekdays-header">
-            {['一', '二', '三', '四', '五', '六', '日'].map(day => (
-              <div key={day} className="weekday">
-                {day}
-              </div>
-            ))}
-          </div>
+		const startA = getDateString(a.start);
+		const startB = getDateString(b.start);
 
-          {/* 日期網格 */}
-          <div className="days-grid">
-            {calendarDays.map((day, index) => {
-              const dayEvents = getEventsForDay(day)
-              const isCurrentMonth = isSameMonth(day, currentDate)
-              const isToday = isSameDay(day, new Date())
+		return startA.localeCompare(startB);
+	};
 
-              return (
-                <div
-                  key={index}
-                  className={`calendar-day ${
-                    !isCurrentMonth ? 'other-month' : ''
-                  } ${isToday ? 'today' : ''}`}
-                  onClick={() => handleDateClick(day)}
-                >
-                  <div className="day-number">
-                    {format(day, 'd')}
-                  </div>
-                  
-                  <div className="day-events">
-                    {dayEvents.slice(0, 3).map((event) => (
-                      <div
-                        key={event.id}
-                        className="event-item"
-                        style={{ backgroundColor: event.color || getEventTypeColor(event.type) }}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (onEventClick) onEventClick(event)
-                        }}
-                      >
-                        <span className="event-title">{event.title}</span>
-                        {!event.all_day && (
-                          <span className="event-time">
-                            {format(new Date(event.start_date), 'HH:mm')}
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <div className="more-events">
-                        +{dayEvents.length - 3} 更多
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
+	// 過濾事件函數
+	const filterEvents = (events: CalendarEvent[]): CalendarEvent[] => {
+		switch (eventFilter) {
+			case 'groups':
+				return events.filter((event) => event.extendedProps?.type === 'group');
+			case 'birthdays':
+				return events.filter((event) => event.extendedProps?.type === 'birthday');
+			case 'tasks':
+				return events.filter((event) => event.extendedProps?.type === 'task');
+			case 'all':
+			default:
+				return events;
+		}
+	};
 
-      <style jsx>{`
-        .calendar-container {
-          background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(20px);
-          border-radius: 20px;
-          padding: 24px;
-          border: 2px solid rgba(201, 169, 97, 0.2);
-          box-shadow: 0 8px 32px rgba(201, 169, 97, 0.1);
-        }
+	// 應用過濾的事件
+	const filteredEvents = filterEvents(events);
 
-        .calendar-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 24px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid rgba(201, 169, 97, 0.2);
-        }
+	// 處理日期點擊 - 導向新增功能
+	const handleDateClick = (info: DateClickArg) => {
+		const selectedDate = format(info.date, 'yyyy-MM-dd');
+		if (onDateClick) {
+			onDateClick(selectedDate);
+		} else {
+			// 預設行為：可以在這裡添加新增事件的邏輯
+			console.log('點擊日期:', selectedDate);
+		}
+	};
 
-        .calendar-navigation {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
+	// 處理事件點擊
+	const handleEventClick = (info: EventClickArg) => {
+		const event = info.event;
+		const calendarEvent: CalendarEvent = {
+			id: event.id,
+			title: event.title,
+			start: event.startStr,
+			end: event.endStr,
+			allDay: event.allDay,
+			backgroundColor: event.backgroundColor,
+			borderColor: event.borderColor,
+			extendedProps: event.extendedProps as any,
+		};
 
-        .calendar-title {
-          font-size: 24px;
-          font-weight: 700;
-          color: #3a3833;
-          margin: 0;
-          min-width: 150px;
-          text-align: center;
-        }
+		if (onEventClick) {
+			onEventClick(calendarEvent);
+		} else {
+			// 預設行為
+			const extendedProps = event.extendedProps as any;
+			if (extendedProps?.type === 'group' && extendedProps.groupCode) {
+				console.log('導向旅遊團編輯頁面:', extendedProps.groupCode);
+			} else if (extendedProps?.type === 'birthday' && extendedProps.customerId) {
+				console.log('導向客戶詳細頁面:', extendedProps.customerId);
+			} else if (extendedProps?.type === 'task') {
+				console.log('編輯任務:', event.title);
+			}
+		}
+	};
 
-        .calendar-actions {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
+	// 處理日期範圍變更
+	const handleDatesSet = (dateInfo: any) => {
+		setDateRange({
+			start: dateInfo.start,
+			end: dateInfo.end
+		});
+	};
 
-        .view-switcher {
-          display: flex;
-          background: rgba(201, 169, 97, 0.1);
-          border-radius: 8px;
-          padding: 4px;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-        }
+	// 處理 "更多" 連結點擊
+	const handleMoreLinkClick = (info: any) => {
+		// 阻止預設的 popover 行為
+		info.jsEvent.preventDefault();
 
-        .view-btn {
-          padding: 8px 16px;
-          background: transparent;
-          border: none;
-          border-radius: 6px;
-          cursor: pointer;
-          font-weight: 500;
-          color: #6d685f;
-          transition: all 0.2s ease;
-        }
+		const clickedDate = format(info.date, 'yyyy-MM-dd');
 
-        .view-btn.active {
-          background: linear-gradient(135deg, #c9a961, #e4d4a8);
-          color: white;
-          box-shadow: 0 2px 8px rgba(201, 169, 97, 0.3);
-        }
+		// 取得當天的所有事件（包括顯示的和隱藏的）
+		const allDayEvents = events.filter((event: CalendarEvent) => {
+			// 處理日期格式
+			const getDateString = (date: string | Date | undefined): string => {
+				if (!date) return '';
 
-        .view-btn:hover:not(.active) {
-          background: rgba(201, 169, 97, 0.2);
-          color: #3a3833;
-        }
+				if (typeof date === 'string' && date.match(/^\d{4}-\d{2}-\d{2}/)) {
+					return date.split('T')[0];
+				}
 
-        .calendar-grid {
-          width: 100%;
-        }
+				return format(new Date(date), 'yyyy-MM-dd');
+			};
 
-        .weekdays-header {
-          display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 1px;
-          margin-bottom: 8px;
-        }
+			const eventStartDate = getDateString(event.start);
 
-        .weekday {
-          text-align: center;
-          padding: 12px 8px;
-          font-weight: 600;
-          color: #6d685f;
-          font-size: 14px;
-        }
+			// 對於生日事件（沒有 end date），只檢查 start date
+			if (!event.end || event.extendedProps?.type === 'birthday') {
+				return eventStartDate === clickedDate;
+			}
 
-        .days-grid {
-          display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 1px;
-          background: rgba(201, 169, 97, 0.1);
-          border-radius: 12px;
-          overflow: hidden;
-        }
+			// 對於有結束日期的事件（如旅遊團），檢查日期範圍
+			const eventEndDate = getDateString(event.end);
+			const isInRange = clickedDate >= eventStartDate && clickedDate <= eventEndDate;
 
-        .calendar-day {
-          background: rgba(255, 255, 255, 0.8);
-          min-height: 120px;
-          padding: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          flex-direction: column;
-          position: relative;
-        }
+			return isInRange;
+		});
 
-        .calendar-day:hover {
-          background: rgba(201, 169, 97, 0.1);
-        }
+		// 排序事件：按照日期區間長度排序
+		const sortedEvents = allDayEvents.sort(compareEvents);
 
-        .calendar-day.other-month {
-          opacity: 0.3;
-        }
+		setMoreEventsDialog({
+			open: true,
+			date: clickedDate,
+			events: sortedEvents
+		});
 
-        .calendar-day.today {
-          background: rgba(201, 169, 97, 0.2);
-          border: 2px solid #c9a961;
-        }
+		return 'none'; // 告訴 FullCalendar 不要顯示預設的 popover
+	};
 
-        .calendar-day.today .day-number {
-          color: #c9a961;
-          font-weight: 700;
-        }
+	// 關閉對話框
+	const handleCloseDialog = () => {
+		setMoreEventsDialog({
+			open: false,
+			date: '',
+			events: []
+		});
+	};
 
-        .day-number {
-          font-size: 16px;
-          font-weight: 500;
-          color: #3a3833;
-          margin-bottom: 4px;
-        }
+	return (
+		<div className="calendar-container card">
+			{/* 事件類型過濾器 - 使用 Venturo 樣式 */}
+			<div className="filter-section gradient-card-subtle" style={{ marginBottom: 'var(--spacing-lg)' }}>
+				<div style={{
+					display: 'flex',
+					justifyContent: 'space-between',
+					alignItems: 'center',
+					flexWrap: 'wrap',
+					gap: 'var(--spacing-md)'
+				}}>
+					<h3 style={{ 
+						margin: 0,
+						fontSize: 'var(--font-size-lg)',
+						fontWeight: 600,
+						color: 'var(--text-primary)'
+					}}>
+						📅 日曆管理
+					</h3>
+					<div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-md)' }}>
+						<span style={{
+							fontSize: 'var(--font-size-sm)',
+							color: 'var(--text-secondary)',
+							fontWeight: 500
+						}}>
+							顯示類型：
+						</span>
+						<div style={{ display: 'flex', gap: 'var(--spacing-xs)' }}>
+							{[
+								{ value: 'all', label: '全部顯示' },
+								{ value: 'groups', label: '旅遊團' },
+								{ value: 'tasks', label: '任務' },
+								{ value: 'birthdays', label: '生日' },
+							].map(({ value, label }) => (
+								<button
+									key={value}
+									className={`btn ${eventFilter === value ? 'btn-primary' : 'btn-ghost'}`}
+									style={{
+										padding: 'var(--spacing-xs) var(--spacing-sm)',
+										fontSize: 'var(--font-size-sm)'
+									}}
+									onClick={() => setEventFilter(value as any)}
+								>
+									{label}
+								</button>
+							))}
+						</div>
+						<div className="badge badge-primary" style={{ whiteSpace: 'nowrap' }}>
+							{filteredEvents.length} 個事件
+						</div>
+					</div>
+				</div>
+			</div>
 
-        .day-events {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          gap: 2px;
-        }
+			{/* FullCalendar 主體 */}
+			<div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', overflow: 'hidden' }}>
+				<FullCalendar
+					ref={calendarRef}
+					plugins={[dayGridPlugin, interactionPlugin]}
+					initialView="dayGridMonth"
+					headerToolbar={{
+						left: 'prev,next today',
+						center: 'title',
+						right: ''
+					}}
+					events={filteredEvents}
+					dateClick={handleDateClick}
+					eventClick={handleEventClick}
+					datesSet={handleDatesSet}
+					locale="zh-tw"
+					height="auto"
+					dayMaxEvents={false}  // 關閉限制以支援跨日事件
+					moreLinkClick={handleMoreLinkClick}
+					moreLinkText="更多"
+					weekends={true}
+					eventDisplay="block"
+					displayEventTime={false}
+					eventOrder={compareEvents}
+					eventClassNames={(arg) => {
+						const type = arg.event.extendedProps?.type;
+						return `event-${type}`;
+					}}
+					// 跨日事件相關設置
+					eventMinHeight={26}
+					dayMaxEventRows={8}
+					eventMaxStack={8}
+					nextDayThreshold="00:00:00"
+				/>
+			</div>
 
-        .event-item {
-          background: #3B82F6;
-          color: white;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 12px;
-          cursor: pointer;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          transition: all 0.2s ease;
-          opacity: 0.9;
-        }
+			{/* 更多事件對話框 - 使用 Venturo 樣式 */}
+			{moreEventsDialog.open && (
+				<div style={{
+					position: 'fixed',
+					top: 0,
+					left: 0,
+					right: 0,
+					bottom: 0,
+					background: 'rgba(0, 0, 0, 0.5)',
+					display: 'flex',
+					alignItems: 'center',
+					justifyContent: 'center',
+					zIndex: 1000
+				}} onClick={handleCloseDialog}>
+					<div className="card" style={{
+						maxWidth: '500px',
+						width: '90vw',
+						maxHeight: '80vh',
+						overflowY: 'auto'
+					}} onClick={(e) => e.stopPropagation()}>
+						<div style={{
+							display: 'flex',
+							justifyContent: 'space-between',
+							alignItems: 'center',
+							marginBottom: 'var(--spacing-md)',
+							paddingBottom: 'var(--spacing-md)',
+							borderBottom: '1px solid var(--border)'
+						}}>
+							<h3 style={{
+								margin: 0,
+								fontSize: 'var(--font-size-lg)',
+								fontWeight: 600
+							}}>
+								{moreEventsDialog.date} 的所有活動 ({moreEventsDialog.events.length})
+							</h3>
+							<button
+								className="btn btn-ghost"
+								onClick={handleCloseDialog}
+								style={{ padding: 'var(--spacing-xs)' }}
+							>
+								✕
+							</button>
+						</div>
+						
+						<div>
+							{moreEventsDialog.events.map((event, index) => (
+								<div
+									key={index}
+									style={{
+										display: 'flex',
+										alignItems: 'center',
+										gap: 'var(--spacing-sm)',
+										padding: 'var(--spacing-sm)',
+										borderRadius: 'var(--radius-sm)',
+										border: '1px solid var(--border)',
+										cursor: 'pointer',
+										transition: 'all var(--animation-fast)',
+										marginBottom: index < moreEventsDialog.events.length - 1 ? 'var(--spacing-sm)' : 0
+									}}
+									onMouseEnter={(e) => {
+										e.currentTarget.style.background = 'var(--surface-hover)';
+										e.currentTarget.style.borderColor = 'var(--border-hover)';
+										e.currentTarget.style.transform = 'translateY(-1px)';
+									}}
+									onMouseLeave={(e) => {
+										e.currentTarget.style.background = 'transparent';
+										e.currentTarget.style.borderColor = 'var(--border)';
+										e.currentTarget.style.transform = 'translateY(0)';
+									}}
+									onClick={() => {
+										handleEventClick({
+											event: {
+												id: event.id,
+												title: event.title,
+												startStr: event.start,
+												endStr: event.end,
+												allDay: event.allDay,
+												backgroundColor: event.backgroundColor,
+												borderColor: event.borderColor,
+												extendedProps: event.extendedProps
+											}
+										} as any);
+										handleCloseDialog();
+									}}
+								>
+									<div style={{
+										width: '12px',
+										height: '12px',
+										borderRadius: 'var(--radius-xs)',
+										backgroundColor: event.backgroundColor || event.color || '#2196F3',
+										flexShrink: 0
+									}} />
+									<div style={{ flex: 1 }}>
+										<div style={{
+											fontWeight: 500,
+											marginBottom: 'var(--spacing-xs)'
+										}}>
+											{event.title}
+										</div>
+										<div style={{
+											fontSize: 'var(--font-size-sm)',
+											color: 'var(--text-secondary)'
+										}}>
+											{(() => {
+												if (event.extendedProps?.type === 'birthday') {
+													return '生日提醒';
+												} else if (event.extendedProps?.type === 'group') {
+													let dayInfo = '';
+													if (event.end) {
+														const start = new Date(event.start);
+														const end = new Date(event.end);
+														const days = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+														dayInfo = ` • ${days}天`;
+													}
+													return `團號: ${event.extendedProps.groupCode}${dayInfo}`;
+												} else if (event.extendedProps?.type === 'task') {
+													return `任務 • ${event.extendedProps.priority || 'normal'}`;
+												}
+												return '';
+											})()}
+										</div>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+			)}
 
-        .event-item:hover {
-          opacity: 1;
-          transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+			{/* FullCalendar 自定義樣式 */}
+			<style jsx global>{`
+				.fc-event {
+					cursor: pointer;
+					border: none !important;
+					font-size: 12px;
+					padding: 6px 10px;
+					font-weight: 500;
+					box-shadow: none;
+					margin: 1px 0;
+					min-height: 24px !important;
+					line-height: 1.2;
+				}
 
-        .event-title {
-          font-weight: 500;
-          flex: 1;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          white-space: nowrap;
-        }
+				.fc-event:hover {
+					opacity: 0.85;
+					transform: translateY(-1px);
+					box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+					transition: all 0.2s ease;
+				}
 
-        .event-time {
-          font-size: 10px;
-          opacity: 0.9;
-          margin-left: 4px;
-        }
+				.fc-daygrid-event {
+					margin: 1px 0 !important;
+					border-radius: 6px !important;
+				}
 
-        .more-events {
-          background: rgba(107, 114, 128, 0.8);
-          color: white;
-          padding: 2px 6px;
-          border-radius: 4px;
-          font-size: 11px;
-          text-align: center;
-          cursor: pointer;
-        }
+				.fc-daygrid-event-harness {
+					margin: 1px 0 !important;
+				}
 
-        /* 響應式設計 */
-        @media (max-width: 768px) {
-          .calendar-container {
-            padding: 16px;
-            border-radius: 16px;
-          }
+				.fc-h-event {
+					border: none !important;
+					padding: 6px 10px !important;
+					margin-left: 0 !important;
+					margin-right: 0 !important;
+				}
 
-          .calendar-header {
-            flex-direction: column;
-            gap: 16px;
-            align-items: stretch;
-          }
+				/* 跨日事件圓角處理 */
+				.fc-event-start {
+					border-top-left-radius: 6px !important;
+					border-bottom-left-radius: 6px !important;
+					border-top-right-radius: 0 !important;
+					border-bottom-right-radius: 0 !important;
+				}
 
-          .calendar-navigation {
-            justify-content: center;
-          }
+				.fc-event-end {
+					border-top-left-radius: 0 !important;
+					border-bottom-left-radius: 0 !important;
+					border-top-right-radius: 6px !important;
+					border-bottom-right-radius: 6px !important;
+				}
 
-          .calendar-title {
-            font-size: 20px;
-          }
+				.fc-event:not(.fc-event-start):not(.fc-event-end) {
+					border-radius: 0 !important;
+				}
 
-          .calendar-actions {
-            justify-content: center;
-          }
+				.fc-event.fc-event-start.fc-event-end {
+					border-radius: 6px !important;
+				}
 
-          .calendar-day {
-            min-height: 80px;
-            padding: 4px;
-          }
+				.fc-day-today {
+					background-color: rgba(201, 169, 97, 0.1) !important;
+				}
 
-          .day-number {
-            font-size: 14px;
-          }
+				.fc-daygrid-day:hover {
+					background-color: rgba(0, 0, 0, 0.02);
+					cursor: pointer;
+				}
 
-          .event-item {
-            font-size: 10px;
-            padding: 1px 4px;
-          }
+				.fc-daygrid-more-link {
+					color: var(--primary) !important;
+					font-weight: 500 !important;
+					text-decoration: none !important;
+					padding: 2px 6px !important;
+					border-radius: 4px !important;
+					transition: all 0.2s ease !important;
+				}
 
-          .event-title {
-            max-width: 60px;
-          }
+				.fc-daygrid-more-link:hover {
+					background-color: var(--primary-bg) !important;
+				}
 
-          .view-btn {
-            padding: 6px 12px;
-            font-size: 14px;
-          }
-        }
+				/* 隱藏原生 popover */
+				.fc-popover {
+					display: none !important;
+				}
 
-        @media (max-width: 480px) {
-          .calendar-day {
-            min-height: 60px;
-          }
-
-          .day-number {
-            font-size: 12px;
-          }
-
-          .event-item {
-            font-size: 9px;
-          }
-        }
-      `}</style>
-    </div>
-  )
+				/* 事件類型顏色 */
+				.event-group {
+					/* 由 generateGroupColor 動態設定 */
+				}
+				
+				.event-birthday {
+					background-color: #FF6B6B !important;
+					border-color: #FF6B6B !important;
+				}
+				
+				.event-task {
+					background-color: #9CAF88 !important;
+					border-color: #9CAF88 !important;
+				}
+			`}</style>
+		</div>
+	);
 }

@@ -248,7 +248,6 @@ export default function IntegratedTaskCard({
 
     <style jsx>{`
       .task-card {
-        background: rgba(255, 255, 255, 0.95);
         border: 1px solid rgba(201, 169, 97, 0.2);
         border-radius: 12px;
         padding: 16px;

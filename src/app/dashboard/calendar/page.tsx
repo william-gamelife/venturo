@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
+import { useMode } from '@/contexts/ModeContext'
 
 interface CalendarEvent {
   id: string
@@ -19,6 +20,7 @@ interface CalendarEvent {
 }
 
 export default function CalendarPage() {
+  const { currentMode } = useMode()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [events, setEvents] = useState<CalendarEvent[]>([])
   const [showAddDialog, setShowAddDialog] = useState(false)
@@ -262,7 +264,7 @@ export default function CalendarPage() {
       {/* 新增事件對話框 */}
       {showAddDialog && (
         <div className="dialog-overlay" onClick={() => setShowAddDialog(false)}>
-          <div className="dialog" onClick={e => e.stopPropagation()}>
+          <div className={`dialog ${currentMode === 'corner' ? 'corner-mode' : ''}`} onClick={e => e.stopPropagation()}>
             <h3>新增事件</h3>
             
             <div className="form-group">
@@ -668,6 +670,34 @@ export default function CalendarPage() {
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
         }
 
+        .dialog.corner-mode {
+          max-width: 1000px;
+          position: relative;
+        }
+
+        .dialog.corner-mode::after {
+          content: '';
+          position: absolute;
+          left: 50%;
+          top: 10%;
+          bottom: 10%;
+          width: 1px;
+          background: linear-gradient(to bottom, 
+            transparent 0%, 
+            rgba(201, 169, 97, 0.3) 20%, 
+            rgba(201, 169, 97, 0.5) 50%, 
+            rgba(201, 169, 97, 0.3) 80%, 
+            transparent 100%
+          );
+          transform: translateX(-50%);
+          z-index: 1;
+        }
+
+        .dialog.corner-mode > * {
+          width: 50%;
+          box-sizing: border-box;
+        }
+
         .dialog h3 {
           margin: 0 0 24px 0;
           font-size: 20px;
@@ -766,6 +796,18 @@ export default function CalendarPage() {
 
           .form-row {
             grid-template-columns: 1fr;
+          }
+
+          .dialog.corner-mode {
+            max-width: 500px;
+          }
+
+          .dialog.corner-mode::after {
+            display: none;
+          }
+
+          .dialog.corner-mode > * {
+            width: 100%;
           }
         }
       `}</style>

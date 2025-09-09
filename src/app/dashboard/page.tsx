@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { authManager } from '@/lib/auth'
-import { BaseAPI } from '@/lib/base-api'
+import { localAuth } from '@/lib/local-auth'
+import api from '@/lib/api-manager'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
@@ -17,28 +17,27 @@ export default function DashboardPage() {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   useEffect(() => {
-    // 檢查開發模式
-    if (typeof window !== 'undefined' && localStorage.getItem('dev_mode') === 'true') {
-      const devUser = JSON.parse(localStorage.getItem('dev_user') || '{}')
-      if (devUser.id) {
-        console.log('🔧 開發模式 - 使用模擬用戶')
-        setCurrentUser({
-          id: devUser.id,
-          username: devUser.user_metadata?.username || 'dev_user',
-          display_name: devUser.user_metadata?.display_name || '開發測試員',
-          email: devUser.email
-        })
-        return
-      }
-    }
+    // 使用本地認證系統
+    const user = localAuth.getCurrentUser()
     
-    // 正常認證流程
-    const user = authManager.getCurrentUser()
     if (!user) {
+      console.log('未登入，跳轉到首頁')
       router.push('/')
       return
     }
+    
+    console.log('👤 當前使用者:', user.display_name)
     setCurrentUser(user)
+    
+    // 顯示儲存統計（延遲執行避免初始化問題）
+    setTimeout(() => {
+      try {
+        const stats = api.getStorageStats()
+        console.log(`📊 儲存使用率: ${stats.percentage}%`)
+      } catch (error) {
+        console.log('儲存統計尚未就緒')
+      }
+    }, 100)
   }, [router])
 
 
@@ -231,7 +230,7 @@ export default function DashboardPage() {
 
         .stats-icon {
           margin: 0 auto 20px;
-          color: #f4a460;
+          color: var(--primary);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -250,7 +249,7 @@ export default function DashboardPage() {
         .stats-number {
           font-size: 48px;
           font-weight: 700;
-          color: #f4a460;
+          color: var(--primary);
           margin-bottom: 8px;
           line-height: 1;
           text-shadow: 0 2px 4px rgba(244, 164, 96, 0.3);
@@ -259,13 +258,13 @@ export default function DashboardPage() {
         .stats-label {
           font-size: 16px;
           font-weight: 600;
-          color: #3a3833;
+          color: var(--text-primary);
           margin-bottom: 4px;
         }
 
         .stats-subtitle {
           font-size: 14px;
-          color: #6d685f;
+          color: var(--text-secondary);
           opacity: 0.8;
         }
 
@@ -324,13 +323,13 @@ export default function DashboardPage() {
         .placeholder-text {
           font-size: 18px;
           font-weight: 600;
-          color: #3a3833;
+          color: var(--text-primary);
           margin-bottom: 8px;
         }
 
         .placeholder-subtitle {
           font-size: 14px;
-          color: #6d685f;
+          color: var(--text-secondary);
           font-weight: 400;
         }
 
@@ -361,7 +360,7 @@ export default function DashboardPage() {
           align-items: center;
           justify-content: center;
           min-height: 400px;
-          color: #6d685f;
+          color: var(--text-secondary);
           font-size: 16px;
         }
 
@@ -373,7 +372,7 @@ export default function DashboardPage() {
         .section-title {
           font-size: 24px;
           font-weight: 700;
-          color: #3a3833;
+          color: var(--text-primary);
           margin: 0 0 24px 0;
           text-align: left;
         }
@@ -462,13 +461,13 @@ export default function DashboardPage() {
         .placeholder-text {
           font-size: 16px;
           font-weight: 600;
-          color: #3a3833;
+          color: var(--text-primary);
           margin-bottom: 4px;
         }
 
         .placeholder-subtitle {
           font-size: 13px;
-          color: #6d685f;
+          color: var(--text-secondary);
           font-weight: 400;
         }
 
@@ -506,14 +505,14 @@ export default function DashboardPage() {
           margin: 0;
           font-size: 18px;
           font-weight: 600;
-          color: #3a3833;
+          color: var(--text-primary);
         }
 
         .close-button {
           background: none;
           border: none;
           font-size: 24px;
-          color: #6d685f;
+          color: var(--text-secondary);
           cursor: pointer;
           padding: 0;
           width: 24px;
@@ -527,7 +526,7 @@ export default function DashboardPage() {
 
         .close-button:hover {
           background: #f0f0f0;
-          color: #3a3833;
+          color: var(--text-primary);
         }
 
         .modal-body {
@@ -546,7 +545,7 @@ export default function DashboardPage() {
         .modal-body p {
           margin: 0 0 8px;
           font-size: 16px;
-          color: #3a3833;
+          color: var(--text-primary);
         }
 
         .dev-subtitle {

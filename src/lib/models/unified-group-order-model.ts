@@ -1,4 +1,4 @@
-import { TodoItem } from '../../../Venturo/src/lib/types';
+import { TodoItem } from '@/types';
 
 /**
  * 團體訂單一體化模型

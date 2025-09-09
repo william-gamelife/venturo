@@ -4,7 +4,7 @@ import {
   DATA_COMPLETENESS_CONFIG,
   TravelerInfo 
 } from '../models/unified-group-order-model';
-import { TodoItem } from '../../../Venturo/src/lib/types';
+import { TodoItem } from '@/types';
 
 /**
  * 智慧團體訂單服務

@@ -72,7 +72,7 @@ export const CornerTags = {
       color: 'amber' as const, 
       icon: Phone,
       priority: 'medium',
-      bgColor: 'bg-amber-50 border-amber-200 text-amber-700'
+      bgColor: 'badge badge-warning'
     },
     '📅 待設日期': { 
       color: 'blue' as const, 
