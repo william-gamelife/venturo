@@ -2,162 +2,417 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { ModuleLayout } from '@/components/ModuleLayout';
+import { Icons } from '@/components/icons';
+import { questions, ARCHETYPES, type Question } from '@/data/mind-magic-questions';
 
-// 簡化的測試資料結構
-const phase1Questions = [
-  {
-    id: "Q001",
-    phase: 1,
-    axis: "ATH-APH",
-    type: "情境",
-    question: "深夜獨處時，你會：",
-    options: [
-      { text: "整理思緒，規劃明天", score: { ATH: 3 } },
-      { text: "聽音樂，感受當下", score: { APH: 3 } },
-      { text: "看書或學習新知", score: { ATH: 2, HER: 1 } },
-      { text: "翻看照片回憶往事", score: { APH: 2, ODI: 1 } },
-      { text: "都有可能，看心情", score: {} }
-    ]
-  },
-  {
-    id: "Q002",
-    phase: 1,
-    axis: "ATH-APH",
-    type: "價值觀",
-    question: "面對爭論時，你最在意：",
-    options: [
-      { text: "邏輯是否嚴密", score: { ATH: 3 } },
-      { text: "情感是否受傷", score: { APH: 3 } },
-      { text: "事實是否正確", score: { ATH: 2 } },
-      { text: "氣氛是否和諧", score: { APH: 2 } },
-      { text: "快點結束爭論", score: { ODI: 1 } }
-    ]
-  },
-  // 為了演示，這裡只放2題
-];
+interface TestResult {
+  [key: string]: number;
+}
 
-export default function MindMagicTest() {
+export default function MindMagicTestPage() {
   const router = useRouter();
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState([]);
-  const [scores, setScores] = useState({
-    ATH: 0, APH: 0, HER: 0, ODI: 0,
-    PRO: 0, POL: 0, ZEU: 0, FRE: 0,
-    DRE: 0, HEP: 0, LOK: 0, CER: 0
-  });
+  const [answers, setAnswers] = useState<{ [key: number]: number }>({});
+  const [isCompleted, setIsCompleted] = useState(false);
 
-  const handleAnswer = (optionIndex) => {
-    const question = phase1Questions[currentQuestion];
-    const selectedOption = question.options[optionIndex];
-    
-    // 更新分數
-    const newScores = { ...scores };
-    if (selectedOption.score) {
-      Object.entries(selectedOption.score).forEach(([axis, value]) => {
-        newScores[axis] = (newScores[axis] || 0) + value;
-      });
-    }
+  const handleAnswer = (optionIndex: number) => {
+    const newAnswers = { ...answers, [currentQuestion]: optionIndex };
+    setAnswers(newAnswers);
 
-    setScores(newScores);
-    setAnswers([...answers, { questionId: question.id, selectedOption: optionIndex }]);
-
-    // 檢查是否完成測試
-    if (currentQuestion + 1 >= phase1Questions.length) {
-      // 測試完成，導向結果頁
-      completeTest(newScores);
+    if (currentQuestion < questions.length - 1) {
+      setTimeout(() => {
+        setCurrentQuestion(currentQuestion + 1);
+      }, 300);
     } else {
+      // 測驗完成，計算結果
+      const result = calculateResult(newAnswers);
+      localStorage.setItem('mindMagicResult', JSON.stringify(result));
+      localStorage.setItem('mindMagicTestDate', new Date().toISOString());
+      setIsCompleted(true);
+      
+      setTimeout(() => {
+        router.push('/dashboard/mind-magic/results');
+      }, 2000);
+    }
+  };
+
+  const calculateResult = (userAnswers: { [key: number]: number }): TestResult => {
+    const scores: TestResult = {};
+    
+    // 初始化所有原型分數
+    Object.values(ARCHETYPES).forEach(archetype => {
+      scores[archetype] = 0;
+    });
+
+    // 根據答案計算分數
+    questions.forEach((question, questionIndex) => {
+      const answerIndex = userAnswers[questionIndex];
+      if (answerIndex !== undefined) {
+        const selectedOption = question.options[answerIndex];
+        Object.entries(selectedOption.archetypes).forEach(([archetype, score]) => {
+          scores[archetype] = (scores[archetype] || 0) + score;
+        });
+      }
+    });
+
+    return scores;
+  };
+
+  const goToPrevious = () => {
+    if (currentQuestion > 0) {
+      setCurrentQuestion(currentQuestion - 1);
+    }
+  };
+
+  const goToNext = () => {
+    if (answers[currentQuestion] !== undefined && currentQuestion < questions.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
     }
   };
 
-  const completeTest = (finalScores) => {
-    // 按照您的規格計算1320人格ID (需要3高+2低)
-    const sorted = Object.entries(finalScores).sort((a, b) => b[1] - a[1]);
-    const top3 = sorted.slice(0, 3);  // 前3高
-    const bottom2 = sorted.slice(-2); // 後2低
-    
-    // 計算強度等級 (1-12, 1-11, 1-10)
-    const primaryIntensity = Math.min(12, Math.max(1, Math.ceil(top3[0][1] / 10)));
-    const secondaryIntensity = Math.min(11, Math.max(1, Math.ceil(top3[1][1] / 10)));
-    const tertiaryIntensity = Math.min(10, Math.max(1, Math.ceil(top3[2][1] / 10)));
-    
-    // 將12軸轉換為索引編號 (ATH=0, APH=1, ...)
-    const axisToIndex = {
-      'ATH': 0, 'APH': 1, 'HER': 2, 'ODI': 3,
-      'PRO': 4, 'POL': 5, 'ZEU': 6, 'FRE': 7,
-      'DRE': 8, 'HEP': 9, 'LOK': 10, 'CER': 11
-    };
-    
-    // 生成包含軸向資訊的ID
-    const primaryAxis = axisToIndex[top3[0][0]];
-    const secondaryAxis = axisToIndex[top3[1][0]];
-    const tertiaryAxis = axisToIndex[top3[2][0]];
-    const shadowAxis1 = axisToIndex[bottom2[0][0]];
-    const shadowAxis2 = axisToIndex[bottom2[1][0]];
-    
-    // 組合成完整的人格ID (包含3高2低+強度資訊)
-    const personalityId = `P${primaryAxis.toString().padStart(2,'0')}${secondaryAxis.toString().padStart(2,'0')}${tertiaryAxis.toString().padStart(2,'0')}_${shadowAxis1.toString().padStart(2,'0')}${shadowAxis2.toString().padStart(2,'0')}_${primaryIntensity.toString().padStart(2,'0')}${secondaryIntensity.toString().padStart(2,'0')}${tertiaryIntensity.toString().padStart(2,'0')}`;
-    
-    // 導向結果頁
-    router.push(`/dashboard/mind-magic/result/${personalityId}`);
-  };
+  const progress = ((currentQuestion + 1) / questions.length) * 100;
+  const question = questions[currentQuestion];
 
-  if (currentQuestion >= phase1Questions.length) {
+  if (isCompleted) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl mb-4">正在分析您的結果...</h2>
-          <div className="animate-pulse">🔮</div>
+      <ModuleLayout
+        header={{
+          icon: Icons.mindMagic,
+          title: "測驗完成",
+          subtitle: "正在分析你的結果..."
+        }}
+      >
+        <div className="completion-screen">
+          <div className="completion-content">
+            <div className="magic-circle">
+              <div className="inner-circle">
+                <span className="completion-icon">✨</span>
+              </div>
+            </div>
+            <h2>測驗已完成！</h2>
+            <p>正在為你分析專屬的人格原型...</p>
+            <div className="loading-bar">
+              <div className="loading-progress"></div>
+            </div>
+          </div>
         </div>
-      </div>
+
+        <style jsx global>{`
+          .completion-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 60vh;
+            text-align: center;
+          }
+          
+          .completion-content h2 {
+            font-size: 1.8rem;
+            margin: 1.5rem 0 0.5rem;
+            color: #c9a961;
+          }
+          
+          .completion-content p {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 2rem;
+          }
+          
+          .magic-circle {
+            width: 120px;
+            height: 120px;
+            border: 3px solid rgba(201, 169, 97, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+            animation: rotate 3s linear infinite;
+          }
+          
+          .inner-circle {
+            width: 80px;
+            height: 80px;
+            border: 2px solid rgba(201, 169, 97, 0.6);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: rotate-reverse 2s linear infinite;
+          }
+          
+          .completion-icon {
+            font-size: 2rem;
+            animation: pulse 1.5s ease-in-out infinite;
+          }
+          
+          .loading-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(201, 169, 97, 0.2);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0 auto;
+          }
+          
+          .loading-progress {
+            width: 30%;
+            height: 100%;
+            background: linear-gradient(90deg, #c9a961, #d4b86a);
+            border-radius: 2px;
+            animation: loading 2s ease-in-out infinite;
+          }
+          
+          @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          
+          @keyframes rotate-reverse {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+          }
+          
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+          }
+          
+          @keyframes loading {
+            0% { transform: translateX(-100%); }
+            50% { transform: translateX(300%); }
+            100% { transform: translateX(-100%); }
+          }
+        `}</style>
+      </ModuleLayout>
     );
   }
 
-  const question = phase1Questions[currentQuestion];
-
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full">
-        {/* 進度顯示 */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm text-gray-400 mb-2">
-            <span>Phase 1 (演示版)</span>
-            <span>{currentQuestion + 1}/{phase1Questions.length}</span>
+    <ModuleLayout
+      header={{
+        icon: Icons.mindMagic,
+        title: `第 ${currentQuestion + 1} 題`,
+        subtitle: `共 ${questions.length} 題 • ${Math.round(progress)}% 完成`,
+        actions: (
+          <div className="test-progress">
+            <div className="progress-bar">
+              <div 
+                className="progress-fill" 
+                style={{ width: `${progress}%` }}
+              />
+            </div>
           </div>
-          <div className="w-full bg-gray-800 h-2 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-500"
-              style={{
-                width: `${((currentQuestion + 1) / phase1Questions.length) * 100}%`
-              }}
-            />
+        )
+      }}
+    >
+      <div className="test-container">
+        <div className="question-section">
+          <div className="question-number">
+            題目 {currentQuestion + 1} / {questions.length}
           </div>
+          <h2 className="question-text">{question.text}</h2>
         </div>
 
-        {/* 題目 */}
-        <div className="space-y-8">
-          <h2 className="text-2xl font-light leading-relaxed">
-            {question.question}
-          </h2>
+        <div className="options-section">
+          {question.options.map((option, index) => (
+            <button
+              key={index}
+              className={`option-button ${answers[currentQuestion] === index ? 'selected' : ''}`}
+              onClick={() => handleAnswer(index)}
+            >
+              <span className="option-letter">{String.fromCharCode(65 + index)}</span>
+              <span className="option-text">{option.text}</span>
+            </button>
+          ))}
+        </div>
 
-          {/* 選項 */}
-          <div className="space-y-3">
-            {question.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleAnswer(index)}
-                className="w-full text-left p-4 rounded-lg border border-gray-800 
-                         hover:border-gray-600 hover:bg-gray-900/50 
-                         transition-all duration-300 group"
-              >
-                <span className="text-lg font-light group-hover:text-blue-400 transition-colors">
-                  {option.text}
-                </span>
-              </button>
-            ))}
-          </div>
+        <div className="navigation-section">
+          <button 
+            className="nav-button prev"
+            onClick={goToPrevious}
+            disabled={currentQuestion === 0}
+          >
+            上一題
+          </button>
+          
+          <button 
+            className="nav-button next"
+            onClick={goToNext}
+            disabled={answers[currentQuestion] === undefined}
+          >
+            {currentQuestion === questions.length - 1 ? '完成測驗' : '下一題'}
+          </button>
         </div>
       </div>
-    </div>
+
+      <style jsx global>{`
+        .test-progress {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        
+        .progress-bar {
+          width: 200px;
+          height: 8px;
+          background: rgba(201, 169, 97, 0.2);
+          border-radius: 4px;
+          overflow: hidden;
+        }
+        
+        .progress-fill {
+          height: 100%;
+          background: linear-gradient(90deg, #c9a961, #d4b86a);
+          border-radius: 4px;
+          transition: width 0.5s ease;
+        }
+        
+        .test-container {
+          max-width: 800px;
+          margin: 0 auto;
+          padding: 2rem 0;
+        }
+        
+        .question-section {
+          text-align: center;
+          margin-bottom: 3rem;
+        }
+        
+        .question-number {
+          font-size: 0.9rem;
+          color: #c9a961;
+          font-weight: 600;
+          margin-bottom: 1rem;
+        }
+        
+        .question-text {
+          font-size: 1.5rem;
+          font-weight: 300;
+          color: #2d3748;
+          line-height: 1.5;
+          margin: 0;
+        }
+        
+        .options-section {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+          margin-bottom: 3rem;
+        }
+        
+        .option-button {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1.25rem;
+          background: white;
+          border: 2px solid rgba(201, 169, 97, 0.2);
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-align: left;
+        }
+        
+        .option-button:hover {
+          border-color: rgba(201, 169, 97, 0.5);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+        
+        .option-button.selected {
+          border-color: #c9a961;
+          background: rgba(201, 169, 97, 0.1);
+        }
+        
+        .option-letter {
+          width: 32px;
+          height: 32px;
+          background: rgba(201, 169, 97, 0.2);
+          border-radius: 50%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          font-weight: 600;
+          color: #c9a961;
+          flex-shrink: 0;
+        }
+        
+        .option-button.selected .option-letter {
+          background: #c9a961;
+          color: white;
+        }
+        
+        .option-text {
+          font-size: 1rem;
+          color: #4a5568;
+          line-height: 1.5;
+        }
+        
+        .navigation-section {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        
+        .nav-button {
+          padding: 0.75rem 2rem;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        
+        .nav-button.prev {
+          background: transparent;
+          border: 2px solid rgba(201, 169, 97, 0.3);
+          color: #c9a961;
+        }
+        
+        .nav-button.prev:hover:not(:disabled) {
+          border-color: #c9a961;
+          background: rgba(201, 169, 97, 0.1);
+        }
+        
+        .nav-button.next {
+          background: #c9a961;
+          border: 2px solid #c9a961;
+          color: white;
+        }
+        
+        .nav-button.next:hover:not(:disabled) {
+          background: #b8976b;
+          border-color: #b8976b;
+        }
+        
+        .nav-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+        
+        @media (max-width: 768px) {
+          .test-container {
+            padding: 1rem;
+          }
+          
+          .question-text {
+            font-size: 1.25rem;
+          }
+          
+          .progress-bar {
+            width: 150px;
+          }
+          
+          .navigation-section {
+            flex-direction: column;
+            gap: 1rem;
+          }
+          
+          .nav-button {
+            width: 100%;
+          }
+        }
+      `}</style>
+    </ModuleLayout>
   );
 }
