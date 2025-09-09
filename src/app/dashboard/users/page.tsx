@@ -31,11 +31,8 @@ interface User {
 }
 
 interface EditUser {
-  display_name: string
-  title: string
-  role: 'SUPER_ADMIN' | 'BUSINESS_ADMIN' | 'GENERAL_USER'
   password?: string
-  modules: string[]
+  cornerMode: boolean
 }
 
 export default function UsersPage() {
@@ -45,11 +42,8 @@ export default function UsersPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editForm, setEditForm] = useState<EditUser>({
-    display_name: '',
-    title: '',
-    role: 'GENERAL_USER',
     password: '',
-    modules: []
+    cornerMode: false
   })
   const [newUser, setNewUser] = useState({
     username: '',
@@ -117,22 +111,12 @@ export default function UsersPage() {
   const handleEditUser = (user: User) => {
     setEditingUser(user)
     
-    // Convert permissions to modules list
-    const userModules = Object.entries(user.permissions)
-      .filter(([_, perms]) => {
-        if (typeof perms === 'object' && 'read' in perms) {
-          return perms.read === true
-        }
-        return false
-      })
-      .map(([module, _]) => module)
+    // 檢查用戶是否為角落員工（角落模式）
+    const isCornerMode = user.role === 'CORNER_EMPLOYEE'
     
     setEditForm({
-      display_name: user.display_name,
-      title: user.title,
-      role: user.role,
       password: '',
-      modules: userModules
+      cornerMode: isCornerMode
     })
     setShowEditModal(true)
   }
@@ -140,57 +124,14 @@ export default function UsersPage() {
   const handleSaveEdit = async () => {
     if (!editingUser) return
 
-    // Convert modules back to permissions format
-    const permissions = getDefaultPermissions(editForm.role)
-    
-    // Reset all permissions to false first
-    Object.keys(permissions).forEach(module => {
-      const modulePerms = permissions[module as keyof typeof permissions] as any
-      Object.keys(modulePerms).forEach(perm => {
-        modulePerms[perm] = false
-      })
-    })
-    
-    // Enable selected modules
-    editForm.modules.forEach(moduleId => {
-      if (permissions[moduleId as keyof typeof permissions]) {
-        const modulePerms = permissions[moduleId as keyof typeof permissions] as any
-        switch (editForm.role) {
-          case 'SUPER_ADMIN':
-            modulePerms.read = true
-            modulePerms.write = true
-            modulePerms.delete = true
-            modulePerms.admin = true
-            if (moduleId === 'todos') {
-              modulePerms.packaging = true
-            }
-            break
-          case 'BUSINESS_ADMIN':
-            modulePerms.read = true
-            modulePerms.write = true
-            if (moduleId === 'todos') {
-              modulePerms.delete = true
-              modulePerms.packaging = true
-            }
-            if (moduleId === 'projects') {
-              modulePerms.delete = true
-            }
-            break
-          default: // GENERAL_USER
-            modulePerms.read = true
-            if (['timebox', 'todos', 'calendar'].includes(moduleId)) {
-              modulePerms.write = true
-            }
-            break
-        }
-      }
-    })
+    // 根據角落模式設定角色和權限
+    const newRole = editForm.cornerMode ? 'CORNER_EMPLOYEE' : editingUser.role
+    const permissions = getDefaultPermissions(newRole)
 
     const updatedUser = {
       ...editingUser,
-      display_name: editForm.display_name,
-      title: editForm.title,
-      role: editForm.role,
+      role: newRole,
+      world_mode: editForm.cornerMode ? 'corner' : 'game',
       permissions,
       ...(editForm.password && editForm.password.trim() !== '' ? { password: editForm.password } : {})
     }
@@ -273,29 +214,7 @@ export default function UsersPage() {
     })
   }
 
-  const toggleModule = (moduleId: string, enabled: boolean) => {
-    setEditForm(prev => ({
-      ...prev,
-      modules: enabled 
-        ? [...prev.modules, moduleId] 
-        : prev.modules.filter(id => id !== moduleId)
-    }))
-  }
 
-  const moduleNames = {
-    users: '使用者管理',
-    todos: '待辦事項',
-    projects: '專案管理',
-    calendar: '行事曆',
-    finance: '財務管理',
-    timebox: '箱型時間',
-    'life-simulator': '人生模擬器',
-    'pixel-life': '像素人生',
-    'travel-pdf': '旅行 PDF',
-    themes: '主題設定',
-    sync: '同步管理',
-    settings: '系統設定'
-  }
 
   if (!currentUser) {
     return (
@@ -328,33 +247,17 @@ export default function UsersPage() {
         title: "使用者管理",
         subtitle: "管理系統使用者及其權限設定",
         actions: (
-          <>
-            <div className="header-stats">
-              <div className="stat-item">
-                <span className="stat-number">{users.length}</span>
-                <span className="stat-label">總用戶</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{users.filter(u => u.role === 'SUPER_ADMIN').length}</span>
-                <span className="stat-label">系統管理員</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number">{users.filter(u => u.role === 'BUSINESS_ADMIN').length}</span>
-                <span className="stat-label">業務管理員</span>
-              </div>
-            </div>
-            <Button 
-              variant="primary"
-              icon={
-                <svg viewBox="0 0 16 16" width="16" height="16">
-                  <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              }
-              onClick={() => setShowAddModal(true)}
-            >
-              新增使用者
-            </Button>
-          </>
+          <Button 
+            variant="primary"
+            icon={
+              <svg viewBox="0 0 16 16" width="16" height="16">
+                <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            }
+            onClick={() => setShowAddModal(true)}
+          >
+            新增使用者
+          </Button>
         )
       }}
     >
@@ -500,44 +403,12 @@ export default function UsersPage() {
         </div>
       )}
 
-      {/* 編輯權限對話框 */}
+      {/* 編輯用戶對話框 */}
       {showEditModal && editingUser && (
         <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setShowEditModal(false)}>
-          <div className="modal-content large">
-            <h3 className="modal-title">編輯使用者權限 - {editingUser.display_name}</h3>
+          <div className="modal-content">
+            <h3 className="modal-title">編輯使用者 - {editingUser.display_name}</h3>
             
-            <div className="form-row">
-              <div className="form-group">
-                <label>顯示名稱</label>
-                <input
-                  type="text"
-                  value={editForm.display_name}
-                  onChange={(e) => setEditForm({...editForm, display_name: e.target.value})}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>職稱</label>
-                <input
-                  type="text"
-                  value={editForm.title}
-                  onChange={(e) => setEditForm({...editForm, title: e.target.value})}
-                />
-              </div>
-
-              <div className="form-group">
-                <label>角色</label>
-                <select
-                  value={editForm.role}
-                  onChange={(e) => setEditForm({...editForm, role: e.target.value as any})}
-                >
-                  <option value="GENERAL_USER">一般使用者</option>
-                  <option value="BUSINESS_ADMIN">業務管理員</option>
-                  <option value="SUPER_ADMIN">超級管理員</option>
-                </select>
-              </div>
-            </div>
-
             <div className="form-group">
               <label>重設密碼 (可選)</label>
               <input
@@ -549,25 +420,16 @@ export default function UsersPage() {
               <small>留空則不修改密碼</small>
             </div>
 
-            <div className="permissions-section">
-              <h4 className="permissions-title">功能權限設定</h4>
-              <p className="permissions-subtitle">勾選此使用者可以存取的模組功能</p>
-
-              <div className="modules-grid">
-                {Object.entries(moduleNames).map(([moduleKey, moduleName]) => (
-                  <label key={moduleKey} className="module-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={editForm.modules.includes(moduleKey)}
-                      onChange={(e) => toggleModule(moduleKey, e.target.checked)}
-                    />
-                    <span className="module-name">{moduleName}</span>
-                    {moduleKey === 'projects' && (
-                      <small className="module-note">包含待辦事項打包功能</small>
-                    )}
-                  </label>
-                ))}
-              </div>
+            <div className="form-group">
+              <label className="checkbox-label">
+                <input
+                  type="checkbox"
+                  checked={editForm.cornerMode}
+                  onChange={(e) => setEditForm({...editForm, cornerMode: e.target.checked})}
+                />
+                <span>啟用角落模式</span>
+              </label>
+              <small>角落模式適用於 Corner 員工，將限制部分功能存取</small>
             </div>
 
             <div className="modal-actions">
@@ -581,7 +443,7 @@ export default function UsersPage() {
                 className="btn-primary" 
                 onClick={handleSaveEdit}
               >
-                儲存權限
+                儲存
               </button>
             </div>
           </div>
@@ -589,33 +451,6 @@ export default function UsersPage() {
       )}
 
       <style jsx>{`
-        .header-stats {
-          display: flex;
-          gap: 24px;
-          margin-right: 16px;
-          padding-right: 16px;
-          border-right: 1px solid rgba(201, 169, 97, 0.3);
-        }
-
-        .header-stats .stat-item {
-          text-align: center;
-        }
-
-        .header-stats .stat-number {
-          display: block;
-          font-size: 18px;
-          font-weight: 700;
-          color: #c9a961;
-          line-height: 1;
-        }
-
-        .header-stats .stat-label {
-          display: block;
-          font-size: 10px;
-          color: #6d685f;
-          margin-top: 2px;
-          white-space: nowrap;
-        }
 
         .users-header {
           display: flex;
@@ -878,9 +713,6 @@ export default function UsersPage() {
           overflow-y: auto;
         }
 
-        .modal-content.large {
-          max-width: 800px;
-        }
 
         .modal-title {
           margin: 0 0 20px 0;
@@ -924,69 +756,21 @@ export default function UsersPage() {
           display: block;
         }
 
-        .permissions-section {
-          margin: 24px 0;
-          padding: 20px;
-          background: rgba(201, 169, 97, 0.05);
-          border-radius: 12px;
-          border: 1px solid rgba(201, 169, 97, 0.1);
-        }
-
-        .permissions-title {
-          margin: 0 0 4px 0;
-          color: #3a3833;
-          font-size: 16px;
-          font-weight: 600;
-        }
-
-        .permissions-subtitle {
-          margin: 0 0 20px 0;
-          color: #6d685f;
-          font-size: 14px;
-        }
-
-        .modules-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 12px;
-        }
-
-        .module-checkbox {
+        .checkbox-label {
           display: flex;
-          align-items: flex-start;
-          gap: 12px;
-          padding: 16px;
-          background: white;
-          border-radius: 8px;
-          border: 1px solid rgba(201, 169, 97, 0.1);
+          align-items: center;
+          gap: 8px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          font-weight: 500;
         }
 
-        .module-checkbox:hover {
-          background: rgba(201, 169, 97, 0.05);
-          border-color: rgba(201, 169, 97, 0.3);
-        }
-
-        .module-checkbox input[type="checkbox"] {
+        .checkbox-label input[type="checkbox"] {
           width: auto;
           margin: 0;
-          margin-top: 2px;
         }
 
-        .module-checkbox .module-name {
-          font-size: 14px;
-          font-weight: 600;
+        .checkbox-label span {
           color: #3a3833;
-          margin: 0;
-        }
-
-        .module-checkbox .module-note {
-          display: block;
-          margin-top: 4px;
-          font-size: 12px;
-          color: #c9a961;
-          font-weight: 500;
         }
 
         .modal-actions {
@@ -1025,9 +809,6 @@ export default function UsersPage() {
             gap: 16px;
           }
           
-          .modules-grid {
-            grid-template-columns: 1fr;
-          }
         }
       `}</style>
     </ModuleLayout>

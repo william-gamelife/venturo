@@ -310,9 +310,9 @@ export function TransactionHistory() {
           align-items: flex-start;
           margin-bottom: 32px;
           padding: 24px;
-          background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(255, 255, 255, 0.8));
+          background: rgba(255, 255, 255, 0.8);
           border-radius: 16px;
-          border: 1px solid rgba(239, 68, 68, 0.2);
+          border: 1px solid rgba(201, 169, 97, 0.2);
         }
 
         .header-info h2 {
@@ -329,12 +329,12 @@ export function TransactionHistory() {
 
         .game-message {
           font-size: 14px;
-          color: #EF4444;
+          color: #c9a961;
           font-style: italic;
           padding: 8px 12px;
-          background: rgba(239, 68, 68, 0.1);
+          background: rgba(201, 169, 97, 0.1);
           border-radius: 8px;
-          border-left: 3px solid #EF4444;
+          border-left: 3px solid #c9a961;
         }
 
         .header-actions {

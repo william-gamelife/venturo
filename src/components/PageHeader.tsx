@@ -25,23 +25,49 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
       
       <style jsx>{`
         .page-header {
-          background: white;
+          background: linear-gradient(135deg, 
+            rgba(255, 255, 255, 0.95) 0%,
+            rgba(248, 250, 252, 0.98) 25%,
+            rgba(255, 255, 255, 0.95) 50%,
+            rgba(254, 252, 232, 0.98) 75%,
+            rgba(255, 255, 255, 0.95) 100%
+          );
+          backdrop-filter: blur(10px);
           border: 1px solid rgba(201, 169, 97, 0.2);
           border-radius: 16px;
           padding: 24px 24px;
           margin: 0 0 32px 0;
-          box-shadow: 0 2px 12px rgba(201, 169, 97, 0.08);
+          box-shadow: 
+            0 2px 12px rgba(201, 169, 97, 0.08),
+            0 8px 32px rgba(201, 169, 97, 0.04);
           position: relative;
           width: 100%;
+          overflow: hidden;
         }
         
         .page-header::before {
           content: '';
           position: absolute;
           inset: -1px;
-          background: linear-gradient(135deg, rgba(201, 169, 97, 0.15), rgba(47, 79, 47, 0.05), rgba(201, 169, 97, 0.15));
+          background: linear-gradient(135deg, 
+            rgba(201, 169, 97, 0.2) 0%,
+            rgba(255, 215, 0, 0.08) 25%,
+            rgba(47, 79, 47, 0.08) 50%,
+            rgba(255, 215, 0, 0.08) 75%,
+            rgba(201, 169, 97, 0.2) 100%
+          );
           border-radius: 16px;
           z-index: -1;
+          animation: shimmer 3s ease-in-out infinite;
+        }
+        
+        @keyframes shimmer {
+          0%, 100% {
+            opacity: 0.8;
+          }
+          50% {
+            opacity: 1;
+          }
         }
         
         .header-content {
@@ -73,9 +99,13 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
         
         .header-title {
           font-size: 24px;
-          font-weight: 600;
-          color: #3a3833;
+          font-weight: 700;
+          background: linear-gradient(135deg, #3a3833, #c9a961, #2f4f2f);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
           margin: 0;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
         
         .header-subtitle {
@@ -96,10 +126,9 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
             margin: 0 0 24px 0;
           }
           
+          /* 保持水平排列，只縮小間距和字體 */
           .header-content {
-            flex-direction: column;
-            gap: 12px;
-            align-items: stretch;
+            gap: 16px; /* 縮小間距但保持水平 */
           }
           
           .header-left {
@@ -120,8 +149,6 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
           }
           
           .header-actions {
-            width: 100%;
-            justify-content: flex-start;
             flex-wrap: wrap;
             gap: 8px;
           }
@@ -134,16 +161,20 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
             border-radius: 12px;
           }
           
-          .header-left {
+          /* 只有在很小的螢幕才垂直排列 */
+          .header-content {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
+            gap: 12px;
+            align-items: stretch;
+          }
+          
+          .header-left {
+            gap: 12px;
           }
           
           .header-icon {
             width: 36px;
             height: 36px;
-            align-self: flex-start;
           }
           
           .header-title {
@@ -155,7 +186,9 @@ export function PageHeader({ icon, title, subtitle, actions }: PageHeaderProps) 
           }
           
           .header-actions {
-            flex-direction: column;
+            width: 100%;
+            justify-content: flex-start;
+            flex-wrap: wrap;
             gap: 6px;
           }
         }

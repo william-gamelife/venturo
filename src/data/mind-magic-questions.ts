@@ -457,7 +457,7 @@ export const questions: Question[] = [
       { text: "我需要時間處理這些情緒", value: 75, archetypes: { [ARCHETYPES.ATH]: 25, [ARCHETYPES.APH]: 75 } },
       { text: "我讓眼淚流，不問為什麼", value: 100, archetypes: { [ARCHETYPES.ATH]: 0, [ARCHETYPES.APH]: 100 } }
     ]
-  }
+  },
 
   
   // --- 行動HER vs 思索ODI 情境題 (Q23-26) ---
