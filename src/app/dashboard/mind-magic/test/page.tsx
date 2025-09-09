@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ModuleLayout } from '@/components/ModuleLayout';
 import { Icons } from '@/components/icons';
 import { questions, ARCHETYPES, type Question } from '@/data/mind-magic-questions';
+import { authManager } from '@/lib/auth';
 
 interface TestResult {
   [key: string]: number;
@@ -15,6 +16,14 @@ export default function MindMagicTestPage() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [isCompleted, setIsCompleted] = useState(false);
+
+  // 檢查用戶認證
+  useEffect(() => {
+    if (!authManager.isAuthenticated()) {
+      router.push('/');
+      return;
+    }
+  }, [router]);
 
   const handleAnswer = (optionIndex: number) => {
     const newAnswers = { ...answers, [currentQuestion]: optionIndex };
@@ -27,8 +36,11 @@ export default function MindMagicTestPage() {
     } else {
       // 測驗完成，計算結果
       const result = calculateResult(newAnswers);
-      localStorage.setItem('mindMagicResult', JSON.stringify(result));
-      localStorage.setItem('mindMagicTestDate', new Date().toISOString());
+      const userId = authManager.getUserId();
+      
+      // 使用用戶ID作為key存儲結果
+      localStorage.setItem(`mindMagicResult_${userId}`, JSON.stringify(result));
+      localStorage.setItem(`mindMagicTestDate_${userId}`, new Date().toISOString());
       setIsCompleted(true);
       
       setTimeout(() => {

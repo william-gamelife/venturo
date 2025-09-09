@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ModuleLayout } from '@/components/ModuleLayout';
 import { Icons } from '@/components/icons';
 import { analyzeTestResults, type TestAnalysis, type ArchetypeInfo } from '@/lib/mind-magic-analysis';
+import { authManager } from '@/lib/auth';
 
 export default function MindMagicResultsPage() {
   const router = useRouter();
@@ -13,8 +14,15 @@ export default function MindMagicResultsPage() {
   const [testDate, setTestDate] = useState<string>('');
 
   useEffect(() => {
-    const savedResult = localStorage.getItem('mindMagicResult');
-    const savedDate = localStorage.getItem('mindMagicTestDate');
+    // 檢查用戶認證
+    if (!authManager.isAuthenticated()) {
+      router.push('/');
+      return;
+    }
+
+    const userId = authManager.getUserId();
+    const savedResult = localStorage.getItem(`mindMagicResult_${userId}`);
+    const savedDate = localStorage.getItem(`mindMagicTestDate_${userId}`);
     
     if (savedResult) {
       try {
@@ -27,11 +35,12 @@ export default function MindMagicResultsPage() {
       }
     }
     setLoading(false);
-  }, []);
+  }, [router]);
 
   const retakeTest = () => {
-    localStorage.removeItem('mindMagicResult');
-    localStorage.removeItem('mindMagicTestDate');
+    const userId = authManager.getUserId();
+    localStorage.removeItem(`mindMagicResult_${userId}`);
+    localStorage.removeItem(`mindMagicTestDate_${userId}`);
     router.push('/dashboard/mind-magic/test');
   };
 

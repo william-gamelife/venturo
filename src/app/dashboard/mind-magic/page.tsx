@@ -4,9 +4,18 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ModuleLayout } from '@/components/ModuleLayout';
 import { Icons } from '@/components/icons';
+import { authManager } from '@/lib/auth';
 
 export default function MindMagicPage() {
   const router = useRouter();
+
+  // 檢查用戶認證
+  useEffect(() => {
+    if (!authManager.isAuthenticated()) {
+      router.push('/');
+      return;
+    }
+  }, [router]);
 
   const startTest = () => {
     router.push('/dashboard/mind-magic/test');
