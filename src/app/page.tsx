@@ -28,10 +28,11 @@ const DEFAULT_CHARACTERS = [
 
 export default function CharacterSelectPage() {
   const router = useRouter()
-  const [characters, setCharacters] = useState<any[]>([])
+  const [characters, setCharacters] = useState<any[]>(DEFAULT_CHARACTERS) // 初始化為預設角色
   const [selectedCharacter, setSelectedCharacter] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showRegisterModal, setShowRegisterModal] = useState(false)
+  const [isClient, setIsClient] = useState(false) // 追蹤是否在客戶端
   
   // 新角色表單
   const [newCharacter, setNewCharacter] = useState({
@@ -46,21 +47,29 @@ export default function CharacterSelectPage() {
   const avatarOptions = ['👤', '👨', '👩', '🧑‍💻', '🦸', '🧙', '🎨', '🚀', '🌟', '💫']
 
   useEffect(() => {
+    // 標記為客戶端
+    setIsClient(true)
+    
     // 載入角色列表
-    const savedCharacters = localStorage.getItem('venturo_characters')
-    if (savedCharacters) {
-      const parsed = JSON.parse(savedCharacters)
-      // 合併預設角色和已儲存角色
-      const merged = [...DEFAULT_CHARACTERS]
-      parsed.forEach((char: any) => {
-        if (!merged.find(c => c.id === char.id)) {
-          merged.push(char)
-        }
-      })
-      setCharacters(merged)
-    } else {
-      // 第一次使用，儲存預設角色
-      localStorage.setItem('venturo_characters', JSON.stringify(DEFAULT_CHARACTERS))
+    try {
+      const savedCharacters = localStorage.getItem('venturo_characters')
+      if (savedCharacters) {
+        const parsed = JSON.parse(savedCharacters)
+        // 合併預設角色和已儲存角色
+        const merged = [...DEFAULT_CHARACTERS]
+        parsed.forEach((char: any) => {
+          if (!merged.find(c => c.id === char.id)) {
+            merged.push(char)
+          }
+        })
+        setCharacters(merged)
+      } else {
+        // 第一次使用，儲存預設角色
+        localStorage.setItem('venturo_characters', JSON.stringify(DEFAULT_CHARACTERS))
+        setCharacters(DEFAULT_CHARACTERS)
+      }
+    } catch (error) {
+      console.error('載入角色失敗，使用預設角色:', error)
       setCharacters(DEFAULT_CHARACTERS)
     }
   }, [])
@@ -183,6 +192,37 @@ export default function CharacterSelectPage() {
       case 'BUSINESS_ADMIN': return '業務管理'
       default: return '一般使用者'
     }
+  }
+
+  // 如果還沒到客戶端，顯示載入畫面
+  if (!isClient) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'linear-gradient(135deg, #f4f1eb 0%, #e8e2d5 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ 
+            fontSize: '48px',
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, #c9a961, #e4c661)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            marginBottom: '20px'
+          }}>
+            VENTURO
+          </div>
+          <div style={{ fontSize: '18px', color: '#6d685f' }}>
+            系統載入中...
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
