@@ -29,7 +29,7 @@ export default function MindMagicTestPage() {
     });
   }, [router]);
 
-  const handleAnswer = (optionIndex: number) => {
+  const handleAnswer = async (optionIndex: number) => {
     const newAnswers = { ...answers, [currentQuestion]: optionIndex };
     setAnswers(newAnswers);
 
