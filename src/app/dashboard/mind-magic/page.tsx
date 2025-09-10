@@ -4,17 +4,22 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ModuleLayout } from '@/components/ModuleLayout';
 import { Icons } from '@/components/icons';
-import { authManager } from '@/lib/auth';
+import { venturoAuth } from '@/lib/venturo-auth';
+import { VersionIndicator } from '@/components/VersionIndicator';
 
 export default function MindMagicPage() {
   const router = useRouter();
 
   // 檢查用戶認證
   useEffect(() => {
-    if (!authManager.isAuthenticated()) {
+    venturoAuth.getCurrentUser().then(user => {
+      if (!user) {
+        router.push('/');
+        return;
+      }
+    }).catch(() => {
       router.push('/');
-      return;
-    }
+    });
   }, [router]);
 
   const startTest = () => {
@@ -292,6 +297,13 @@ export default function MindMagicPage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="心靈魔法"
+        authSystem="venturoAuth" 
+        version="2.1"
+        status="working"
+      />
     </ModuleLayout>
   );
 }

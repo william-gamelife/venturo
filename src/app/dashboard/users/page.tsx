@@ -5,6 +5,7 @@ import { authManager } from '@/lib/auth'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 interface User {
   id: string
@@ -811,6 +812,13 @@ export default function UsersPage() {
           
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="用戶管理"
+        authSystem="authManager" 
+        version="1.0"
+        status="loading"
+      />
     </ModuleLayout>
   )
 }

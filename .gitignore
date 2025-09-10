@@ -37,3 +37,4 @@ next-env.d.ts
 .idea/
 *.swp
 *.swo
+node_modules_backup/

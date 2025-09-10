@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { venturoAuth } from '@/lib/venturo-auth'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -216,6 +217,13 @@ export default function LoginPage() {
           全雲端認證系統 | 使用 Supabase 進行身份驗證
         </div>
       </div>
+      
+      <VersionIndicator 
+        page="登入頁面"
+        authSystem="venturoAuth" 
+        version="2.1"
+        status="working"
+      />
     </div>
   )
 }

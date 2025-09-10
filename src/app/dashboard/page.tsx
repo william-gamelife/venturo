@@ -7,6 +7,7 @@ import api from '@/lib/api-manager'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -659,6 +660,13 @@ export default function DashboardPage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="儀表板"
+        authSystem="venturoAuth" 
+        version="2.1"
+        status="working"
+      />
     </ModuleLayout>
   )
 }
