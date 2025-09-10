@@ -26,7 +26,7 @@ export default function DashboardPage() {
       return
     }
     
-    console.log('👤 當前使用者:', user.display_name)
+    console.log('👤 當前使用者:', user.name || user.display_name || user.email)
     setCurrentUser(user)
     
     // 顯示儲存統計（延遲執行避免初始化問題）
@@ -88,7 +88,7 @@ export default function DashboardPage() {
       header={{
         icon: Icons.dashboard,
         title: "工作台",
-        subtitle: `歡迎回來，${currentUser.display_name || currentUser.username}`,
+        subtitle: `歡迎回來，${currentUser.name || currentUser.display_name || currentUser.email}`,
         actions: (
           <>
             <Button variant="ghost" icon={Icons.settingsSmall} onClick={() => router.push('/dashboard/settings')}>

@@ -5,6 +5,9 @@ export interface LocalUser {
   id: string;
   email: string;
   name: string;
+  display_name?: string;
+  username?: string;
+  role?: string;
 }
 
 export const localAuth = {
