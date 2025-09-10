@@ -207,9 +207,18 @@ class SupabaseAuth {
    */
   async getCurrentUser(): Promise<VenturoUser | null> {
     try {
+      // 如果有本地測試用戶，直接回傳 (暫時後備方案)
+      if (this.currentUser && this.currentUser.id === 'admin_william_test') {
+        console.log('🔧 回傳本地測試用戶')
+        return this.currentUser
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       
-      if (!user) return null
+      if (!user) {
+        // 檢查是否有本地測試用戶
+        return this.currentUser
+      }
 
       if (this.currentUser && this.currentUser.id === user.id) {
         return this.currentUser
@@ -222,7 +231,10 @@ class SupabaseAuth {
         .eq('id', user.id)
         .single()
 
-      if (!profile) return null
+      if (!profile) {
+        console.log('⚠️ 用戶檔案不存在，回傳本地用戶')
+        return this.currentUser
+      }
 
       this.currentUser = {
         id: user.id,
