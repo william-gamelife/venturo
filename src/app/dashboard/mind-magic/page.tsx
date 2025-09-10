@@ -34,12 +34,12 @@ export default function MindMagicPage() {
       header={{
         icon: Icons.mindMagic,
         title: "心靈魔法",
-        subtitle: "探索內在，發現真實的自己",
+        subtitle: "基於希臘神話十二原型的深度人格分析系統",
         actions: (
           <div className="mind-magic-stats">
             <div className="stat-item">
-              <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>🔮</span>
-              <span className="stat-label">準備好了嗎？</span>
+              <span className="stat-number" style={{ fontSize: 14, fontWeight: 600, color: "#c9a961" }}>1320+ 系統</span>
+              <span className="stat-label">完整十二維度評估</span>
             </div>
           </div>
         )
@@ -48,42 +48,45 @@ export default function MindMagicPage() {
       {/* 主要內容 */}
       <div className="mind-magic-content">
         <div className="intro-section">
-          <h2>歡迎來到心靈魔法</h2>
-          <p>基於希臘神話十二原型的深度人格測驗，探索你的內在真實樣貌。</p>
+          <h2>重新架構：完整的 1320+ 系統</h2>
+          <p>不是三高二低的簡化分析，而是十二維度的全像人格圖譜。每個維度都重要，每個分數都有其獨特意義。</p>
           
           <div className="test-phases">
             <div className="phase-card">
-              <h3>🎯 人格軸向測驗</h3>
-              <p>分析你的主要人格特質組合</p>
+              <div className="phase-icon">◊</div>
+              <h3>多層次人格測量</h3>
+              <p>絕對值、相對值、動態範圍的完整評估</p>
             </div>
             <div className="phase-card">
-              <h3>🎭 陰影人格識別</h3>
-              <p>發現你最不願承認的內在面向</p>
+              <div className="phase-icon">◈</div>
+              <h3>陰影原型識別</h3>
+              <p>發現最不願承認的內在驅動力</p>
             </div>
             <div className="phase-card">
-              <h3>🔮 專屬密碼生成</h3>
-              <p>獲得獨一無二的人格解鎖密碼</p>
+              <div className="phase-icon">◉</div>
+              <h3>專屬密碼生成</h3>
+              <p>基於完整數據的個人化識別碼</p>
             </div>
           </div>
 
           <div className="test-options">
-            <h3>選擇你的測驗體驗</h3>
+            <h3>選擇評估模式</h3>
             <div className="test-type-cards">
               <div className="test-type-card">
-                <div className="test-type-icon">⚡</div>
-                <h4>快速測驗</h4>
-                <p>傳統的60題測驗，直接獲得結果</p>
+                <div className="test-type-icon">◦</div>
+                <h4>標準評估</h4>
+                <p>完整的 60 題多層次測量，獲得精確的十二維度數據</p>
                 <button className="btn-outline" onClick={startTest}>
-                  開始測驗
+                  開始評估
                 </button>
               </div>
               <div className="test-type-card featured">
-                <div className="test-type-icon">🔮</div>
-                <h4>儀式體驗</h4>
-                <p>療癒級的心靈儀式，深度自我探索</p>
-                <span className="recommended-badge">推薦</span>
+                <div className="test-type-icon">◆</div>
+                <h4>深度分析</h4>
+                <p>結合情境模擬的進階評估，探索動態人格模式</p>
+                <span className="recommended-badge">建議</span>
                 <button className="btn-primary" onClick={startRitualTest}>
-                  開始儀式
+                  開始分析
                 </button>
               </div>
             </div>
@@ -150,24 +153,34 @@ export default function MindMagicPage() {
         }
         
         .phase-card {
-          background: white;
-          border-radius: 12px;
-          padding: 1.5rem;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          background: linear-gradient(145deg, #ffffff, #f8f9fa);
+          border-radius: 16px;
+          padding: 2rem;
+          border: 1px solid rgba(201, 169, 97, 0.15);
+          box-shadow: 0 4px 20px rgba(201, 169, 97, 0.08);
           transition: all 0.3s ease;
+          text-align: center;
         }
         
         .phase-card:hover {
-          border-color: rgba(201, 169, 97, 0.4);
-          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+          border-color: rgba(201, 169, 97, 0.3);
+          box-shadow: 0 8px 32px rgba(201, 169, 97, 0.15);
+          transform: translateY(-2px);
+        }
+        
+        .phase-icon {
+          font-size: 2rem;
+          color: #c9a961;
+          margin-bottom: 1rem;
+          font-weight: 300;
         }
         
         .phase-card h3 {
           font-size: 1.25rem;
-          font-weight: 600;
-          margin-bottom: 0.5rem;
-          color: #c9a961;
+          font-weight: 500;
+          margin-bottom: 0.75rem;
+          color: #2d3748;
+          letter-spacing: -0.025em;
         }
         
         .phase-card p {
