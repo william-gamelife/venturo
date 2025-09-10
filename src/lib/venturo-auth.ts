@@ -3,7 +3,7 @@
  * 直接使用 Supabase Auth，不依賴本地存儲
  */
 
-import { supabase } from './supabase'
+import { supabase } from './supabase/client'
 import { User, Session } from '@supabase/supabase-js'
 
 export interface VenturoUser {

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { localAuth } from '@/lib/local-auth'
+import { venturoAuth } from '@/lib/venturo-auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -17,10 +17,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     // 檢查是否已經登入
-    const currentUser = localAuth.getCurrentUser()
-    if (currentUser) {
-      router.push('/dashboard')
-    }
+    venturoAuth.getCurrentUser().then(currentUser => {
+      if (currentUser) {
+        router.push('/dashboard')
+      }
+    })
   }, [router])
 
   // 處理登入
@@ -35,31 +36,15 @@ export default function LoginPage() {
     setError('')
     
     try {
-      // 檢查內建管理者帳號
-      if (loginForm.email === 'williamchien.corner@gmail.com' && loginForm.password === '19891230') {
-        const user = {
-          id: 'admin_william',
-          email: 'williamchien.corner@gmail.com',
-          name: 'William',
-          role: 'SUPER_ADMIN'
-        }
-        localStorage.setItem('venturo_user', JSON.stringify(user))
-        console.log('✅ 管理者登入成功:', user.email)
+      // 使用 Supabase 雲端認證
+      const result = await venturoAuth.login(loginForm.email, loginForm.password)
+      
+      if (result.success && result.user) {
+        console.log('✅ 雲端登入成功:', result.user.email)
         router.push('/dashboard')
-        return
+      } else {
+        setError(result.error || '登入失敗')
       }
-      
-      // 一般用戶登入邏輯
-      const user = {
-        id: 'local_user_' + Date.now(),
-        email: loginForm.email,
-        name: loginForm.email.split('@')[0] || '使用者',
-        role: 'GENERAL_USER'
-      }
-      
-      localStorage.setItem('venturo_user', JSON.stringify(user))
-      console.log('✅ 本地登入成功:', user.email)
-      router.push('/dashboard')
       
     } catch (error) {
       console.error('登入錯誤:', error)
@@ -221,14 +206,14 @@ export default function LoginPage() {
           v1.0.0
         </div>
         
-        {/* 管理員帳號提示 */}
+        {/* 雲端認證說明 */}
         <div style={{
           marginTop: '15px',
           textAlign: 'center',
           fontSize: '11px',
           color: 'rgba(109, 104, 95, 0.7)'
         }}>
-          管理員：williamchien.corner@gmail.com / 19891230
+          全雲端認證系統 | 使用 Supabase 進行身份驗證
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { localAuth } from '@/lib/local-auth'
+import { venturoAuth } from '@/lib/venturo-auth'
 import api from '@/lib/api-manager'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
@@ -17,27 +17,30 @@ export default function DashboardPage() {
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   useEffect(() => {
-    // 使用本地認證系統
-    const user = localAuth.getCurrentUser()
-    
-    if (!user) {
-      console.log('未登入，跳轉到首頁')
-      router.push('/')
-      return
-    }
-    
-    console.log('👤 當前使用者:', user.name || user.display_name || user.email)
-    setCurrentUser(user)
-    
-    // 顯示儲存統計（延遲執行避免初始化問題）
-    setTimeout(() => {
-      try {
-        const stats = api.getStorageStats()
-        console.log(`📊 儲存使用率: ${stats.percentage}%`)
-      } catch (error) {
-        console.log('儲存統計尚未就緒')
+    // 使用 Supabase 雲端認證系統
+    venturoAuth.getCurrentUser().then(user => {
+      if (!user) {
+        console.log('未登入，跳轉到首頁')
+        router.push('/')
+        return
       }
-    }, 100)
+      
+      console.log('👤 當前雲端使用者:', user.real_name || user.email)
+      setCurrentUser(user)
+      
+      // 顯示儲存統計（延遲執行避免初始化問題）
+      setTimeout(() => {
+        try {
+          const stats = api.getStorageStats()
+          console.log(`📊 儲存使用率: ${stats.percentage}%`)
+        } catch (error) {
+          console.log('儲存統計尚未就緒')
+        }
+      }, 100)
+    }).catch(error => {
+      console.error('獲取用戶資訊失敗:', error)
+      router.push('/')
+    })
   }, [router])
 
 
@@ -88,7 +91,7 @@ export default function DashboardPage() {
       header={{
         icon: Icons.dashboard,
         title: "工作台",
-        subtitle: `歡迎回來，${currentUser.name || currentUser.display_name || currentUser.email}`,
+        subtitle: `歡迎回來，${currentUser.real_name || currentUser.email}`,
         actions: (
           <>
             <Button variant="ghost" icon={Icons.settingsSmall} onClick={() => router.push('/dashboard/settings')}>
