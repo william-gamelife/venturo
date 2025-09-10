@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
-import { authManager } from '@/lib/auth'
+import { venturoAuth } from '@/lib/venturo-auth'
 
 import { Icons } from '@/components/icons'
 import { Button } from '@/components/Button'
@@ -33,13 +33,17 @@ function DashboardLayoutContent({ children }: SidebarProps) {
   }, [])
 
   useEffect(() => {
-    const user = authManager.getCurrentUser()
-    if (!user) {
-      // router.push('/') // 🔓 已停用登入重定向
-      return
-    }
-    setCurrentUser(user)
-    
+    venturoAuth.getCurrentUser().then(user => {
+      if (!user) {
+        console.log('Layout: 用戶未登入')
+        // router.push('/') // 🔓 已停用登入重定向
+        return
+      }
+      console.log('Layout: 用戶已登入', user.real_name || user.email)
+      setCurrentUser(user)
+    }).catch(error => {
+      console.error('Layout: 獲取用戶失敗', error)
+    })
 
     return () => {
       // Cleanup function
@@ -54,8 +58,8 @@ function DashboardLayoutContent({ children }: SidebarProps) {
       localStorage.removeItem('venturo_last_character')
     }
     
-    // 也清除舊系統的資料
-    await authManager.logout()
+    // 使用新的雲端認證系統登出
+    await venturoAuth.logout()
   }
 
 
