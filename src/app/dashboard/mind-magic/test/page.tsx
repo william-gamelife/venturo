@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ModuleLayout } from '@/components/ModuleLayout';
 import { Icons } from '@/components/icons';
 import { questions, ARCHETYPES, type Question } from '@/data/mind-magic-questions';
-import { authManager } from '@/lib/auth';
+import { venturoAuth } from '@/lib/venturo-auth';
 
 interface TestResult {
   [key: string]: number;
@@ -19,10 +19,14 @@ export default function MindMagicTestPage() {
 
   // 檢查用戶認證
   useEffect(() => {
-    if (!authManager.isAuthenticated()) {
+    venturoAuth.getCurrentUser().then(user => {
+      if (!user) {
+        router.push('/');
+        return;
+      }
+    }).catch(() => {
       router.push('/');
-      return;
-    }
+    });
   }, [router]);
 
   const handleAnswer = (optionIndex: number) => {
@@ -36,7 +40,8 @@ export default function MindMagicTestPage() {
     } else {
       // 測驗完成，計算結果
       const result = calculateResult(newAnswers);
-      const userId = authManager.getUserId();
+      const user = await venturoAuth.getCurrentUser();
+      const userId = user?.id || 'anonymous';
       
       // 使用用戶ID作為key存儲結果
       localStorage.setItem(`mindMagicResult_${userId}`, JSON.stringify(result));

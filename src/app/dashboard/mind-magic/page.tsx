@@ -53,8 +53,8 @@ export default function MindMagicPage() {
       {/* 主要內容 */}
       <div className="mind-magic-content">
         <div className="intro-section">
-          <h2>重新架構：完整的 1320+ 系統</h2>
-          <p>不是三高二低的簡化分析，而是十二維度的全像人格圖譜。每個維度都重要，每個分數都有其獨特意義。</p>
+          <h2>希臘神話十二原型</h2>
+          <p>深度人格分析系統，探索內在驅動力與人格動態模式。</p>
           
           <div className="test-phases">
             <div className="phase-card">
@@ -75,23 +75,14 @@ export default function MindMagicPage() {
           </div>
 
           <div className="test-options">
-            <h3>選擇評估模式</h3>
+            <h3>開始深度分析</h3>
             <div className="test-type-cards">
-              <div className="test-type-card">
-                <div className="test-type-icon">◦</div>
-                <h4>標準評估</h4>
-                <p>完整的 60 題多層次測量，獲得精確的十二維度數據</p>
-                <button className="btn-outline" onClick={startTest}>
-                  開始評估
-                </button>
-              </div>
-              <div className="test-type-card featured">
+              <div className="test-type-card featured single-option">
                 <div className="test-type-icon">◆</div>
                 <h4>深度分析</h4>
-                <p>結合情境模擬的進階評估，探索動態人格模式</p>
-                <span className="recommended-badge">建議</span>
+                <p>結合情境模擬的進階評估，探索動態人格模式與十二維度完整數據</p>
                 <button className="btn-primary" onClick={startRitualTest}>
-                  開始分析
+                  開始深度分析
                 </button>
               </div>
             </div>
@@ -207,13 +198,14 @@ export default function MindMagicPage() {
         }
         
         .test-type-cards {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-          gap: 2rem;
+          display: flex;
+          justify-content: center;
           margin: 2rem 0 3rem;
-          max-width: 600px;
-          margin-left: auto;
-          margin-right: auto;
+        }
+        
+        .single-option {
+          max-width: 400px;
+          width: 100%;
         }
         
         .test-type-card {

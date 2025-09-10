@@ -218,12 +218,7 @@ export default function LoginPage() {
         </div>
       </div>
       
-      <VersionIndicator 
-        page="登入頁面"
-        authSystem="venturoAuth" 
-        version="2.1"
-        status="working"
-      />
+      {/* 版本指示器暫時移除以測試基本功能 */}
     </div>
   )
 }
