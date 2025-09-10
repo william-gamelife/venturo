@@ -1,5 +1,5 @@
-// 統一的認證檢查工具，完全本地化版本
-import { localAuth } from '@/lib/local-auth'
+// 統一的認證檢查工具，使用雲端認證系統
+import { venturoAuth } from '@/lib/venturo-auth'
 
 export interface AuthUser {
   id: string
@@ -10,18 +10,18 @@ export interface AuthUser {
 }
 
 export async function checkAuth(): Promise<{ user: AuthUser | null, isDevMode: boolean }> {
-  // 使用本地認證系統
-  const user = localAuth.getCurrentUser()
+  // 使用雲端認證系統
+  const user = await venturoAuth.getCurrentUser()
   
   if (user) {
-    console.log('✅ 本地認證成功')
+    console.log('✅ 雲端認證成功')
     return {
       user: {
         id: user.id,
         email: user.email,
-        username: user.username,
-        display_name: user.display_name,
-        role: user.role || 'user'
+        username: user.real_name || user.email.split('@')[0],
+        display_name: user.real_name,
+        role: user.role?.toLowerCase() || 'user'
       },
       isDevMode: true // 目前都是開發模式
     }
@@ -102,13 +102,13 @@ export function getMockTodos() {
 }
 
 // 模擬的用戶資料（開發模式用）
-export function getMockUserProfile() {
-  const user = localAuth.getCurrentUser()
+export async function getMockUserProfile() {
+  const user = await venturoAuth.getCurrentUser()
   return {
     id: user?.id || 'dev-user-001',
     email: user?.email || 'dev@venturo.app',
-    username: user?.username || 'dev_user',
-    role: (user?.role || 'admin') as 'admin' | 'corner' | 'user',
+    username: user?.real_name || user?.email.split('@')[0] || 'dev_user',
+    role: (user?.role?.toLowerCase() || 'admin') as 'admin' | 'corner' | 'user',
     level: 5,
     experience: 342,
     experience_lifetime: 1842

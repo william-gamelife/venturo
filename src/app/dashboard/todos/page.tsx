@@ -7,6 +7,7 @@ import { ModuleLayout } from '@/components/ModuleLayout'
 import { Icons } from '@/components/icons'
 import TaskDetailDialog from '@/components/TaskDetailDialog'
 import { useMode } from '@/contexts/ModeContext'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 // 型別定義
 interface Todo {
@@ -1240,6 +1241,13 @@ export default function TodosPage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="代辦事項"
+        authSystem="venturoAuth" 
+        version="2.2"
+        status="working"
+      />
     </ModuleLayout>
   )
 }
