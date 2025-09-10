@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { venturoAuth, VenturoUser } from '@/lib/venturo-auth'
+import { localAuth } from '@/lib/local-auth'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -29,11 +29,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     // 檢查是否已經登入
-    venturoAuth.getCurrentUser().then(user => {
-      if (user) {
-        router.push('/dashboard')
-      }
-    })
+    const currentUser = localAuth.getCurrentUser()
+    if (currentUser) {
+      router.push('/dashboard')
+    }
   }, [router])
 
   // 處理登入
@@ -48,17 +47,22 @@ export default function LoginPage() {
     setError('')
     
     try {
-      const result = await venturoAuth.login(loginForm.email, loginForm.password)
-      
-      if (result.success) {
-        console.log('✅ 登入成功:', result.user?.email)
-        router.push('/dashboard')
-      } else {
-        setError(result.error || '登入失敗')
+      // 簡化登入邏輯 - 本地模式
+      const user = {
+        id: 'local_user_' + Date.now(),
+        email: loginForm.email,
+        name: loginForm.email.split('@')[0] || '使用者'
       }
+      
+      // 儲存到本地存儲
+      localStorage.setItem('venturo_user', JSON.stringify(user))
+      
+      console.log('✅ 本地登入成功:', user.email)
+      router.push('/dashboard')
+      
     } catch (error) {
       console.error('登入錯誤:', error)
-      setError('系統錯誤，請稍後再試')
+      setError('登入失敗，請稍後再試')
     } finally {
       setIsLoading(false)
     }
@@ -81,22 +85,23 @@ export default function LoginPage() {
     setError('')
     
     try {
-      const result = await venturoAuth.register({
+      // 簡化註冊邏輯 - 本地模式
+      const user = {
+        id: 'local_user_' + Date.now(),
         email: registerForm.email,
-        password: registerForm.password,
-        real_name: registerForm.real_name,
+        name: registerForm.real_name,
         avatar: registerForm.avatar
-      })
-      
-      if (result.success) {
-        console.log('✅ 註冊成功:', result.user?.email)
-        router.push('/dashboard')
-      } else {
-        setError(result.error || '註冊失敗')
       }
+      
+      // 儲存到本地存儲
+      localStorage.setItem('venturo_user', JSON.stringify(user))
+      
+      console.log('✅ 本地註冊成功:', user.email)
+      router.push('/dashboard')
+      
     } catch (error) {
       console.error('註冊錯誤:', error)
-      setError('系統錯誤，請稍後再試')
+      setError('註冊失敗，請稍後再試')
     } finally {
       setIsLoading(false)
     }
