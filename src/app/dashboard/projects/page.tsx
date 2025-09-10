@@ -6,6 +6,7 @@ import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/ui/button'
 import { Icons } from '@/components/icons'
 import { useProjectStore, PROJECT_PHASES } from '@/lib/stores/project-store'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 export default function ProjectsPage() {
   const router = useRouter()
@@ -240,6 +241,13 @@ export default function ProjectsPage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="專案管理"
+        authSystem="mixed" 
+        version="1.3"
+        status="error"
+      />
     </ModuleLayout>
   )
 }

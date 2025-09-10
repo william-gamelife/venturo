@@ -10,7 +10,8 @@ export interface VenturoUser {
   id: string
   email: string
   real_name: string
-  role: 'SUPER_ADMIN' | 'ADVENTURE_MODE'
+  role: 'SUPER_ADMIN' | 'ADVENTURE_MODE' | 'CORNER_EMPLOYEE'
+  world_mode?: 'game' | 'corner'
   avatar?: string
   created_at: string
   last_login?: string
@@ -127,6 +128,7 @@ class SupabaseAuth {
           email: 'williamchien.corner@gmail.com',
           real_name: 'William (測試)',
           role: 'SUPER_ADMIN',
+          world_mode: 'game', // 預設為遊戲模式
           avatar: '👨‍💻',
           created_at: new Date().toISOString()
         }

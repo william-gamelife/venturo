@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Icons } from '@/components/icons'
 import { calculatePopoverPosition } from '@/lib/popover-utils'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 // 箱子類型定義
 type BoxType = 'basic' | 'workout' | 'timer' | 'reminder'
@@ -2456,6 +2457,13 @@ export default function SimpleTimebox() {
           }
         `}</style>
       </div>
+      
+      <VersionIndicator 
+        page="時間盒"
+        authSystem="mixed" 
+        version="1.5"
+        status="error"
+      />
     </ModuleLayout>
   )
 }

@@ -6,6 +6,7 @@ import { checkAuth } from '@/lib/auth-utils'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Icons } from '@/components/icons'
 import { useMode } from '@/contexts/ModeContext'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 // 合約型別定義
 interface Contract {
@@ -528,6 +529,13 @@ export default function ContractsPage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="合約管理"
+        authSystem="venturoAuth" 
+        version="1.1"
+        status="working"
+      />
     </ModuleLayout>
   )
 }

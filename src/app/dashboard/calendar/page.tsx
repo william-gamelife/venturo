@@ -10,6 +10,7 @@ import {
   meetingToCalendarEvent 
 } from '@/components/calendar/CalendarEventModel';
 import { format } from 'date-fns';
+import { VersionIndicator } from '@/components/VersionIndicator';
 
 // Mock API 資料生成函數
 function generateMockData() {
@@ -362,6 +363,13 @@ export default function CalendarPage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="行事曆"
+        authSystem="mixed" 
+        version="1.2"
+        status="error"
+      />
     </div>
   );
 }

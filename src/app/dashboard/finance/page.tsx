@@ -9,6 +9,7 @@ import { AssetManagement } from './components/AssetManagement'
 import { BudgetManagement } from './components/BudgetManagement'
 import { TransactionHistory } from './components/TransactionHistory'
 import { AdvanceManagement } from './components/AdvanceManagement'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 type FinanceTab = 'overview' | 'assets' | 'budget' | 'transactions' | 'advances'
 
@@ -150,6 +151,13 @@ export default function FinancePage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="財務管理"
+        authSystem="mixed" 
+        version="1.0"
+        status="error"
+      />
     </ModuleLayout>
   )
 }

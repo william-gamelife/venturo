@@ -7,6 +7,7 @@ import { BaseAPI } from '@/lib/base-api'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 interface SidebarOrder {
   desktop: string[]
@@ -956,6 +957,13 @@ export default function SettingsPage() {
           }
         }
       `}</style>
+      
+      <VersionIndicator 
+        page="系統設定"
+        authSystem="localAuth" 
+        version="0.8"
+        status="error"
+      />
     </ModuleLayout>
   )
 }

@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { ModuleLayout } from '@/components/ModuleLayout';
 import { Icons } from '@/components/icons';
 import { questions, ARCHETYPES, type Question } from '@/data/mind-magic-questions';
-import { authManager } from '@/lib/auth';
+import { venturoAuth } from '@/lib/venturo-auth';
+import { VersionIndicator } from '@/components/VersionIndicator';
 import { Play, Volume2, VolumeX, ArrowRight, ArrowLeft, Heart, Sparkles } from 'lucide-react';
 
 // 測驗階段
@@ -106,10 +107,14 @@ export default function RitualMindMagicTestPage() {
 
   // 檢查用戶認證
   useEffect(() => {
-    if (!authManager.isAuthenticated()) {
+    venturoAuth.getCurrentUser().then(user => {
+      if (!user) {
+        router.push('/');
+        return;
+      }
+    }).catch(() => {
       router.push('/');
-      return;
-    }
+    });
   }, [router]);
 
   // 呼吸動畫控制
@@ -231,9 +236,10 @@ export default function RitualMindMagicTestPage() {
   };
 
   // 完成二次引導
-  const completeAftercare = () => {
+  const completeAftercare = async () => {
     const result = calculateResult();
-    const userId = authManager.getUserId();
+    const user = await venturoAuth.getCurrentUser();
+    const userId = user?.id || 'anonymous';
     
     localStorage.setItem(`mindMagicResult_${userId}`, JSON.stringify(result));
     localStorage.setItem(`mindMagicTestDate_${userId}`, new Date().toISOString());
@@ -669,6 +675,16 @@ export default function RitualMindMagicTestPage() {
         </ModuleLayout>
       )}
       {renderMicroBreakOverlay()}
+      
+      {/* 只在非全屏模式顯示版本指示器 */}
+      {!(currentPhase === PHASES.PREPARATION || currentPhase === PHASES.AFTERCARE || currentPhase === PHASES.COMPLETED) && (
+        <VersionIndicator 
+          page="心靈魔法儀式"
+          authSystem="venturoAuth" 
+          version="2.0"
+          status="working"
+        />
+      )}
     </>
   );
 }

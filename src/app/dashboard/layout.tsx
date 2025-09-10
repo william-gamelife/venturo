@@ -299,7 +299,7 @@ function DashboardLayoutContent({ children }: SidebarProps) {
         </div>
         
         {/* 模式切換按鈕或模式顯示 */}
-        {currentUser?.role === 'CORNER_EMPLOYEE' ? (
+        {currentUser?.role === 'CORNER_EMPLOYEE' || currentUser?.role === 'SUPER_ADMIN' ? (
           <div className="mode-switcher" style={{ transform: 'translateY(-10px)' }}>
             <div className="toggle-container" onClick={toggleMode}>
               <div className={`toggle-slider ${currentMode}`}></div>

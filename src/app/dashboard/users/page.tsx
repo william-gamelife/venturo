@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { authManager } from '@/lib/auth'
+import { venturoAuth } from '@/lib/venturo-auth'
 import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
@@ -55,19 +55,20 @@ export default function UsersPage() {
   })
 
   useEffect(() => {
-    const user = authManager.getCurrentUser()
-    setCurrentUser(user)
-    
-    if (!user || user.role !== 'SUPER_ADMIN') {
-      return
-    }
+    venturoAuth.getCurrentUser().then(user => {
+      setCurrentUser(user)
+      
+      if (!user || user.role !== 'SUPER_ADMIN') {
+        return
+      }
 
-    loadUsers()
+      loadUsers()
+    })
   }, [])
 
   const loadUsers = async () => {
-    // Get all users from authManager
-    const allUsers = await authManager.getUsers()
+    // Get all users from venturoAuth
+    const allUsers = await venturoAuth.getUsers()
     setUsers(allUsers.map(user => ({
       ...user,
       created_at: user.created_at || new Date().toISOString(),
@@ -94,7 +95,7 @@ export default function UsersPage() {
       permissions: defaultPermissions
     }
 
-    if (await authManager.addUser(userData)) {
+    if (await venturoAuth.addUser(userData)) {
       await loadUsers()
       setShowAddModal(false)
       setNewUser({
@@ -137,7 +138,7 @@ export default function UsersPage() {
       ...(editForm.password && editForm.password.trim() !== '' ? { password: editForm.password } : {})
     }
 
-    if (await authManager.updateUser(updatedUser)) {
+    if (await venturoAuth.updateUser(updatedUser)) {
       await loadUsers()
       setShowEditModal(false)
       setEditingUser(null)
@@ -151,7 +152,7 @@ export default function UsersPage() {
     }
 
     if (confirm(`確定要刪除使用者 "${user.display_name}" 嗎？`)) {
-      if (await authManager.removeUser(user.id)) {
+      if (await venturoAuth.removeUser(user.id)) {
         await loadUsers()
       }
     }
@@ -815,9 +816,9 @@ export default function UsersPage() {
       
       <VersionIndicator 
         page="用戶管理"
-        authSystem="authManager" 
-        version="1.0"
-        status="loading"
+        authSystem="venturoAuth" 
+        version="2.0"
+        status="working"
       />
     </ModuleLayout>
   )
