@@ -36,10 +36,10 @@ export default function LoginPage() {
     
     try {
       // 檢查內建管理者帳號
-      if (loginForm.email === 'william@venturo.local' && loginForm.password === 'william123') {
+      if (loginForm.email === 'williamchien.corner@gmail.com' && loginForm.password === '19891230') {
         const user = {
           id: 'admin_william',
-          email: 'william@venturo.local',
+          email: 'williamchien.corner@gmail.com',
           name: 'William',
           role: 'SUPER_ADMIN'
         }
@@ -228,7 +228,7 @@ export default function LoginPage() {
           fontSize: '11px',
           color: 'rgba(109, 104, 95, 0.7)'
         }}>
-          管理員：william@venturo.local / william123
+          管理員：williamchien.corner@gmail.com / 19891230
         </div>
       </div>
     </div>
