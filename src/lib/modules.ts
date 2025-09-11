@@ -27,14 +27,6 @@ export const DEFAULT_MODULES: { [key: string]: ModuleConfig } = {
     icon: null,
     enabled: true
   },
-  users: {
-    id: 'users',
-    name: '使用者管理', 
-    description: '管理使用者和權限',
-    href: '/dashboard/users',
-    icon: null,
-    enabled: false // 預設關閉
-  },
   projects: {
     id: 'projects',
     name: '專案管理',
