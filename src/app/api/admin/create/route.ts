@@ -1,17 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// 檢查環境變數
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+// 檢查環境變數 - 改為運行時檢查
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
-if (!supabaseUrl) {
-  throw new Error('NEXT_PUBLIC_SUPABASE_URL is required')
-}
-
-if (!supabaseServiceKey) {
-  throw new Error('SUPABASE_SERVICE_ROLE_KEY is required')
-}
+// 移到函數內部檢查，避免 build 時期錯誤
 
 // 使用 Service Role Key 創建管理員客戶端
 const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -30,6 +24,14 @@ const DEFAULT_ADMIN = {
 
 export async function POST() {
   try {
+    // 運行時檢查環境變數
+    if (!supabaseUrl) {
+      return NextResponse.json({ error: 'NEXT_PUBLIC_SUPABASE_URL is required' }, { status: 500 })
+    }
+    if (!supabaseServiceKey) {
+      return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY is required' }, { status: 500 })
+    }
+    
     console.log('🔧 API: 創建預設管理員...')
     
     // 1. 檢查是否已存在管理員
