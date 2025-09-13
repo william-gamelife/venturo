@@ -13,6 +13,10 @@ export interface GroupModel extends BaseModel {
   maxMembers?: number
 }
 
+// 為了向後兼容性，也匯出為 Group
+export type Group = GroupModel
+export type GroupStatus = 'active' | 'inactive' | 'completed'
+
 export const GROUP_STATUS = {
   ACTIVE: 'active' as const,
   INACTIVE: 'inactive' as const,

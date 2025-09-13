@@ -17,7 +17,7 @@
 
 ### 對 Claude Code/Cursor/Copilot：
 ```
-Venturo 專案：使用 v- 組件，venturo.css 樣式，禁止 emoji/MUI/Tailwind
+Venturo 專案：使用 v- 組件，venturo.css 樣式，lucide-react 圖示，禁止 emoji/MUI/Tailwind
 ```
 
 ## 📚 必讀文檔優先級
@@ -50,6 +50,8 @@ Venturo 專案：使用 v- 組件，venturo.css 樣式，禁止 emoji/MUI/Tailwi
 // ❌ 絕對不要使用
 import { Button } from '@mui/material'     // 禁止 Material-UI
 import { Button } from '@/components/ui'   // 錯誤路徑
+import { FaCalendar } from 'react-icons'   // 禁止其他圖示庫
+import { Birthday } from 'lucide-react'    // 不存在的圖示
 className="bg-blue-500 p-4"                // 禁止 Tailwind
 <span>📅</span>                           // 禁止 Emoji
 style={{ color: 'red' }}                   // 避免行內樣式
@@ -63,9 +65,10 @@ style={{ color: 'red' }}                   // 避免行內樣式
 ### 🟢 必須使用 (ALWAYS DO)
 ```typescript
 // ✅ 正確做法
-className="v-button variant-primary"       // 使用 v- 前綴
-import venturo.css                         // 使用 Venturo 樣式
-<svg viewBox="0 0 24 24">                  // SVG 圖標
+import { Calendar, Users, Cake } from 'lucide-react'  // 使用 lucide-react
+className="v-button variant-primary"                  // 使用 v- 前綴
+import venturo.css                                    // 使用 Venturo 樣式
+<Calendar className="w-5 h-5" />                      // lucide 圖示
 
 // ✅ Layout 正確
 <div className="v-main-content">
@@ -133,6 +136,7 @@ import venturo.css                         // 使用 Venturo 樣式
 'use client'
 
 import { ModuleLayout } from '@/components/ModuleLayout'
+import { Calendar, Users } from 'lucide-react'
 
 export default function ModulePage() {
   return (
@@ -172,7 +176,8 @@ export function VComponentName({ className = '', ...props }) {
 - [ ] 沒有使用 Emoji
 - [ ] 使用 v- 前綴命名
 - [ ] 引用 venturo.css 的類別
-- [ ] SVG 圖標使用 24x24 viewBox
+- [ ] 圖示必須來自 lucide-react
+- [ ] 圖示名稱先查 https://lucide.dev
 - [ ] **主畫面沒有額外容器** 🆕
 - [ ] **Layout 遵循三區塊架構** 🆕
 
@@ -184,10 +189,14 @@ export function VComponentName({ className = '', ...props }) {
  * Venturo [模組名稱] Module
  * 遵循 Venturo Design System
  * Layout: 三區塊架構（側邊欄、Header、主畫面）
+ * 圖示: lucide-react
  */
+
+import { Calendar, CheckSquare } from 'lucide-react'
 
 // ✅ 使用 Venturo 組件
 // ✅ 主畫面無額外容器
+// ✅ 使用 lucide-react
 // ❌ 禁止 MUI/Tailwind/Emoji
 ```
 
@@ -198,15 +207,18 @@ export function VComponentName({ className = '', ...props }) {
 // 2. 使用既有樣式系統
 // 3. 不引入新的 UI 框架
 // 4. 主畫面不要白框套白框
+// 5. 圖示來自 lucide-react
 ```
 
 ## 🚀 常用程式碼片段
 
 ### 模組頁面結構
 ```tsx
+import { Calendar, Users, FileText } from 'lucide-react'
+
 <ModuleLayout
   header={{
-    icon: Icons.module,
+    icon: <Calendar className="w-5 h-5" />,
     title: "模組名稱",
     subtitle: "說明文字",
     actions: (
@@ -245,11 +257,18 @@ export function VComponentName({ className = '', ...props }) {
 </div>
 ```
 
-### SVG 圖標
-```html
-<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-  <path d="..."/>
-</svg>
+### Lucide 圖示使用
+```tsx
+import { Calendar, CheckSquare, Users, Cake, FileText } from 'lucide-react'
+
+// 生日事件用 Cake（不要用 Birthday - 不存在）
+<Cake className="w-5 h-5 text-pink-500" />
+
+// 行事曆用 Calendar
+<Calendar className="w-5 h-5" />
+
+// 團體/用戶用 Users
+<Users className="w-5 h-5" />
 ```
 
 ## ⚠️ 常見錯誤與修正
@@ -257,8 +276,10 @@ export function VComponentName({ className = '', ...props }) {
 | 錯誤 | 正確 |
 |------|------|
 | `@mui/material` | 使用 `v-button` |
+| `react-icons/fa` | 使用 `lucide-react` |
+| `<Birthday />` | 使用 `<Cake />` |
 | `className="flex"` | 使用 `className="v-flex"` |
-| `🔍` emoji | 使用 SVG 圖標 |
+| `🔍` emoji | 使用 lucide-react 圖示 |
 | `<Button>` | `<button className="v-button">` |
 | `style={{}}` | 使用 className |
 | 主畫面加白框 | 內容直接開始 |
@@ -273,12 +294,13 @@ export function VComponentName({ className = '', ...props }) {
 5. **低**: README.md
 
 ## 🔄 版本
-- 版本: 2.1
-- 更新: 2024-01-27
+- 版本: 2.2
+- 更新: 2024-01-28
 - 狀態: 生效中
-- 新增: Layout 規範整合
+- 新增: lucide-react 圖示規範
 
 ---
 
 **記住：你是在開發 Venturo，不是 Corner。遵循 Venturo 的簡潔優雅理念。**
 **主畫面原則：像白紙一樣，內容直接寫上去，不要加框框。**
+**圖示原則：所有圖示必須來自 lucide-react，使用前先查 https://lucide.dev。**

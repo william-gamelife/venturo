@@ -397,6 +397,7 @@ export default function ProjectsPage() {
           border-radius: var(--radius-sm);
           text-transform: uppercase;
           letter-spacing: 0.5px;
+          white-space: nowrap;
         }
 
         .v-badge.v-info {
@@ -492,6 +493,44 @@ export default function ProjectsPage() {
           font-weight: 500;
           color: #333;
           margin: 2px 0 0 0;
+        }
+
+        /* 按鈕樣式 */
+        .v-button {
+          display: inline-flex;
+          align-items: center;
+          gap: var(--spacing-xs);
+          padding: var(--spacing-sm) var(--spacing-md);
+          border: 1px solid #E5E5E5;
+          border-radius: var(--radius-md);
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-decoration: none;
+          background: white;
+          color: #333;
+        }
+
+        .v-button.variant-primary {
+          background: var(--primary);
+          color: white;
+          border-color: var(--primary);
+        }
+
+        .v-button.variant-primary:hover {
+          background: var(--sage-green);
+          border-color: var(--sage-green);
+        }
+
+        .v-button.size-sm {
+          padding: 6px var(--spacing-sm);
+          font-size: 12px;
+        }
+
+        .v-button:hover {
+          background: #F8F9FA;
+          border-color: var(--primary);
         }
 
         /* 響應式設計 */

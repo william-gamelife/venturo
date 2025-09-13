@@ -11,7 +11,7 @@ import {
 } from '@/components/calendar/CalendarEventModel';
 import { format } from 'date-fns';
 import { VersionIndicator } from '@/components/VersionIndicator';
-import { Calendar, Users, Birthday, CheckSquare, MessageCircle } from 'lucide-react';
+import { Calendar, Users, Cake, CheckSquare, MessageCircle } from 'lucide-react';
 
 // Mock API 資料生成函數
 function generateMockData() {
@@ -222,7 +222,7 @@ export default function CalendarPage() {
           </div>
 
           <div className="v-stat-card">
-            <Birthday className="v-stat-icon" size={20} />
+            <Cake className="v-stat-icon" size={20} />
             <div className="v-stat-content">
               <div className="v-stat-number">
                 {events.filter(e => e.extendedProps?.type === 'birthday').length}
