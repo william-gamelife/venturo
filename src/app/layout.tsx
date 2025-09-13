@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
 
 export const metadata: Metadata = {
-  title: "VENTURO | 智能生活管理平台",
-  description: "專業的智能生活管理平台，結合莫蘭迪質感、狼域孤寂、星球科技三種主題風格",
+  title: "VENTURO-ERP | 企業資源規劃系統",
+  description: "專業的企業資源規劃系統，結合莫蘭迪質感、狼域孤寂、星球科技三種主題風格",
 };
 
 export default function RootLayout({

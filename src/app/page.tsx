@@ -85,14 +85,14 @@ export default function LoginPage() {
             backgroundClip: 'text',
             marginBottom: '10px'
           }}>
-            VENTURO
+            VENTURO-ERP
           </h1>
           <p style={{ 
             fontSize: '16px', 
             color: '#6d685f',
             marginBottom: '30px'
           }}>
-            歡迎回來！請登入您的帳號
+            企業資源規劃系統 | 請登入您的帳號
           </p>
         </div>
 
@@ -214,7 +214,7 @@ export default function LoginPage() {
           fontSize: '11px',
           color: 'rgba(109, 104, 95, 0.7)'
         }}>
-          全雲端認證系統 | 使用 Supabase 進行身份驗證
+          ERP 系統 | 全雲端認證系統 | 使用 Supabase 進行身份驗證
         </div>
       </div>
       
