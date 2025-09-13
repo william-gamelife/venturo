@@ -1,19 +1,22 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// 檢查環境變數 - 改為運行時檢查
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+// 創建 Supabase 管理員客戶端的函數
+function createSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-// 移到函數內部檢查，避免 build 時期錯誤
-
-// 使用 Service Role Key 創建管理員客戶端
-const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase environment variables')
   }
-})
+
+  return createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+}
 
 const DEFAULT_ADMIN = {
   username: 'admin',
@@ -24,15 +27,10 @@ const DEFAULT_ADMIN = {
 
 export async function POST() {
   try {
-    // 運行時檢查環境變數
-    if (!supabaseUrl) {
-      return NextResponse.json({ error: 'NEXT_PUBLIC_SUPABASE_URL is required' }, { status: 500 })
-    }
-    if (!supabaseServiceKey) {
-      return NextResponse.json({ error: 'SUPABASE_SERVICE_ROLE_KEY is required' }, { status: 500 })
-    }
-    
     console.log('🔧 API: 創建預設管理員...')
+    
+    // 創建 Supabase 客戶端（運行時創建）
+    const supabaseAdmin = createSupabaseAdmin()
     
     // 1. 檢查是否已存在管理員
     const { data: existingAdmin } = await supabaseAdmin
@@ -132,6 +130,9 @@ export async function POST() {
 export async function DELETE() {
   try {
     console.log('🗑️ API: 刪除預設管理員...')
+    
+    // 創建 Supabase 客戶端（運行時創建）
+    const supabaseAdmin = createSupabaseAdmin()
     
     // 查找預設管理員
     const { data: adminProfile } = await supabaseAdmin
