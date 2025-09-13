@@ -131,6 +131,9 @@ export async function DELETE() {
   try {
     console.log('🗑️ API: 刪除預設管理員...')
     
+    // 創建 Supabase 客戶端（運行時創建）
+    const supabaseAdmin = createSupabaseAdmin()
+    
     // 查找預設管理員
     const { data: adminProfile } = await supabaseAdmin
       .from('profiles')
