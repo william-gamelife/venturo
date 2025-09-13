@@ -3,15 +3,14 @@
 import { useState, useEffect } from 'react';
 import CalendarView from '@/components/calendar/CalendarView';
 import { CalendarEvent } from '@/types/calendar';
-import {
-  groupToCalendarEvent,
+import { 
+  groupToCalendarEvent, 
   customerBirthdayToCalendarEvent,
   taskToCalendarEvent,
-  meetingToCalendarEvent
+  meetingToCalendarEvent 
 } from '@/components/calendar/CalendarEventModel';
 import { format } from 'date-fns';
 import { VersionIndicator } from '@/components/VersionIndicator';
-import { Calendar, Users, Birthday, CheckSquare, MessageCircle } from 'lucide-react';
 
 // Mock API 資料生成函數
 function generateMockData() {
@@ -195,251 +194,172 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="v-page">
-      {/* Header 區塊 */}
-      <header className="v-header">
-        <div className="v-header-content">
-          <div className="v-title-group">
-            <Calendar className="v-title-icon" size={24} />
-            <h1 className="v-title">行事曆管理</h1>
-          </div>
-          <p className="v-subtitle">統合管理旅遊團行程、客戶生日提醒、任務和會議</p>
+    <div className="calendar-page">
+      {/* 頁面統計資訊 */}
+      <div className="calendar-stats">
+        <div className="page-header">
+          <h1>🗓️ Venturo 行事曆系統</h1>
+          <p>統合管理旅遊團行程、客戶生日提醒、任務和會議</p>
         </div>
-      </header>
-
-      {/* Main 區塊 */}
-      <main className="v-main">
-        {/* 統計卡片 */}
-        <div className="v-stats-grid">
-          <div className="v-stat-card">
-            <Users className="v-stat-icon" size={20} />
-            <div className="v-stat-content">
-              <div className="v-stat-number">
-                {events.filter(e => e.extendedProps?.type === 'group').length}
-              </div>
-              <div className="v-stat-label">旅遊團</div>
+        
+        <div className="stats-grid">
+          <div className="stat-card">
+            <div className="stat-number" style={{ color: 'var(--primary)' }}>
+              {events.filter(e => e.extendedProps?.type === 'group').length}
             </div>
+            <div className="stat-label">旅遊團</div>
           </div>
-
-          <div className="v-stat-card">
-            <Birthday className="v-stat-icon" size={20} />
-            <div className="v-stat-content">
-              <div className="v-stat-number">
-                {events.filter(e => e.extendedProps?.type === 'birthday').length}
-              </div>
-              <div className="v-stat-label">生日提醒</div>
+          <div className="stat-card">
+            <div className="stat-number" style={{ color: '#FF6B6B' }}>
+              {events.filter(e => e.extendedProps?.type === 'birthday').length}
             </div>
+            <div className="stat-label">生日提醒</div>
           </div>
-
-          <div className="v-stat-card">
-            <CheckSquare className="v-stat-icon" size={20} />
-            <div className="v-stat-content">
-              <div className="v-stat-number">
-                {events.filter(e => e.extendedProps?.type === 'task').length}
-              </div>
-              <div className="v-stat-label">任務</div>
+          <div className="stat-card">
+            <div className="stat-number" style={{ color: '#9CAF88' }}>
+              {events.filter(e => e.extendedProps?.type === 'task').length}
             </div>
+            <div className="stat-label">任務</div>
           </div>
-
-          <div className="v-stat-card">
-            <MessageCircle className="v-stat-icon" size={20} />
-            <div className="v-stat-content">
-              <div className="v-stat-number">
-                {events.filter(e => e.extendedProps?.type === 'meeting').length}
-              </div>
-              <div className="v-stat-label">會議</div>
+          <div className="stat-card">
+            <div className="stat-number" style={{ color: '#3B82F6' }}>
+              {events.filter(e => e.extendedProps?.type === 'meeting').length}
             </div>
+            <div className="stat-label">會議</div>
           </div>
         </div>
+      </div>
 
-        {/* 日曆主體 */}
-        <div className="v-calendar-container">
-          <CalendarView
-            events={events}
-            onEventClick={handleEventClick}
-            onDateClick={handleDateClick}
-            isLoading={loading}
-          />
-        </div>
-      </main>
+      {/* 日曆組件 */}
+      <CalendarView
+        events={events}
+        onEventClick={handleEventClick}
+        onDateClick={handleDateClick}
+        isLoading={loading}
+      />
 
-      {/* Sidebar 區塊 */}
-      <aside className="v-sidebar">
-        <div className="v-guide-card">
-          <h3 className="v-guide-title">操作說明</h3>
-          <ul className="v-guide-list">
-            <li>點擊日期可新增事件</li>
-            <li>點擊事件可查看詳細資訊</li>
-            <li>使用上方過濾器切換顯示類型</li>
-            <li>當日事件過多時，點擊「更多」查看完整清單</li>
-            <li>不同類型事件有不同顏色標識</li>
-          </ul>
-        </div>
-      </aside>
+      {/* 操作說明 */}
+      <div className="calendar-guide">
+        <h4>💡 操作說明</h4>
+        <ul>
+          <li>點擊日期可新增事件</li>
+          <li>點擊事件可查看詳細資訊</li>
+          <li>使用上方過濾器切換顯示類型</li>
+          <li>當日事件過多時，點擊「更多」查看完整清單</li>
+          <li>不同類型事件有不同顏色標識</li>
+        </ul>
+      </div>
 
       <style jsx>{`
-        /* Venturo 三區塊架構 */
-        .v-page {
-          display: grid;
-          grid-template-areas:
-            "header header"
-            "main sidebar";
-          grid-template-columns: 1fr 280px;
-          grid-template-rows: auto 1fr;
+        .calendar-page {
+          max-width: 1400px;
+          margin: 0 auto;
+          padding: var(--spacing-lg);
+          background: var(--background);
           min-height: 100vh;
-          gap: var(--v-spacing-lg);
-          padding: var(--v-spacing-lg);
-          background: var(--v-color-background);
-        }
-
-        /* Header 區塊 */
-        .v-header {
-          grid-area: header;
-        }
-
-        .v-header-content {
-          text-align: center;
-          padding: var(--v-spacing-xl) 0;
-        }
-
-        .v-title-group {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: var(--v-spacing-sm);
-          margin-bottom: var(--v-spacing-sm);
-        }
-
-        .v-title-icon {
-          color: var(--v-color-primary);
-        }
-
-        .v-title {
-          font-size: var(--v-font-size-2xl);
-          font-weight: var(--v-font-weight-bold);
-          color: var(--v-color-text-primary);
-          margin: 0;
-        }
-
-        .v-subtitle {
-          font-size: var(--v-font-size-base);
-          color: var(--v-color-text-secondary);
-          margin: 0;
-          line-height: 1.5;
-        }
-
-        /* Main 區塊 */
-        .v-main {
-          grid-area: main;
           display: flex;
           flex-direction: column;
-          gap: var(--v-spacing-lg);
+          gap: var(--spacing-lg);
         }
 
-        .v-stats-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-          gap: var(--v-spacing-md);
+        .calendar-stats {
+          background: linear-gradient(135deg, var(--primary-bg), var(--surface));
+          border-radius: var(--radius-lg);
+          padding: var(--spacing-xl);
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow-md);
         }
 
-        .v-stat-card {
-          display: flex;
-          align-items: center;
-          gap: var(--v-spacing-sm);
-          padding: var(--v-spacing-md);
-          background: var(--v-color-surface);
-          border-radius: var(--v-radius-md);
-          border: 1px solid var(--v-color-border);
-          transition: all var(--v-animation-fast);
+        .page-header {
+          text-align: center;
+          margin-bottom: var(--spacing-lg);
         }
 
-        .v-stat-card:hover {
-          transform: translateY(-1px);
-          box-shadow: var(--v-shadow-md);
-          border-color: var(--v-color-border-hover);
+        .page-header h1 {
+          font-size: var(--font-size-2xl);
+          font-weight: 700;
+          color: var(--text-primary);
+          margin: 0 0 var(--spacing-sm) 0;
         }
 
-        .v-stat-icon {
-          color: var(--v-color-primary);
-          flex-shrink: 0;
-        }
-
-        .v-stat-content {
-          flex: 1;
-        }
-
-        .v-stat-number {
-          font-size: var(--v-font-size-xl);
-          font-weight: var(--v-font-weight-bold);
-          color: var(--v-color-text-primary);
-          line-height: 1.2;
-        }
-
-        .v-stat-label {
-          font-size: var(--v-font-size-sm);
-          color: var(--v-color-text-secondary);
-          font-weight: var(--v-font-weight-medium);
-        }
-
-        .v-calendar-container {
-          flex: 1;
-        }
-
-        /* Sidebar 區塊 */
-        .v-sidebar {
-          grid-area: sidebar;
-        }
-
-        .v-guide-card {
-          background: var(--v-color-surface);
-          border-radius: var(--v-radius-lg);
-          padding: var(--v-spacing-lg);
-          border: 1px solid var(--v-color-border);
-          box-shadow: var(--v-shadow-sm);
-        }
-
-        .v-guide-title {
-          font-size: var(--v-font-size-lg);
-          font-weight: var(--v-font-weight-semibold);
-          color: var(--v-color-text-primary);
-          margin: 0 0 var(--v-spacing-md) 0;
-        }
-
-        .v-guide-list {
+        .page-header p {
+          font-size: var(--font-size-base);
+          color: var(--text-secondary);
           margin: 0;
-          padding-left: var(--v-spacing-lg);
-          color: var(--v-color-text-secondary);
-        }
-
-        .v-guide-list li {
-          margin-bottom: var(--v-spacing-xs);
           line-height: 1.5;
         }
 
-        /* 響應式設計 */
-        @media (max-width: 1024px) {
-          .v-page {
-            grid-template-areas:
-              "header"
-              "main"
-              "sidebar";
-            grid-template-columns: 1fr;
-            grid-template-rows: auto 1fr auto;
-          }
+        .stats-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: var(--spacing-lg);
+          margin-top: var(--spacing-lg);
+        }
+
+        .stat-card {
+          text-align: center;
+          padding: var(--spacing-lg);
+          background: var(--surface);
+          border-radius: var(--radius-md);
+          border: 1px solid var(--border);
+          transition: all var(--animation-fast);
+        }
+
+        .stat-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-lg);
+        }
+
+        .stat-number {
+          font-size: var(--font-size-2xl);
+          font-weight: 700;
+          margin-bottom: var(--spacing-xs);
+        }
+
+        .stat-label {
+          font-size: var(--font-size-sm);
+          color: var(--text-secondary);
+          font-weight: 500;
+        }
+
+        .calendar-guide {
+          background: var(--surface);
+          border-radius: var(--radius-lg);
+          padding: var(--spacing-xl);
+          border: 1px solid var(--border);
+          box-shadow: var(--shadow-sm);
+        }
+
+        .calendar-guide h4 {
+          margin: 0 0 var(--spacing-md) 0;
+          color: var(--text-primary);
+          font-size: var(--font-size-lg);
+          font-weight: 600;
+        }
+
+        .calendar-guide ul {
+          margin: 0;
+          padding-left: var(--spacing-xl);
+          color: var(--text-secondary);
+        }
+
+        .calendar-guide li {
+          margin-bottom: var(--spacing-xs);
+          line-height: 1.5;
         }
 
         @media (max-width: 768px) {
-          .v-page {
-            padding: var(--v-spacing-md);
-            gap: var(--v-spacing-md);
+          .calendar-page {
+            padding: var(--spacing-md);
           }
 
-          .v-stats-grid {
+          .stats-grid {
             grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-md);
           }
 
-          .v-title {
-            font-size: var(--v-font-size-xl);
+          .page-header h1 {
+            font-size: var(--font-size-xl);
           }
         }
       `}</style>

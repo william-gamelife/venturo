@@ -1,0 +1,28 @@
+{
+  "name": "venturo-erp",
+  "description": "Venturo ERP System - 使用 Venturo Design System",
+  "ai-instructions": "請遵循 AI_INSTRUCTIONS.md",
+  "ui-system": "venturo",
+  "forbidden": ["mui", "tailwind", "emoji"],
+  "required": ["v-prefix", "svg-icons", "venturo.css"],
+  "style-guide": {
+    "components": "v-[component]",
+    "variants": "variant-[name]",
+    "sizes": "size-[sm|md|lg]",
+    "colors": {
+      "primary": "#D4C4A0",
+      "secondary": "#C4A4A7",
+      "sage": "#9CAF88",
+      "fog": "#8B95A7",
+      "danger": "#C48B8B"
+    }
+  },
+  "quick-rules": [
+    "✅ 使用 v- 前綴",
+    "✅ 使用 SVG (24x24)",
+    "✅ 使用 venturo.css",
+    "❌ 禁止 Material-UI",
+    "❌ 禁止 Tailwind",
+    "❌ 禁止 Emoji"
+  ]
+}

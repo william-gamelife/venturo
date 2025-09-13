@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ModuleLayout } from '@/components/ModuleLayout';
 import { Icons } from '@/components/icons';
-import { 
+import {
   Invoice,
   INVOICE_STATUS,
   INVOICE_STATUS_NAMES,
@@ -13,6 +13,18 @@ import {
 import { InvoiceApi } from './InvoiceApi';
 import { GroupApi } from '../groups/GroupApi';
 import { Group } from '../groups/models/GroupModel';
+import {
+  Receipt,
+  Plus,
+  Filter,
+  Eye,
+  Trash2,
+  DollarSign,
+  Calendar,
+  TrendingUp,
+  CheckCircle,
+  Clock
+} from 'lucide-react';
 
 export default function InvoicesPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -112,29 +124,42 @@ export default function InvoicesPage() {
         subtitle: "管理所有成本支出記錄",
         actions: (
           <>
-            <div className="invoice-stats">
-              <div className="stat-item">
-                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{stats.count}</span>
-                <span className="stat-label">請款單數</span>
+            <div className="v-stats">
+              <div className="v-stat-item">
+                <Receipt className="v-stat-icon" size={16} />
+                <div className="v-stat-content">
+                  <span className="v-stat-number">{stats.count}</span>
+                  <span className="v-stat-label">請款單數</span>
+                </div>
               </div>
-              <div className="stat-item">
-                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{formatCurrency(stats.totalCost)}</span>
-                <span className="stat-label">總成本</span>
+              <div className="v-stat-item">
+                <TrendingUp className="v-stat-icon" size={16} />
+                <div className="v-stat-content">
+                  <span className="v-stat-number">{formatCurrency(stats.totalCost)}</span>
+                  <span className="v-stat-label">總成本</span>
+                </div>
               </div>
-              <div className="stat-item">
-                <span className="stat-number text-success">{formatCurrency(stats.paidCost)}</span>
-                <span className="stat-label">已付款</span>
+              <div className="v-stat-item">
+                <CheckCircle className="v-stat-icon" size={16} />
+                <div className="v-stat-content">
+                  <span className="v-stat-number v-success">{formatCurrency(stats.paidCost)}</span>
+                  <span className="v-stat-label">已付款</span>
+                </div>
               </div>
-              <div className="stat-item">
-                <span className="stat-number text-warning">{formatCurrency(stats.pendingCost)}</span>
-                <span className="stat-label">待付款</span>
+              <div className="v-stat-item">
+                <Clock className="v-stat-icon" size={16} />
+                <div className="v-stat-content">
+                  <span className="v-stat-number v-warning">{formatCurrency(stats.pendingCost)}</span>
+                  <span className="v-stat-label">待付款</span>
+                </div>
               </div>
             </div>
             <Link
               href="/dashboard/invoices/new"
-              className="btn-primary"
+              className="v-button variant-primary"
             >
-              + 新增請款單
+              <Plus size={16} />
+              新增請款單
             </Link>
           </>
         )
@@ -142,120 +167,137 @@ export default function InvoicesPage() {
     >
 
       {/* 篩選區 */}
-      <div className="bg-white rounded-lg shadow mb-6 p-4">
-        <div className="flex flex-wrap gap-4">
-          {/* 狀態篩選 */}
-          <select
-            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
-          >
-            <option value="all">所有狀態</option>
-            {Object.entries(INVOICE_STATUS).map(([key, value]) => (
-              <option key={key} value={value}>
-                {INVOICE_STATUS_NAMES[value as keyof typeof INVOICE_STATUS_NAMES]}
-              </option>
-            ))}
-          </select>
+      <div className="v-filters">
+        <div className="v-filter-group">
+          <div className="v-select-group">
+            <Filter className="v-select-icon" size={16} />
+            <select
+              className="v-select"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+            >
+              <option value="all">所有狀態</option>
+              {Object.entries(INVOICE_STATUS).map(([key, value]) => (
+                <option key={key} value={value}>
+                  {INVOICE_STATUS_NAMES[value as keyof typeof INVOICE_STATUS_NAMES]}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          {/* 團號篩選 */}
-          <select
-            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
-            value={groupFilter}
-            onChange={(e) => setGroupFilter(e.target.value)}
-          >
-            <option value="all">所有團體</option>
-            {groups.map(group => (
-              <option key={group.groupCode} value={group.groupCode}>
-                {group.groupCode} - {group.groupName}
-              </option>
-            ))}
-          </select>
-
+          <div className="v-select-group">
+            <Receipt className="v-select-icon" size={16} />
+            <select
+              className="v-select"
+              value={groupFilter}
+              onChange={(e) => setGroupFilter(e.target.value)}
+            >
+              <option value="all">所有團體</option>
+              {groups.map(group => (
+                <option key={group.groupCode} value={group.groupCode}>
+                  {group.groupCode} - {group.groupName}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {/* 請款單列表 */}
-      <div className="unified-table" style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)", border: "1px solid rgba(201, 169, 97, 0.2)" }}>
+      <div className="v-table-container">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">載入中...</div>
+          <div className="v-loading">
+            <Receipt className="v-loading-icon" size={32} />
+            <p>載入中...</p>
+          </div>
         ) : invoices.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            沒有找到請款單資料
+          <div className="v-empty-state">
+            <Receipt className="v-empty-icon" size={48} />
+            <h3 className="v-empty-title">沒有找到請款單資料</h3>
+            <p className="v-empty-message">開始建立您的第一張請款單</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead style={{ background: "linear-gradient(135deg, #c9a961 0%, #b8975a 100%)" }}>
+          <div className="v-table-wrapper">
+            <table className="v-table">
+              <thead className="v-table-header">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
+                    <Receipt size={14} />
                     請款單號
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
                     團號
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
                     訂單編號
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
+                    <Calendar size={14} />
                     請款日期
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
+                    <DollarSign size={14} />
                     總金額
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
                     狀態
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
                     操作
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="v-table-body">
                 {invoices.map((invoice) => (
-                  <tr key={invoice.invoiceNumber} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <tr key={invoice.invoiceNumber} className="v-tr">
+                    <td className="v-td v-td-primary">
                       {invoice.invoiceNumber}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="v-td">
                       <Link
                         href={`/dashboard/groups/${invoice.groupCode}`}
-                        className="text-blue-600 hover:text-blue-900 underline"
+                        className="v-link"
                       >
                         {invoice.groupCode}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="v-td">
                       <Link
                         href={`/dashboard/orders/${invoice.orderNumber}`}
-                        className="text-blue-600 hover:text-blue-900 underline"
+                        className="v-link"
                       >
                         {invoice.orderNumber}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="v-td v-td-muted">
                       {formatDate(invoice.invoiceDate)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
+                    <td className="v-td v-td-amount">
                       {formatCurrency(invoiceTotals[invoice.invoiceNumber] || 0)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(invoice.status)}`}>
+                    <td className="v-td">
+                      <span className={`v-badge ${
+                        invoice.status === INVOICE_STATUS.PAID ? 'v-success' :
+                        invoice.status === INVOICE_STATUS.PENDING ? 'v-warning' :
+                        'v-info'
+                      }`}>
                         {INVOICE_STATUS_NAMES[invoice.status as keyof typeof INVOICE_STATUS_NAMES]}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
+                    <td className="v-td">
+                      <div className="v-actions">
                         <Link
                           href={`/dashboard/invoices/${invoice.invoiceNumber}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="v-button variant-secondary size-sm"
                         >
+                          <Eye size={12} />
                           檢視
                         </Link>
                         <button
                           onClick={() => handleDelete(invoice.invoiceNumber)}
-                          className="text-red-600 hover:text-red-900"
+                          className="v-button variant-danger size-sm"
                         >
+                          <Trash2 size={12} />
                           刪除
                         </button>
                       </div>
@@ -269,40 +311,300 @@ export default function InvoicesPage() {
       </div>
 
       <style jsx global>{`
-        .invoice-stats {
+        /* Venturo 發票管理樣式 */
+        .v-stats {
           display: flex;
-          gap: 24px;
+          gap: var(--spacing-lg);
           align-items: center;
         }
-        
-        .invoice-stats .stat-item {
+
+        .v-stat-item {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: var(--radius-md);
+          border: 1px solid rgba(212, 196, 160, 0.2);
+        }
+
+        .v-stat-icon {
+          color: var(--primary);
+          flex-shrink: 0;
+        }
+
+        .v-stat-content {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+        }
+
+        .v-stat-number {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--primary);
+          line-height: 1;
+        }
+
+        .v-stat-number.v-success {
+          color: var(--sage-green);
+        }
+
+        .v-stat-number.v-warning {
+          color: var(--fog-blue);
+        }
+
+        .v-stat-label {
+          font-size: 11px;
+          color: #666;
+          white-space: nowrap;
+        }
+
+        /* 篩選區域 */
+        .v-filters {
+          margin-bottom: var(--spacing-lg);
+        }
+
+        .v-filter-group {
+          display: flex;
+          gap: var(--spacing-md);
+        }
+
+        .v-select-group {
+          position: relative;
+          min-width: 180px;
+        }
+
+        .v-select-icon {
+          position: absolute;
+          left: var(--spacing-sm);
+          top: 50%;
+          transform: translateY(-50%);
+          color: #666;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .v-select {
+          width: 100%;
+          padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 36px;
+          border: 1px solid #E5E5E5;
+          border-radius: var(--radius-md);
+          font-size: 14px;
+          background: white;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .v-select:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(212, 196, 160, 0.1);
+        }
+
+        /* 表格容器 */
+        .v-table-container {
+          background: white;
+          border-radius: var(--radius-lg);
+          border: 1px solid #E5E5E5;
+          overflow: hidden;
+        }
+
+        .v-loading {
           display: flex;
           flex-direction: column;
           align-items: center;
-          gap: 2px;
+          justify-content: center;
+          padding: 60px 20px;
+          color: #666;
+          gap: var(--spacing-md);
         }
-        
-        .invoice-stats .stat-number {
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: #374151;
+
+        .v-loading-icon {
+          color: var(--primary);
+          animation: pulse 2s infinite;
         }
-        
-        .invoice-stats .stat-label {
-          font-size: 0.75rem;
-          color: #6b7280;
+
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        .v-empty-state {
+          text-align: center;
+          padding: 60px 20px;
+        }
+
+        .v-empty-icon {
+          color: #999;
+          margin-bottom: var(--spacing-md);
+        }
+
+        .v-empty-title {
+          font-size: 18px;
+          font-weight: 600;
+          color: #333;
+          margin: 0 0 var(--spacing-sm) 0;
+        }
+
+        .v-empty-message {
+          color: #666;
+          margin: 0;
+        }
+
+        /* 表格樣式 */
+        .v-table-wrapper {
+          overflow-x: auto;
+        }
+
+        .v-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .v-table-header {
+          background: var(--primary);
+        }
+
+        .v-th {
+          padding: var(--spacing-md) var(--spacing-lg);
+          text-align: left;
+          font-size: 12px;
+          font-weight: 600;
+          color: white;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
           white-space: nowrap;
         }
-        
+
+        .v-th svg {
+          margin-right: var(--spacing-xs);
+          vertical-align: middle;
+        }
+
+        .v-table-body {
+          background: white;
+        }
+
+        .v-tr {
+          border-bottom: 1px solid #F0F0F0;
+          transition: background-color 0.2s ease;
+        }
+
+        .v-tr:hover {
+          background: #FAFAFA;
+        }
+
+        .v-td {
+          padding: var(--spacing-md) var(--spacing-lg);
+          font-size: 14px;
+          color: #333;
+          white-space: nowrap;
+        }
+
+        .v-td-primary {
+          font-weight: 600;
+          color: var(--primary);
+        }
+
+        .v-td-muted {
+          color: #666;
+        }
+
+        .v-td-amount {
+          font-weight: 600;
+          color: var(--primary);
+        }
+
+        .v-link {
+          color: var(--primary);
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+
+        .v-link:hover {
+          color: var(--sage-green);
+          text-decoration: underline;
+        }
+
+        .v-badge {
+          padding: 4px 8px;
+          font-size: 11px;
+          font-weight: 500;
+          border-radius: var(--radius-sm);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .v-badge.v-success {
+          background: #E8F5E8;
+          color: #2E7D32;
+        }
+
+        .v-badge.v-warning {
+          background: #FFF3E0;
+          color: #F57C00;
+        }
+
+        .v-badge.v-info {
+          background: #E3F2FD;
+          color: #1976D2;
+        }
+
+        .v-actions {
+          display: flex;
+          gap: var(--spacing-xs);
+        }
+
+        /* 響應式設計 */
         @media (max-width: 768px) {
-          .invoice-stats {
+          .v-stats {
             flex-direction: column;
-            gap: 12px;
+            gap: var(--spacing-md);
+            align-items: stretch;
           }
-          
-          .invoice-stats .stat-item {
+
+          .v-stat-item {
+            justify-content: space-between;
+            padding: var(--spacing-md);
+          }
+
+          .v-stat-content {
+            align-items: flex-end;
+          }
+
+          .v-filter-group {
+            flex-direction: column;
+          }
+
+          .v-select-group {
+            min-width: auto;
+          }
+
+          .v-table-wrapper {
+            font-size: 12px;
+          }
+
+          .v-th,
+          .v-td {
+            padding: var(--spacing-sm);
+          }
+
+          .v-actions {
+            flex-direction: column;
+            gap: 2px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .v-th,
+          .v-td {
+            padding: var(--spacing-xs) var(--spacing-sm);
+          }
+
+          .v-actions {
             flex-direction: row;
-            gap: 8px;
+            gap: var(--spacing-xs);
           }
         }
       `}</style>

@@ -8,6 +8,18 @@ import { ModuleLayout } from '@/components/ModuleLayout'
 import { Button } from '@/components/Button'
 import { Icons } from '@/components/icons'
 import { VersionIndicator } from '@/components/VersionIndicator'
+import {
+  Settings,
+  Monitor,
+  Smartphone,
+  GripVertical,
+  Trash2,
+  RotateCcw,
+  Save,
+  Shield,
+  Palette,
+  Layers
+} from 'lucide-react'
 
 interface SidebarOrder {
   desktop: string[]
@@ -260,47 +272,50 @@ export default function SettingsPage() {
         title: "系統設定",
         subtitle: "個人化您的側邊欄排序和介面設定",
         actions: (
-          <>
+          <div className="v-settings-actions">
             {hasUnsavedChanges && (
-              <Button variant="primary" onClick={saveSidebarOrder}>
+              <button className="v-button variant-primary" onClick={saveSidebarOrder}>
+                <Save size={16} />
                 儲存變更
-              </Button>
+              </button>
             )}
-            <Button variant="ghost" onClick={resetToDefault}>
+            <button className="v-button variant-outline" onClick={resetToDefault}>
+              <RotateCcw size={16} />
               重設預設值
-            </Button>
-          </>
+            </button>
+          </div>
         )
       }}
     >
         {/* 安全設定 */}
-        <div className="setting-section">
-          <h2 className="section-title">安全設定</h2>
-          <p className="section-description">
-            管理您的密碼和帳戶安全
-          </p>
-          
-          <div className="security-section">
-            <div className="security-item">
-              <div className="security-info">
+        <div className="v-setting-section">
+          <div className="v-section-header">
+            <Shield className="v-section-icon" size={20} />
+            <div>
+              <h2 className="v-section-title">安全設定</h2>
+              <p className="v-section-description">管理您的密碼和帳戶安全</p>
+            </div>
+          </div>
+
+          <div className="v-security-items">
+            <div className="v-security-item">
+              <div className="v-security-info">
                 <h4>密碼</h4>
                 <p>上次修改：從未</p>
               </div>
-              <button className="btn-secondary" disabled>
+              <button className="v-button variant-outline" disabled>
                 修改密碼
-                <span className="coming-soon">即將推出</span>
+                <span className="v-badge v-warning">即將推出</span>
               </button>
             </div>
-            
-            <div className="security-item danger">
-              <div className="security-info">
+
+            <div className="v-security-item v-danger">
+              <div className="v-security-info">
                 <h4>清除所有資料</h4>
                 <p>清除所有本地儲存的資料，包括用戶、待辦事項、專案等</p>
               </div>
-              <button className="btn-danger" onClick={clearAllData}>
-                <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '16px', height: '16px' }}>
-                  <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6h14zM10 11v6M14 11v6"/>
-                </svg>
+              <button className="v-button variant-danger" onClick={clearAllData}>
+                <Trash2 size={16} />
                 清除所有資料
               </button>
             </div>
@@ -308,116 +323,114 @@ export default function SettingsPage() {
         </div>
 
         {/* 主題設定 */}
-        <div className="setting-section">
-          <h2 className="section-title">外觀設定</h2>
-          <p className="section-description">
-            自訂您的介面主題和外觀
-          </p>
-          
-          <div className="theme-section">
-            <div className="theme-options">
-              <div className="theme-option">
-                <input type="radio" id="theme-light" name="theme" defaultChecked disabled />
-                <label htmlFor="theme-light" className="theme-card">
-                  <div className="theme-preview light">
-                    <div className="preview-header"></div>
-                    <div className="preview-sidebar"></div>
-                    <div className="preview-content"></div>
-                  </div>
-                  <span>淺色主題</span>
-                </label>
-              </div>
-              
-              <div className="theme-option">
-                <input type="radio" id="theme-dark" name="theme" disabled />
-                <label htmlFor="theme-dark" className="theme-card">
-                  <div className="theme-preview dark">
-                    <div className="preview-header"></div>
-                    <div className="preview-sidebar"></div>
-                    <div className="preview-content"></div>
-                  </div>
-                  <span>深色主題</span>
-                </label>
-              </div>
-              
-              <div className="theme-option">
-                <input type="radio" id="theme-auto" name="theme" disabled />
-                <label htmlFor="theme-auto" className="theme-card">
-                  <div className="theme-preview auto">
-                    <div className="preview-header"></div>
-                    <div className="preview-sidebar"></div>
-                    <div className="preview-content"></div>
-                  </div>
-                  <span>自動切換</span>
-                </label>
-              </div>
+        <div className="v-setting-section">
+          <div className="v-section-header">
+            <Palette className="v-section-icon" size={20} />
+            <div>
+              <h2 className="v-section-title">外觀設定</h2>
+              <p className="v-section-description">自訂您的介面主題和外觀</p>
             </div>
-            
-            <div className="coming-soon-notice">
-              <span className="coming-soon">主題功能即將推出</span>
+          </div>
+
+          <div className="v-theme-options">
+            <div className="v-theme-option">
+              <input type="radio" id="theme-light" name="theme" defaultChecked disabled />
+              <label htmlFor="theme-light" className="v-theme-card">
+                <div className="v-theme-preview v-light">
+                  <div className="v-preview-header"></div>
+                  <div className="v-preview-sidebar"></div>
+                  <div className="v-preview-content"></div>
+                </div>
+                <span>淺色主題</span>
+              </label>
             </div>
+
+            <div className="v-theme-option">
+              <input type="radio" id="theme-dark" name="theme" disabled />
+              <label htmlFor="theme-dark" className="v-theme-card">
+                <div className="v-theme-preview v-dark">
+                  <div className="v-preview-header"></div>
+                  <div className="v-preview-sidebar"></div>
+                  <div className="v-preview-content"></div>
+                </div>
+                <span>深色主題</span>
+              </label>
+            </div>
+
+            <div className="v-theme-option">
+              <input type="radio" id="theme-auto" name="theme" disabled />
+              <label htmlFor="theme-auto" className="v-theme-card">
+                <div className="v-theme-preview v-auto">
+                  <div className="v-preview-header"></div>
+                  <div className="v-preview-sidebar"></div>
+                  <div className="v-preview-content"></div>
+                </div>
+                <span>自動切換</span>
+              </label>
+            </div>
+          </div>
+
+          <div className="v-coming-soon-notice">
+            <span className="v-badge v-warning">主題功能即將推出</span>
           </div>
         </div>
 
         {/* 側邊欄排序設定 */}
-        <div className="setting-section">
-          <h2 className="section-title">側邊欄排序設定</h2>
-          <p className="section-description">
-            拖放下方的功能項目來自訂您的側邊欄順序。桌機版和手機版可以設定不同的排序。
-          </p>
-          
+        <div className="v-setting-section">
+          <div className="v-section-header">
+            <Layers className="v-section-icon" size={20} />
+            <div>
+              <h2 className="v-section-title">側邊欄排序設定</h2>
+              <p className="v-section-description">
+                拖放下方的功能項目來自訂您的側邊欄順序。桌機版和手機版可以設定不同的排序。
+              </p>
+            </div>
+          </div>
+
           {/* 平台選擇 */}
-          <div className="platform-tabs">
-            <button 
-              className={`tab ${activeTab === 'desktop' ? 'active' : ''}`}
+          <div className="v-platform-tabs">
+            <button
+              className={`v-tab ${activeTab === 'desktop' ? 'v-active' : ''}`}
               onClick={() => setActiveTab('desktop')}
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="tab-icon">
-                <rect x="2" y="4" width="20" height="12" rx="2"/>
-                <path d="M8 18h8"/>
-                <path d="M10 22h4"/>
-                <path d="M12 18v4"/>
-              </svg>
+              <Monitor size={16} />
               桌機版
             </button>
-            <button 
-              className={`tab ${activeTab === 'mobile' ? 'active' : ''}`}
+            <button
+              className={`v-tab ${activeTab === 'mobile' ? 'v-active' : ''}`}
               onClick={() => setActiveTab('mobile')}
             >
-              <svg viewBox="0 0 24 24" fill="currentColor" className="tab-icon">
-                <rect x="7" y="2" width="10" height="20" rx="2"/>
-                <circle cx="12" cy="18" r="1"/>
-              </svg>
+              <Smartphone size={16} />
               手機版
             </button>
           </div>
           
           {/* 拖放排序區域 */}
-          <div className="drag-container">
-            <div className="preview-section">
-              <h3 className="preview-title">
+          <div className="v-drag-container">
+            <div className="v-preview-section">
+              <h3 className="v-preview-title">
                 {activeTab === 'desktop' ? '桌機版預覽' : '手機版預覽'}
               </h3>
-              <div className={`sidebar-preview ${activeTab}`}>
+              <div className={`v-sidebar-preview ${activeTab === 'desktop' ? 'v-desktop' : 'v-mobile'}`}>
                 {sidebarOrder[activeTab].map((moduleId, index) => (
-                  <div key={moduleId} className="preview-item">
+                  <div key={moduleId} className="v-preview-item">
                     {getModuleIcon(moduleId)}
-                    <span className="preview-text">{getModuleName(moduleId)}</span>
+                    <span className="v-preview-text">{getModuleName(moduleId)}</span>
                   </div>
                 ))}
               </div>
             </div>
-            
-            <div className="drag-section">
-              <h3 className="drag-title">拖放排序</h3>
-              <div className="drag-list">
+
+            <div className="v-drag-section">
+              <h3 className="v-drag-title">拖放排序</h3>
+              <div className="v-drag-list">
                 {sidebarOrder[activeTab].map((moduleId, index) => (
                   <div
                     key={moduleId}
-                    className={`drag-item ${
-                      draggedItem === moduleId ? 'dragging' : ''
+                    className={`v-drag-item ${
+                      draggedItem === moduleId ? 'v-dragging' : ''
                     } ${
-                      dragOverIndex === index ? 'drag-over' : ''
+                      dragOverIndex === index ? 'v-drag-over' : ''
                     }`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, moduleId, index)}
@@ -426,247 +439,383 @@ export default function SettingsPage() {
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
                   >
-                    <div className="drag-handle">
-                      <svg viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="9" cy="7" r="1"/>
-                        <circle cx="15" cy="7" r="1"/>
-                        <circle cx="9" cy="12" r="1"/>
-                        <circle cx="15" cy="12" r="1"/>
-                        <circle cx="9" cy="17" r="1"/>
-                        <circle cx="15" cy="17" r="1"/>
-                      </svg>
+                    <div className="v-drag-handle">
+                      <GripVertical size={16} />
                     </div>
                     {getModuleIcon(moduleId)}
-                    <span className="drag-text">{getModuleName(moduleId)}</span>
-                    <span className="drag-order">#{index + 1}</span>
+                    <span className="v-drag-text">{getModuleName(moduleId)}</span>
+                    <span className="v-drag-order">#{index + 1}</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
-          
+
           {/* 操作按鈕 */}
-          <div className="setting-actions">
-            <button 
-              className="btn-secondary" 
+          <div className="v-setting-actions">
+            <button
+              className="v-button variant-outline"
               onClick={resetToDefault}
             >
+              <RotateCcw size={16} />
               重設為預設
             </button>
-            <button 
-              className={`btn-primary ${hasUnsavedChanges ? 'highlight' : ''}`}
+            <button
+              className={`v-button variant-primary ${hasUnsavedChanges ? 'v-highlight' : ''}`}
               onClick={saveSidebarOrder}
               disabled={!hasUnsavedChanges}
             >
+              <Save size={16} />
               {hasUnsavedChanges ? '儲存變更' : '已儲存'}
             </button>
           </div>
         </div>
 
       <style jsx>{`
-
-        .settings-header {
-          margin-bottom: 32px;
+        /* Venturo 設定頁面樣式 */
+        .v-settings-actions {
+          display: flex;
+          gap: var(--spacing-sm);
         }
 
-        .settings-title {
-          font-size: 28px;
-          font-weight: 700;
-          color: var(--text-primary);
-          margin: 0 0 8px 0;
+        .v-setting-section {
+          margin-bottom: var(--spacing-xl);
+          padding-bottom: var(--spacing-xl);
+          border-bottom: 1px solid rgba(212, 196, 160, 0.1);
         }
 
-        .settings-subtitle {
-          font-size: 16px;
-          color: var(--text-secondary);
-          margin: 0;
-        }
-
-        .setting-section {
-          margin-bottom: 40px;
-          padding-bottom: 32px;
-          border-bottom: 1px solid rgba(201, 169, 97, 0.1);
-        }
-
-        .setting-section:last-child {
+        .v-setting-section:last-child {
           border-bottom: none;
           margin-bottom: 0;
         }
 
-        .section-title {
-          font-size: 20px;
-          font-weight: 600;
-          color: var(--text-primary);
-          margin: 0 0 8px 0;
+        .v-section-header {
+          display: flex;
+          align-items: flex-start;
+          gap: var(--spacing-md);
+          margin-bottom: var(--spacing-lg);
         }
 
-        .section-description {
-          color: var(--text-secondary);
-          margin: 0 0 24px 0;
+        .v-section-icon {
+          color: var(--primary);
+          flex-shrink: 0;
+          margin-top: 2px;
+        }
+
+        .v-section-title {
+          font-size: 20px;
+          font-weight: 600;
+          color: #333;
+          margin: 0 0 4px 0;
+        }
+
+        .v-section-description {
+          color: #666;
+          margin: 0;
           line-height: 1.5;
         }
 
-        .platform-tabs {
+        /* 安全設定 */
+        .v-security-items {
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-md);
+        }
+
+        .v-security-item {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: var(--spacing-lg);
+          background: rgba(255, 255, 255, 0.5);
+          border: 1px solid rgba(212, 196, 160, 0.1);
+          border-radius: var(--radius-lg);
+        }
+
+        .v-security-item.v-danger {
+          border-color: rgba(244, 67, 54, 0.2);
+          background: rgba(244, 67, 54, 0.02);
+        }
+
+        .v-security-info h4 {
+          margin: 0 0 4px 0;
+          font-size: 16px;
+          font-weight: 600;
+          color: #333;
+        }
+
+        .v-security-item.v-danger .v-security-info h4 {
+          color: #F44336;
+        }
+
+        .v-security-info p {
+          margin: 0;
+          font-size: 14px;
+          color: #666;
+        }
+
+        /* 主題設定 */
+        .v-theme-options {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: var(--spacing-md);
+          margin-bottom: var(--spacing-lg);
+        }
+
+        .v-theme-option {
+          position: relative;
+        }
+
+        .v-theme-option input[type="radio"] {
+          position: absolute;
+          opacity: 0;
+          width: 0;
+          height: 0;
+        }
+
+        .v-theme-card {
+          display: flex;
+          flex-direction: column;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-md);
+          border: 2px solid rgba(212, 196, 160, 0.2);
+          border-radius: var(--radius-lg);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          background: rgba(255, 255, 255, 0.5);
+        }
+
+        .v-theme-card:hover {
+          border-color: rgba(212, 196, 160, 0.4);
+          box-shadow: 0 4px 12px rgba(212, 196, 160, 0.1);
+        }
+
+        .v-theme-option input[type="radio"]:checked + .v-theme-card {
+          border-color: var(--primary);
+          background: rgba(212, 196, 160, 0.05);
+          box-shadow: 0 4px 12px rgba(212, 196, 160, 0.2);
+        }
+
+        .v-theme-preview {
+          height: 80px;
+          border-radius: var(--radius-md);
+          position: relative;
+          overflow: hidden;
+          border: 1px solid rgba(212, 196, 160, 0.2);
+        }
+
+        .v-theme-preview.v-light {
+          background: white;
+        }
+
+        .v-theme-preview.v-dark {
+          background: #333;
+        }
+
+        .v-theme-preview.v-auto {
+          background: linear-gradient(45deg, white 50%, #333 50%);
+        }
+
+        .v-preview-header {
+          position: absolute;
+          top: 8px;
+          left: 8px;
+          right: 8px;
+          height: 12px;
+          background: rgba(212, 196, 160, 0.3);
+          border-radius: 4px;
+        }
+
+        .v-preview-sidebar {
+          position: absolute;
+          top: 24px;
+          left: 8px;
+          width: 24px;
+          bottom: 8px;
+          background: rgba(212, 196, 160, 0.5);
+          border-radius: 4px;
+        }
+
+        .v-preview-content {
+          position: absolute;
+          top: 24px;
+          left: 36px;
+          right: 8px;
+          bottom: 8px;
+          background: rgba(212, 196, 160, 0.2);
+          border-radius: 4px;
+        }
+
+        .v-theme-card span {
+          text-align: center;
+          font-weight: 500;
+          color: #333;
+          font-size: 14px;
+        }
+
+        .v-coming-soon-notice {
+          text-align: center;
+          padding: var(--spacing-md);
+          background: rgba(255, 193, 7, 0.1);
+          border: 1px solid rgba(255, 193, 7, 0.3);
+          border-radius: var(--radius-md);
+        }
+
+        /* 側邊欄排序 */
+        .v-platform-tabs {
           display: flex;
           gap: 4px;
-          margin-bottom: 24px;
-          background: rgba(201, 169, 97, 0.1);
-          border-radius: 12px;
+          margin-bottom: var(--spacing-lg);
+          background: rgba(212, 196, 160, 0.1);
+          border-radius: var(--radius-lg);
           padding: 4px;
           width: fit-content;
         }
 
-        .tab {
+        .v-tab {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 12px 20px;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-lg);
           border: none;
           background: transparent;
-          border-radius: 8px;
+          border-radius: var(--radius-md);
           cursor: pointer;
           font-weight: 500;
-          color: var(--text-secondary);
+          color: #666;
           transition: all 0.2s ease;
         }
 
-        .tab.active {
+        .v-tab.v-active {
           background: var(--primary);
           color: white;
-          box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
+          box-shadow: 0 4px 12px rgba(212, 196, 160, 0.3);
         }
 
-        .tab-icon {
-          width: 16px;
-          height: 16px;
-        }
-
-        .drag-container {
+        .v-drag-container {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 32px;
-          margin-bottom: 24px;
+          gap: var(--spacing-xl);
+          margin-bottom: var(--spacing-lg);
         }
 
-        .preview-section,
-        .drag-section {
+        .v-preview-section,
+        .v-drag-section {
           background: rgba(255, 255, 255, 0.5);
-          border-radius: 12px;
-          padding: 20px;
-          border: 1px solid rgba(201, 169, 97, 0.1);
+          border-radius: var(--radius-lg);
+          padding: var(--spacing-lg);
+          border: 1px solid rgba(212, 196, 160, 0.1);
         }
 
-        .preview-title,
-        .drag-title {
+        .v-preview-title,
+        .v-drag-title {
           font-size: 16px;
           font-weight: 600;
-          color: var(--text-primary);
-          margin: 0 0 16px 0;
+          color: #333;
+          margin: 0 0 var(--spacing-md) 0;
         }
 
-        .sidebar-preview {
-          border: 2px solid rgba(201, 169, 97, 0.2);
-          border-radius: 8px;
+        .v-sidebar-preview {
+          border: 2px solid rgba(212, 196, 160, 0.2);
+          border-radius: var(--radius-md);
           overflow: hidden;
         }
 
-        .sidebar-preview.desktop {
+        .v-sidebar-preview.v-desktop {
           max-height: 400px;
           overflow-y: auto;
         }
 
-        .sidebar-preview.mobile {
+        .v-sidebar-preview.v-mobile {
           display: flex;
           flex-direction: row;
           flex-wrap: wrap;
-          padding: 8px;
-          gap: 8px;
+          padding: var(--spacing-sm);
+          gap: var(--spacing-sm);
         }
 
-        .preview-item {
+        .v-preview-item {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-md);
           background: rgba(255, 255, 255, 0.7);
-          border-bottom: 1px solid rgba(201, 169, 97, 0.1);
+          border-bottom: 1px solid rgba(212, 196, 160, 0.1);
           font-size: 14px;
-          color: var(--text-primary);
+          color: #333;
         }
 
-        .sidebar-preview.mobile .preview-item {
+        .v-sidebar-preview.v-mobile .v-preview-item {
           flex-direction: column;
           gap: 4px;
-          padding: 8px 12px;
+          padding: var(--spacing-xs) var(--spacing-sm);
           border: none;
-          border-radius: 6px;
+          border-radius: var(--radius-sm);
           text-align: center;
           min-width: 80px;
         }
 
-        .preview-text {
+        .v-preview-text {
           font-weight: 500;
         }
 
-        .sidebar-preview.mobile .preview-text {
+        .v-sidebar-preview.v-mobile .v-preview-text {
           font-size: 10px;
           line-height: 1.2;
         }
 
-        .drag-list {
+        .v-drag-list {
           min-height: 200px;
         }
 
-        .drag-item {
+        .v-drag-item {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-md);
           background: white;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-          border-radius: 8px;
-          margin-bottom: 8px;
+          border: 1px solid rgba(212, 196, 160, 0.2);
+          border-radius: var(--radius-md);
+          margin-bottom: var(--spacing-sm);
           cursor: grab;
           transition: all 0.2s ease;
           user-select: none;
         }
 
-        .drag-item:hover {
-          box-shadow: 0 4px 12px rgba(201, 169, 97, 0.2);
-          border-color: rgba(201, 169, 97, 0.4);
+        .v-drag-item:hover {
+          box-shadow: 0 4px 12px rgba(212, 196, 160, 0.2);
+          border-color: rgba(212, 196, 160, 0.4);
         }
 
-        .drag-item.dragging {
+        .v-drag-item.v-dragging {
           opacity: 0.5;
-          box-shadow: 0 8px 24px rgba(201, 169, 97, 0.3);
+          box-shadow: 0 8px 24px rgba(212, 196, 160, 0.3);
           transform: rotate(2deg);
           cursor: grabbing;
         }
 
-        .drag-item.drag-over {
-          background: rgba(201, 169, 97, 0.1);
+        .v-drag-item.v-drag-over {
+          background: rgba(212, 196, 160, 0.1);
           border-color: var(--primary);
         }
 
-        .drag-handle {
-          width: 16px;
-          height: 16px;
-          color: var(--text-secondary);
+        .v-drag-handle {
+          color: #666;
           cursor: grab;
         }
 
-        .drag-text {
+        .v-drag-text {
           flex: 1;
           font-weight: 500;
-          color: var(--text-primary);
+          color: #333;
         }
 
-        .drag-order {
+        .v-drag-order {
           font-size: 12px;
-          color: var(--text-secondary);
-          background: rgba(201, 169, 97, 0.1);
-          padding: 4px 8px;
-          border-radius: 12px;
+          color: #666;
+          background: rgba(212, 196, 160, 0.1);
+          padding: 4px var(--spacing-sm);
+          border-radius: var(--radius-full);
           font-weight: 600;
         }
 
@@ -676,58 +825,19 @@ export default function SettingsPage() {
           color: var(--primary);
         }
 
-        .setting-actions {
+        .v-setting-actions {
           display: flex;
           justify-content: flex-end;
-          gap: 12px;
-          padding-top: 24px;
-          border-top: 1px solid rgba(201, 169, 97, 0.2);
+          gap: var(--spacing-sm);
+          padding-top: var(--spacing-lg);
+          border-top: 1px solid rgba(212, 196, 160, 0.2);
         }
 
-        .btn-secondary {
-          padding: 12px 20px;
-          border: 1px solid rgba(201, 169, 97, 0.3);
-          background: white;
-          border-radius: 8px;
-          cursor: pointer;
-          color: var(--text-secondary);
-          font-weight: 500;
-          transition: all 0.2s ease;
+        .v-highlight {
+          animation: v-pulse 2s infinite;
         }
 
-        .btn-secondary:hover {
-          background: rgba(201, 169, 97, 0.05);
-          border-color: rgba(201, 169, 97, 0.5);
-        }
-
-        .btn-primary {
-          padding: 12px 20px;
-          background: linear-gradient(135deg, var(--primary), var(--primary-light));
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.3s ease;
-        }
-
-        .btn-primary:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(201, 169, 97, 0.3);
-        }
-
-        .btn-primary.highlight {
-          animation: pulse 2s infinite;
-        }
-
-        .btn-primary:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          transform: none;
-          box-shadow: none;
-        }
-
-        @keyframes pulse {
+        @keyframes v-pulse {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.8; }
         }
@@ -737,222 +847,38 @@ export default function SettingsPage() {
           align-items: center;
           justify-content: center;
           min-height: 400px;
-          color: var(--text-secondary);
+          color: #666;
           font-size: 16px;
         }
 
-        /* 安全設定區塊 */
-        .security-section {
-          margin-bottom: 24px;
-        }
-
-        .security-item {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 20px;
-          background: rgba(255, 255, 255, 0.5);
-          border: 1px solid rgba(201, 169, 97, 0.1);
-          border-radius: 12px;
-          margin-bottom: 12px;
-        }
-
-        .security-info h4 {
-          margin: 0 0 4px 0;
-          font-size: 16px;
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .security-info p {
-          margin: 0;
-          font-size: 14px;
-          color: var(--text-secondary);
-        }
-
-        /* 主題設定區塊 */
-        .theme-section {
-          margin-bottom: 24px;
-        }
-
-        .theme-options {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 16px;
-          margin-bottom: 20px;
-        }
-
-        .theme-option {
-          position: relative;
-        }
-
-        .theme-option input[type="radio"] {
-          position: absolute;
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-
-        .theme-card {
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          padding: 16px;
-          border: 2px solid rgba(201, 169, 97, 0.2);
-          border-radius: 12px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          background: rgba(255, 255, 255, 0.5);
-        }
-
-        .theme-card:hover {
-          border-color: rgba(201, 169, 97, 0.4);
-          box-shadow: 0 4px 12px rgba(201, 169, 97, 0.1);
-        }
-
-        .theme-option input[type="radio"]:checked + .theme-card {
-          border-color: var(--primary);
-          background: rgba(201, 169, 97, 0.05);
-          box-shadow: 0 4px 12px rgba(201, 169, 97, 0.2);
-        }
-
-        .theme-preview {
-          height: 80px;
-          border-radius: 8px;
-          position: relative;
-          overflow: hidden;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-        }
-
-        .theme-preview.light {
-          background: var(--surface);
-        }
-
-        .theme-preview.dark {
-          background: var(--text-primary);
-        }
-
-        .theme-preview.auto {
-          background: linear-gradient(45deg, var(--surface) 50%, var(--text-primary) 50%);
-        }
-
-        .preview-header {
-          position: absolute;
-          top: 8px;
-          left: 8px;
-          right: 8px;
-          height: 12px;
-          background: rgba(201, 169, 97, 0.3);
-          border-radius: 4px;
-        }
-
-        .preview-sidebar {
-          position: absolute;
-          top: 24px;
-          left: 8px;
-          width: 24px;
-          bottom: 8px;
-          background: rgba(201, 169, 97, 0.5);
-          border-radius: 4px;
-        }
-
-        .preview-content {
-          position: absolute;
-          top: 24px;
-          left: 36px;
-          right: 8px;
-          bottom: 8px;
-          background: rgba(201, 169, 97, 0.2);
-          border-radius: 4px;
-        }
-
-        .theme-card span {
-          text-align: center;
-          font-weight: 500;
-          color: var(--text-primary);
-          font-size: 14px;
-        }
-
-        .coming-soon-notice {
-          text-align: center;
-          padding: 12px;
-          background: rgba(255, 193, 7, 0.1);
-          border: 1px solid rgba(255, 193, 7, 0.3);
-          border-radius: 8px;
-          color: var(--warning);
-        }
-
-        .coming-soon {
-          font-size: 12px;
-          color: var(--warning);
-          background: rgba(255, 193, 7, 0.2);
-          padding: 2px 8px;
-          border-radius: 12px;
-          margin-left: 8px;
-          font-weight: 500;
-        }
-
-        .btn-secondary:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          position: relative;
-        }
-
-        .btn-danger {
-          padding: 12px 20px;
-          background: linear-gradient(135deg, var(--danger), var(--danger));
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          font-weight: 500;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .btn-danger:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
-          background: linear-gradient(135deg, var(--danger), var(--danger));
-        }
-
-        .security-item.danger {
-          border-color: rgba(239, 68, 68, 0.2);
-          background: rgba(239, 68, 68, 0.02);
-        }
-
-        .security-item.danger .security-info h4 {
-          color: var(--danger);
-        }
-
+        /* 響應式設計 */
         @media (max-width: 768px) {
-          .drag-container {
+          .v-drag-container {
             grid-template-columns: 1fr;
           }
-          
-          .platform-tabs {
+
+          .v-platform-tabs {
             width: 100%;
             justify-content: center;
           }
-          
-          .tab {
+
+          .v-tab {
             flex: 1;
             justify-content: center;
           }
 
-          .setting-actions {
+          .v-setting-actions,
+          .v-settings-actions {
             flex-direction: column;
           }
 
-          .security-item {
+          .v-security-item {
             flex-direction: column;
-            gap: 12px;
+            gap: var(--spacing-sm);
             text-align: center;
           }
 
-          .theme-options {
+          .v-theme-options {
             grid-template-columns: 1fr;
           }
         }

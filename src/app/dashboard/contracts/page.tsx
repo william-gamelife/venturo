@@ -7,6 +7,16 @@ import { ModuleLayout } from '@/components/ModuleLayout'
 import { Icons } from '@/components/icons'
 import { useMode } from '@/contexts/ModeContext'
 import { VersionIndicator } from '@/components/VersionIndicator'
+import {
+  FileText,
+  Plus,
+  Search,
+  Filter,
+  Eye,
+  Edit,
+  Calendar,
+  DollarSign
+} from 'lucide-react'
 
 // 合約型別定義
 interface Contract {
@@ -172,119 +182,138 @@ export default function ContractsPage() {
         title: "合約管理",
         subtitle: "Contract Management",
         actions: (
-          <div className="header-actions">
-            <button 
-              className="new-contract-btn"
+          <div className="v-actions">
+            <button
+              className="v-button variant-primary"
               onClick={() => router.push('/dashboard/contracts/new')}
             >
-              + 新增合約
+              <Plus size={16} />
+              新增合約
             </button>
           </div>
         )
       }}
     >
       {/* 搜尋和篩選區 */}
-      <div className="filters-section">
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="搜尋合約編號、標題或客戶名稱..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
+      <div className="v-filters">
+        <div className="v-search-group">
+          <div className="v-input-group">
+            <Search className="v-input-icon" size={16} />
+            <input
+              type="text"
+              placeholder="搜尋合約編號、標題或客戶名稱..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="v-input"
+            />
+          </div>
         </div>
-        
-        <div className="filter-group">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">所有狀態</option>
-            <option value="draft">草稿</option>
-            <option value="pending">待簽署</option>
-            <option value="active">有效</option>
-            <option value="expired">已過期</option>
-            <option value="terminated">已終止</option>
-          </select>
-          
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="filter-select"
-          >
-            <option value="all">所有類型</option>
-            <option value="service">服務合約</option>
-            <option value="product">產品合約</option>
-            <option value="lease">租賃合約</option>
-            <option value="other">其他</option>
-          </select>
+
+        <div className="v-filter-group">
+          <div className="v-select-group">
+            <Filter className="v-select-icon" size={16} />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="v-select"
+            >
+              <option value="all">所有狀態</option>
+              <option value="draft">草稿</option>
+              <option value="pending">待簽署</option>
+              <option value="active">有效</option>
+              <option value="expired">已過期</option>
+              <option value="terminated">已終止</option>
+            </select>
+          </div>
+
+          <div className="v-select-group">
+            <FileText className="v-select-icon" size={16} />
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="v-select"
+            >
+              <option value="all">所有類型</option>
+              <option value="service">服務合約</option>
+              <option value="product">產品合約</option>
+              <option value="lease">租賃合約</option>
+              <option value="other">其他</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* 合約列表 */}
-      <div className="contracts-grid">
+      <div className="v-contracts-grid">
         {filteredContracts.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">📄</div>
-            <h3>暫無合約資料</h3>
-            <p>開始建立您的第一份合約</p>
+          <div className="v-empty-state">
+            <FileText className="v-empty-icon" size={48} />
+            <h3 className="v-empty-title">暫無合約資料</h3>
+            <p className="v-empty-message">開始建立您的第一份合約</p>
           </div>
         ) : (
           filteredContracts.map((contract) => (
-            <div key={contract.id} className="contract-card">
-              <div className="contract-header">
-                <div className="contract-info">
-                  <h3 className="contract-title">{contract.title}</h3>
-                  <p className="contract-number">{contract.contractNumber}</p>
+            <div key={contract.id} className="v-contract-card">
+              <div className="v-card-header">
+                <div className="v-contract-info">
+                  <h3 className="v-contract-title">{contract.title}</h3>
+                  <p className="v-contract-number">{contract.contractNumber}</p>
                 </div>
-                <div 
-                  className="status-badge"
-                  style={getStatusStyle(contract.status)}
+                <div
+                  className={`v-badge ${
+                    contract.status === 'active' ? 'v-success' :
+                    contract.status === 'pending' ? 'v-warning' :
+                    contract.status === 'expired' ? 'v-danger' :
+                    contract.status === 'terminated' ? 'v-secondary' :
+                    'v-info'
+                  }`}
                 >
                   {getStatusName(contract.status)}
                 </div>
               </div>
-              
-              <div className="contract-details">
-                <div className="detail-row">
-                  <span className="detail-label">客戶：</span>
-                  <span className="detail-value">{contract.clientName}</span>
+
+              <div className="v-contract-details">
+                <div className="v-detail-row">
+                  <span className="v-detail-label">客戶：</span>
+                  <span className="v-detail-value">{contract.clientName}</span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">類型：</span>
-                  <span className="detail-value">{getTypeName(contract.contractType)}</span>
+                <div className="v-detail-row">
+                  <span className="v-detail-label">類型：</span>
+                  <span className="v-detail-value">{getTypeName(contract.contractType)}</span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">金額：</span>
-                  <span className="detail-value amount">{formatCurrency(contract.totalAmount, contract.currency)}</span>
+                <div className="v-detail-row">
+                  <DollarSign className="v-detail-icon" size={14} />
+                  <span className="v-detail-label">金額：</span>
+                  <span className="v-detail-value v-amount">{formatCurrency(contract.totalAmount, contract.currency)}</span>
                 </div>
-                <div className="detail-row">
-                  <span className="detail-label">期間：</span>
-                  <span className="detail-value">
+                <div className="v-detail-row">
+                  <Calendar className="v-detail-icon" size={14} />
+                  <span className="v-detail-label">期間：</span>
+                  <span className="v-detail-value">
                     {contract.startDate} ~ {contract.endDate || '無期限'}
                   </span>
                 </div>
               </div>
-              
+
               {contract.description && (
-                <div className="contract-description">
+                <div className="v-contract-description">
                   {contract.description}
                 </div>
               )}
-              
-              <div className="contract-actions">
-                <button 
-                  className="action-btn view"
+
+              <div className="v-contract-actions">
+                <button
+                  className="v-button variant-secondary size-sm"
                   onClick={() => router.push(`/dashboard/contracts/${contract.id}`)}
                 >
+                  <Eye size={14} />
                   檢視
                 </button>
-                <button 
-                  className="action-btn edit"
+                <button
+                  className="v-button variant-sage size-sm"
                   onClick={() => router.push(`/dashboard/contracts/${contract.id}/edit`)}
                 >
+                  <Edit size={14} />
                   編輯
                 </button>
               </div>
@@ -294,238 +323,311 @@ export default function ContractsPage() {
       </div>
 
       <style jsx>{`
+        /* Venturo 合約管理樣式 */
         .loading {
           display: flex;
           align-items: center;
           justify-content: center;
           min-height: 400px;
-          color: #6d685f;
+          color: #666;
           font-size: 16px;
         }
 
-        .header-actions {
+        .v-actions {
           display: flex;
-          gap: 12px;
+          gap: var(--spacing-sm);
           align-items: center;
         }
 
-        .new-contract-btn {
-          padding: 8px 16px;
-          background: linear-gradient(135deg, #c9a961, #e4d4a8);
-          color: white;
-          border: none;
-          border-radius: 8px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .new-contract-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3);
-        }
-
-        .filters-section {
-          background: rgba(255, 255, 255, 0.8);
-          padding: 20px;
-          border-radius: 12px;
-          margin-bottom: 20px;
-          border: 1px solid rgba(201, 169, 97, 0.2);
+        /* 篩選區域 */
+        .v-filters {
+          margin-bottom: var(--spacing-lg);
           display: flex;
-          gap: 16px;
+          gap: var(--spacing-lg);
           align-items: center;
           flex-wrap: wrap;
         }
 
-        .search-box {
+        .v-search-group {
           flex: 1;
           min-width: 300px;
         }
 
-        .search-input {
+        .v-input-group {
+          position: relative;
+        }
+
+        .v-input-icon {
+          position: absolute;
+          left: var(--spacing-sm);
+          top: 50%;
+          transform: translateY(-50%);
+          color: #666;
+          pointer-events: none;
+        }
+
+        .v-input {
           width: 100%;
-          padding: 10px 12px;
-          border: 1px solid rgba(201, 169, 97, 0.3);
-          border-radius: 8px;
+          padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 36px;
+          border: 1px solid #E5E5E5;
+          border-radius: var(--radius-md);
           font-size: 14px;
           background: white;
+          transition: all 0.2s ease;
         }
 
-        .search-input:focus {
+        .v-input:focus {
           outline: none;
-          border-color: #c9a961;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(212, 196, 160, 0.1);
         }
 
-        .filter-group {
+        .v-filter-group {
           display: flex;
-          gap: 12px;
+          gap: var(--spacing-sm);
         }
 
-        .filter-select {
-          padding: 8px 12px;
-          border: 1px solid rgba(201, 169, 97, 0.3);
-          border-radius: 8px;
+        .v-select-group {
+          position: relative;
+          min-width: 140px;
+        }
+
+        .v-select-icon {
+          position: absolute;
+          left: var(--spacing-sm);
+          top: 50%;
+          transform: translateY(-50%);
+          color: #666;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .v-select {
+          width: 100%;
+          padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 36px;
+          border: 1px solid #E5E5E5;
+          border-radius: var(--radius-md);
           font-size: 14px;
           background: white;
           cursor: pointer;
+          transition: all 0.2s ease;
         }
 
-        .filter-select:focus {
+        .v-select:focus {
           outline: none;
-          border-color: #c9a961;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(212, 196, 160, 0.1);
         }
 
-        .contracts-grid {
+        /* 合約網格 */
+        .v-contracts-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-          gap: 20px;
+          grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+          gap: var(--spacing-lg);
         }
 
-        .contract-card {
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 12px;
-          padding: 20px;
-          border: 1px solid rgba(201, 169, 97, 0.2);
-          transition: all 0.2s ease;
-          cursor: pointer;
-        }
-
-        .contract-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .contract-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 16px;
-        }
-
-        .contract-title {
-          font-size: 16px;
-          font-weight: 600;
-          color: #3a3833;
-          margin: 0 0 4px 0;
-        }
-
-        .contract-number {
-          font-size: 12px;
-          color: #6d685f;
-          margin: 0;
-        }
-
-        .status-badge {
-          padding: 4px 8px;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 500;
-        }
-
-        .contract-details {
-          margin-bottom: 16px;
-        }
-
-        .detail-row {
-          display: flex;
-          justify-content: space-between;
-          margin-bottom: 8px;
-          font-size: 14px;
-        }
-
-        .detail-label {
-          color: #6d685f;
-          font-weight: 500;
-        }
-
-        .detail-value {
-          color: #3a3833;
-        }
-
-        .detail-value.amount {
-          font-weight: 600;
-          color: #c9a961;
-        }
-
-        .contract-description {
-          background: rgba(249, 250, 251, 0.8);
-          padding: 12px;
-          border-radius: 8px;
-          margin-bottom: 16px;
-          font-size: 13px;
-          color: #6d685f;
-          line-height: 1.4;
-        }
-
-        .contract-actions {
-          display: flex;
-          gap: 8px;
-          justify-content: flex-end;
-        }
-
-        .action-btn {
-          padding: 6px 12px;
-          border: none;
-          border-radius: 6px;
-          font-size: 12px;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        .action-btn.view {
-          background: rgba(59, 130, 246, 0.1);
-          color: #3b82f6;
-        }
-
-        .action-btn.edit {
-          background: rgba(16, 185, 129, 0.1);
-          color: #10b981;
-        }
-
-        .action-btn:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .empty-state {
+        .v-empty-state {
           grid-column: 1 / -1;
           text-align: center;
           padding: 60px 20px;
-          color: #6d685f;
+          background: white;
+          border-radius: var(--radius-lg);
+          border: 1px solid #E5E5E5;
         }
 
-        .empty-icon {
-          font-size: 48px;
-          margin-bottom: 16px;
+        .v-empty-icon {
+          color: #999;
+          margin-bottom: var(--spacing-md);
         }
 
-        .empty-state h3 {
-          margin: 0 0 8px 0;
+        .v-empty-title {
           font-size: 18px;
+          font-weight: 600;
+          color: #333;
+          margin: 0 0 var(--spacing-sm) 0;
         }
 
-        .empty-state p {
+        .v-empty-message {
+          color: #666;
           margin: 0;
-          opacity: 0.7;
         }
 
+        /* 合約卡片 */
+        .v-contract-card {
+          background: white;
+          border-radius: var(--radius-lg);
+          border: 1px solid #E5E5E5;
+          overflow: hidden;
+          transition: all 0.2s ease;
+          cursor: pointer;
+        }
+
+        .v-contract-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+          border-color: #D1D5DB;
+        }
+
+        .v-card-header {
+          padding: var(--spacing-lg);
+          border-bottom: 1px solid #F0F0F0;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+        }
+
+        .v-contract-info {
+          flex: 1;
+        }
+
+        .v-contract-title {
+          font-size: 16px;
+          font-weight: 600;
+          color: var(--primary);
+          margin: 0 0 4px 0;
+        }
+
+        .v-contract-number {
+          font-size: 12px;
+          color: #666;
+          margin: 0;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .v-badge {
+          padding: 4px 8px;
+          font-size: 11px;
+          font-weight: 500;
+          border-radius: var(--radius-sm);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .v-badge.v-success {
+          background: #E8F5E8;
+          color: #2E7D32;
+        }
+
+        .v-badge.v-warning {
+          background: #FFF3E0;
+          color: #F57C00;
+        }
+
+        .v-badge.v-danger {
+          background: #FFEBEE;
+          color: #D32F2F;
+        }
+
+        .v-badge.v-secondary {
+          background: rgba(196, 164, 167, 0.2);
+          color: var(--secondary);
+        }
+
+        .v-badge.v-info {
+          background: #E3F2FD;
+          color: #1976D2;
+        }
+
+        /* 合約詳情 */
+        .v-contract-details {
+          padding: var(--spacing-md) var(--spacing-lg);
+        }
+
+        .v-detail-row {
+          display: flex;
+          align-items: center;
+          margin-bottom: var(--spacing-sm);
+          font-size: 14px;
+          gap: var(--spacing-xs);
+        }
+
+        .v-detail-icon {
+          color: var(--primary);
+          flex-shrink: 0;
+        }
+
+        .v-detail-label {
+          color: #666;
+          font-weight: 500;
+          min-width: 50px;
+        }
+
+        .v-detail-value {
+          color: #333;
+          flex: 1;
+          text-align: right;
+        }
+
+        .v-detail-value.v-amount {
+          font-weight: 600;
+          color: var(--primary);
+        }
+
+        .v-contract-description {
+          padding: var(--spacing-md) var(--spacing-lg);
+          background: #FAFAFA;
+          font-size: 13px;
+          color: #666;
+          line-height: 1.5;
+          border-top: 1px solid #F0F0F0;
+        }
+
+        /* 操作按鈕 */
+        .v-contract-actions {
+          padding: var(--spacing-md) var(--spacing-lg);
+          border-top: 1px solid #F0F0F0;
+          display: flex;
+          gap: var(--spacing-sm);
+          justify-content: flex-end;
+        }
+
+        /* 響應式設計 */
         @media (max-width: 768px) {
-          .contracts-grid {
+          .v-contracts-grid {
             grid-template-columns: 1fr;
           }
-          
-          .filters-section {
+
+          .v-filters {
             flex-direction: column;
             align-items: stretch;
+            gap: var(--spacing-md);
           }
-          
-          .search-box {
+
+          .v-search-group {
             min-width: auto;
           }
-          
-          .filter-group {
+
+          .v-filter-group {
             justify-content: center;
+          }
+
+          .v-card-header {
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            align-items: flex-start;
+          }
+
+          .v-detail-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 2px;
+          }
+
+          .v-detail-value {
+            text-align: left;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .v-contracts-grid {
+            gap: var(--spacing-md);
+          }
+
+          .v-card-header,
+          .v-contract-details,
+          .v-contract-actions {
+            padding: var(--spacing-md);
           }
         }
       `}</style>

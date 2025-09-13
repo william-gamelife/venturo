@@ -174,18 +174,15 @@ export default function CalendarView({
   }
 
   return (
-    <div className="calendar-container">
-      {/* 事件類型過濾器 */}
-      <div className="calendar-header">
-        <div className="calendar-title">
-          <h3>📅 行事曆管理</h3>
-          <div className="event-counter">
-            {filteredEvents.length} 個事件
-          </div>
+    <div className="v-calendar">
+      {/* 過濾器工具列 */}
+      <div className="v-filters">
+        <div className="v-counter">
+          <span className="v-counter-text">{filteredEvents.length} 個事件</span>
         </div>
-        <div className="calendar-filters">
-          <span className="filter-label">顯示類型：</span>
-          <div className="filter-buttons">
+        <div className="v-filter-group">
+          <span className="v-filter-label">顯示類型：</span>
+          <div className="v-filter-buttons">
             {[
               { value: 'all', label: '全部顯示' },
               { value: 'groups', label: '旅遊團' },
@@ -196,7 +193,7 @@ export default function CalendarView({
             ].map(({ value, label }) => (
               <button
                 key={value}
-                className={`filter-btn ${eventFilter === value ? 'active' : ''}`}
+                className={`v-button ${eventFilter === value ? 'variant-primary' : 'variant-ghost'} size-sm`}
                 onClick={() => setEventFilter(value as EventFilterType)}
               >
                 {label}
@@ -206,59 +203,57 @@ export default function CalendarView({
         </div>
       </div>
 
-      {/* FullCalendar 主體 */}
-      <div className="calendar-wrapper">
-        <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, interactionPlugin]}
-          initialView="dayGridMonth"
-          headerToolbar={{
-            left: 'prev,next today',
-            center: 'title',
-            right: ''
-          }}
-          events={filteredEvents}
-          dateClick={handleDateClick}
-          eventClick={handleEventClick}
-          datesSet={handleDatesSet}
-          locale="zh-tw"
-          height="auto"
-          dayMaxEvents={false}
-          moreLinkClick={handleMoreLinkClick}
-          moreLinkText="更多"
-          weekends={true}
-          eventDisplay="block"
-          displayEventTime={false}
-          eventOrder={compareEvents}
-          eventClassNames={(arg) => {
-            const type = arg.event.extendedProps?.type;
-            return `event-${type}`;
-          }}
-          eventMinHeight={26}
-          dayMaxEventRows={8}
-          eventMaxStack={8}
-          nextDayThreshold="00:00:00"
-        />
-      </div>
+      {/* FullCalendar 主體 - 直接無容器 */}
+      <FullCalendar
+        ref={calendarRef}
+        plugins={[dayGridPlugin, interactionPlugin]}
+        initialView="dayGridMonth"
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: ''
+        }}
+        events={filteredEvents}
+        dateClick={handleDateClick}
+        eventClick={handleEventClick}
+        datesSet={handleDatesSet}
+        locale="zh-tw"
+        height="auto"
+        dayMaxEvents={false}
+        moreLinkClick={handleMoreLinkClick}
+        moreLinkText="更多"
+        weekends={true}
+        eventDisplay="block"
+        displayEventTime={false}
+        eventOrder={compareEvents}
+        eventClassNames={(arg) => {
+          const type = arg.event.extendedProps?.type;
+          return `v-event-${type}`;
+        }}
+        eventMinHeight={26}
+        dayMaxEventRows={8}
+        eventMaxStack={8}
+        nextDayThreshold="00:00:00"
+      />
 
       {/* 更多事件對話框 */}
       {moreEventsDialog.open && (
-        <div className="dialog-overlay" onClick={handleCloseDialog}>
-          <div className="dialog" onClick={(e) => e.stopPropagation()}>
-            <div className="dialog-header">
-              <h3>
+        <div className="v-dialog-overlay" onClick={handleCloseDialog}>
+          <div className="v-dialog" onClick={(e) => e.stopPropagation()}>
+            <div className="v-dialog-header">
+              <h3 className="v-dialog-title">
                 {moreEventsDialog.date} 的所有活動 ({moreEventsDialog.events.length})
               </h3>
-              <button className="close-btn" onClick={handleCloseDialog}>
-                ✕
+              <button className="v-button variant-ghost size-sm" onClick={handleCloseDialog}>
+                ×
               </button>
             </div>
-            
-            <div className="dialog-content">
+
+            <div className="v-dialog-content">
               {moreEventsDialog.events.map((event, index) => (
                 <div
                   key={index}
-                  className="event-item"
+                  className="v-event-item"
                   onClick={() => {
                     handleEventClick({
                       event: {
@@ -275,13 +270,13 @@ export default function CalendarView({
                     handleCloseDialog();
                   }}
                 >
-                  <div 
-                    className="event-color" 
+                  <div
+                    className="v-event-color"
                     style={{ backgroundColor: event.backgroundColor || event.color || '#3B82F6' }}
                   />
-                  <div className="event-details">
-                    <div className="event-title">{event.title}</div>
-                    <div className="event-meta">
+                  <div className="v-event-details">
+                    <div className="v-event-title">{event.title}</div>
+                    <div className="v-event-meta">
                       {(() => {
                         if (event.extendedProps?.type === 'birthday') {
                           return '生日提醒';
@@ -311,11 +306,9 @@ export default function CalendarView({
       )}
 
       <style jsx>{`
-        .calendar-container {
-          background: var(--surface);
-          border-radius: var(--radius-lg);
-          padding: var(--spacing-xl);
-          box-shadow: var(--shadow-md);
+        /* Venturo 日曆樣式 - 主容器不設置額外樣式 */
+        .v-calendar {
+          /* 主畫面原則：無額外容器包裝 */
         }
 
         .calendar-loading {
@@ -330,7 +323,7 @@ export default function CalendarView({
         .loading-spinner {
           width: 40px;
           height: 40px;
-          border: 4px solid var(--border);
+          border: 4px solid var(--sage-green);
           border-top: 4px solid var(--primary);
           border-radius: 50%;
           animation: spin 1s linear infinite;
@@ -341,87 +334,48 @@ export default function CalendarView({
           100% { transform: rotate(360deg); }
         }
 
-        .calendar-header {
+        /* 過濾器工具列 */
+        .v-filters {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: var(--spacing-lg);
-          padding: var(--spacing-lg);
-          background: linear-gradient(135deg, var(--primary-bg), var(--surface-hover));
-          border-radius: var(--radius-md);
-          border: 1px solid var(--border);
+          padding: var(--spacing-md) 0;
         }
 
-        .calendar-title {
+        .v-counter {
           display: flex;
           align-items: center;
-          gap: var(--spacing-md);
         }
 
-        .calendar-title h3 {
-          margin: 0;
-          font-size: var(--font-size-lg);
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .event-counter {
+        .v-counter-text {
           background: var(--primary);
           color: white;
           padding: var(--spacing-xs) var(--spacing-sm);
           border-radius: var(--radius-sm);
-          font-size: var(--font-size-sm);
+          font-size: 14px;
           font-weight: 500;
         }
 
-        .calendar-filters {
+        .v-filter-group {
           display: flex;
           align-items: center;
           gap: var(--spacing-md);
         }
 
-        .filter-label {
-          font-size: var(--font-size-sm);
-          color: var(--text-secondary);
+        .v-filter-label {
+          font-size: 14px;
+          color: #666;
           font-weight: 500;
         }
 
-        .filter-buttons {
+        .v-filter-buttons {
           display: flex;
           gap: var(--spacing-xs);
         }
 
-        .filter-btn {
-          padding: var(--spacing-xs) var(--spacing-sm);
-          border: 1px solid var(--border);
-          background: var(--surface);
-          color: var(--text-secondary);
-          border-radius: var(--radius-sm);
-          cursor: pointer;
-          transition: all var(--animation-fast);
-          font-size: var(--font-size-sm);
-          font-weight: 500;
-        }
-
-        .filter-btn:hover {
-          background: var(--surface-hover);
-          border-color: var(--border-hover);
-        }
-
-        .filter-btn.active {
-          background: var(--primary);
-          color: white;
-          border-color: var(--primary);
-        }
-
-        .calendar-wrapper {
-          background: white;
-          border-radius: var(--radius-md);
-          padding: var(--spacing-lg);
-          border: 1px solid var(--border);
-        }
-
-        .dialog-overlay {
+        /* 對話框樣式 - 使用 Venturo 設計系統 */
+        .v-dialog-overlay {
           position: fixed;
           top: 0;
           left: 0;
@@ -433,121 +387,89 @@ export default function CalendarView({
           align-items: center;
           justify-content: center;
           z-index: 1000;
-          animation: fadeIn var(--animation-normal) ease;
+          animation: fadeIn 0.3s ease;
         }
 
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-
-        .dialog {
-          background: var(--surface);
+        .v-dialog {
+          background: white;
           border-radius: var(--radius-lg);
           max-width: 500px;
           width: 90vw;
           max-height: 80vh;
           overflow: hidden;
-          box-shadow: var(--shadow-xl);
-          animation: slideIn var(--animation-normal) ease;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+          animation: slideIn 0.3s ease;
         }
 
-        @keyframes slideIn {
-          from { 
-            opacity: 0;
-            transform: translateY(-20px) scale(0.95);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        .dialog-header {
+        .v-dialog-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           padding: var(--spacing-lg);
-          border-bottom: 1px solid var(--border);
+          border-bottom: 1px solid #E5E5E5;
         }
 
-        .dialog-header h3 {
+        .v-dialog-title {
           margin: 0;
-          font-size: var(--font-size-lg);
-          font-weight: 600;
-          color: var(--text-primary);
-        }
-
-        .close-btn {
-          background: none;
-          border: none;
           font-size: 18px;
-          cursor: pointer;
-          padding: var(--spacing-xs);
-          border-radius: var(--radius-sm);
-          color: var(--text-secondary);
-          transition: all var(--animation-fast);
+          font-weight: 600;
+          color: #333;
         }
 
-        .close-btn:hover {
-          background: var(--surface-hover);
-          color: var(--text-primary);
-        }
-
-        .dialog-content {
+        .v-dialog-content {
           max-height: 60vh;
           overflow-y: auto;
           padding: var(--spacing-md);
         }
 
-        .event-item {
+        .v-event-item {
           display: flex;
           align-items: center;
           gap: var(--spacing-sm);
           padding: var(--spacing-md);
           border-radius: var(--radius-sm);
-          border: 1px solid var(--border);
+          border: 1px solid #E5E5E5;
           cursor: pointer;
-          transition: all var(--animation-fast);
+          transition: all 0.2s ease;
           margin-bottom: var(--spacing-sm);
         }
 
-        .event-item:hover {
-          background: var(--surface-hover);
-          border-color: var(--border-hover);
+        .v-event-item:hover {
+          background: #F8F9FA;
+          border-color: #D1D5DB;
           transform: translateY(-1px);
         }
 
-        .event-color {
+        .v-event-color {
           width: 12px;
           height: 12px;
           border-radius: var(--radius-xs);
           flex-shrink: 0;
         }
 
-        .event-details {
+        .v-event-details {
           flex: 1;
         }
 
-        .event-title {
+        .v-event-title {
           font-weight: 500;
-          color: var(--text-primary);
+          color: #333;
           margin-bottom: var(--spacing-xs);
         }
 
-        .event-meta {
-          font-size: var(--font-size-sm);
-          color: var(--text-secondary);
+        .v-event-meta {
+          font-size: 14px;
+          color: #666;
         }
 
         @media (max-width: 768px) {
-          .calendar-header {
+          .v-filters {
             flex-direction: column;
             gap: var(--spacing-md);
             align-items: flex-start;
           }
 
-          .filter-buttons {
+          .v-filter-buttons {
             flex-wrap: wrap;
           }
         }
@@ -606,28 +528,29 @@ export default function CalendarView({
           display: none !important;
         }
 
-        .event-group {
+        /* Venturo 事件類型樣式 */
+        .v-event-group {
           /* 團號顏色由 generateGroupColor 動態設定 */
         }
-        
-        .event-birthday {
+
+        .v-event-birthday {
           background-color: #FF6B6B !important;
           border-color: #FF6B6B !important;
         }
-        
-        .event-task {
-          background-color: #9CAF88 !important;
-          border-color: #9CAF88 !important;
+
+        .v-event-task {
+          background-color: var(--sage-green) !important;
+          border-color: var(--sage-green) !important;
         }
 
-        .event-meeting {
-          background-color: #3B82F6 !important;
-          border-color: #3B82F6 !important;
+        .v-event-meeting {
+          background-color: var(--fog-blue) !important;
+          border-color: var(--fog-blue) !important;
         }
 
-        .event-personal {
-          background-color: #8B5CF6 !important;
-          border-color: #8B5CF6 !important;
+        .v-event-personal {
+          background-color: var(--secondary) !important;
+          border-color: var(--secondary) !important;
         }
       `}</style>
     </div>

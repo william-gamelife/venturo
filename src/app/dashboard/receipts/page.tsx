@@ -1,23 +1,38 @@
-'use client';
+'use client'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { ModuleLayout } from '@/components/ModuleLayout';
-import { Icons } from '@/components/icons';
-import { 
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import { ModuleLayout } from '@/components/ModuleLayout'
+import { Icons } from '@/components/icons'
+import {
   Receipt,
+  Search,
+  Filter,
+  Eye,
+  Trash2,
+  Plus,
+  DollarSign,
+  Calendar,
+  TrendingUp,
+  CheckCircle,
+  Clock,
+  AlertCircle
+} from 'lucide-react'
+import {
+  Receipt as ReceiptModel,
   RECEIPT_STATUS,
   RECEIPT_TYPE,
   RECEIPT_STATUS_NAMES,
   RECEIPT_TYPE_NAMES,
   RECEIPT_STATUS_COLORS,
   getReceiptTypeName
-} from './models/ReceiptModel';
-import { ReceiptApi } from './ReceiptApi';
-import { OrderApi } from '../orders/OrderApi';
+} from './models/ReceiptModel'
+import { ReceiptApi } from './ReceiptApi'
+import { OrderApi } from '../orders/OrderApi'
+import { VersionIndicator } from '@/components/VersionIndicator'
 
 export default function ReceiptsPage() {
-  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [receipts, setReceipts] = useState<ReceiptModel[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<number | 'all'>('all');
   const [orderFilter, setOrderFilter] = useState<string>('all');
@@ -108,180 +123,190 @@ export default function ReceiptsPage() {
         title: "收款單管理",
         subtitle: "管理所有客戶付款記錄",
         actions: (
-          <>
-            <div className="receipt-stats">
-              <div className="stat-item">
-                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{stats.count}</span>
-                <span className="stat-label">收款單數</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number" style={{ fontSize: 24, fontWeight: 700, color: "#c9a961" }}>{formatCurrency(stats.totalAmount)}</span>
-                <span className="stat-label">應收總額</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number text-success">{formatCurrency(stats.actualAmount)}</span>
-                <span className="stat-label">已收金額</span>
-              </div>
-              <div className="stat-item">
-                <span className="stat-number text-warning">{formatCurrency(stats.pendingAmount)}</span>
-                <span className="stat-label">待收金額</span>
+          <div className="v-stats">
+            <div className="v-stat-item">
+              <Receipt className="v-stat-icon" size={16} />
+              <div className="v-stat-content">
+                <span className="v-stat-number">{stats.count}</span>
+                <span className="v-stat-label">收款單數</span>
               </div>
             </div>
-            <div className="action-buttons">
-              <Link
-                href="/dashboard/receipts/new"
-                className="btn-primary"
-              >
-                + 新增收款單
-              </Link>
-              <Link
-                href="/dashboard/receipts/batch-create"
-                className="btn-primary"
-              >
-                批次建立
-              </Link>
+            <div className="v-stat-item">
+              <DollarSign className="v-stat-icon" size={16} />
+              <div className="v-stat-content">
+                <span className="v-stat-number">{formatCurrency(stats.totalAmount)}</span>
+                <span className="v-stat-label">應收總額</span>
+              </div>
             </div>
-          </>
+            <div className="v-stat-item">
+              <CheckCircle className="v-stat-icon" size={16} />
+              <div className="v-stat-content">
+                <span className="v-stat-number">{formatCurrency(stats.actualAmount)}</span>
+                <span className="v-stat-label">已收金額</span>
+              </div>
+            </div>
+            <div className="v-stat-item">
+              <Clock className="v-stat-icon" size={16} />
+              <div className="v-stat-content">
+                <span className="v-stat-number">{formatCurrency(stats.pendingAmount)}</span>
+                <span className="v-stat-label">待收金額</span>
+              </div>
+            </div>
+          </div>
         )
       }}
     >
 
-      {/* 篩選區 */}
-      <div className="filter-section" style={{ background: "rgba(255, 255, 255, 0.9)", borderRadius: 16, padding: 24, border: "1px solid rgba(201, 169, 97, 0.2)", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)", backdropFilter: "blur(10px)", marginBottom: 24 }}>
-        <div className="flex flex-wrap gap-4">
-          {/* 狀態篩選 */}
-          <select
-            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+      {/* 操作區域 */}
+      <div className="v-actions">
+        <div className="v-filters">
+          <div className="v-select-group">
+            <Filter className="v-select-icon" size={16} />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+              className="v-select"
+            >
+              <option value="all">所有狀態</option>
+              {Object.entries(RECEIPT_STATUS).map(([key, value]) => (
+                <option key={key} value={value}>
+                  {RECEIPT_STATUS_NAMES[value as keyof typeof RECEIPT_STATUS_NAMES]}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="v-select-group">
+            <Filter className="v-select-icon" size={16} />
+            <select
+              value={orderFilter}
+              onChange={(e) => setOrderFilter(e.target.value)}
+              className="v-select"
+            >
+              <option value="all">所有訂單</option>
+              {orders.map(order => (
+                <option key={order.orderNumber} value={order.orderNumber}>
+                  {order.orderNumber} - {order.groupCode} {order.groupName}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="v-action-buttons">
+          <Link
+            href="/dashboard/receipts/new"
+            className="v-button variant-primary"
           >
-            <option value="all">所有狀態</option>
-            {Object.entries(RECEIPT_STATUS).map(([key, value]) => (
-              <option key={key} value={value}>
-                {RECEIPT_STATUS_NAMES[value as keyof typeof RECEIPT_STATUS_NAMES]}
-              </option>
-            ))}
-          </select>
-
-          {/* 訂單篩選 */}
-          <select
-            className="unified-input" style={{ width: "100%", padding: "10px 14px", border: "1px solid rgba(201, 169, 97, 0.3)", borderRadius: 8, fontSize: 14, transition: "all 0.2s ease" }}
-            value={orderFilter}
-            onChange={(e) => setOrderFilter(e.target.value)}
+            <Plus size={16} />
+            新增收款單
+          </Link>
+          <Link
+            href="/dashboard/receipts/batch-create"
+            className="v-button variant-outline"
           >
-            <option value="all">所有訂單</option>
-            {orders.map(order => (
-              <option key={order.orderNumber} value={order.orderNumber}>
-                {order.orderNumber} - {order.groupCode} {order.groupName}
-              </option>
-            ))}
-          </select>
+            批次建立
+          </Link>
         </div>
       </div>
 
       {/* 收款單列表 */}
-      <div className="unified-table" style={{ background: "white", borderRadius: 16, overflow: "hidden", boxShadow: "0 4px 16px rgba(0, 0, 0, 0.1)", border: "1px solid rgba(201, 169, 97, 0.2)" }}>
+      <div className="v-table-container">
         {loading ? (
-          <div className="p-8 text-center text-gray-500">載入中...</div>
+          <div className="v-empty-state">
+            <p className="v-empty-message">載入中...</p>
+          </div>
         ) : receipts.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            沒有找到收款單資料
+          <div className="v-empty-state">
+            <p className="v-empty-message">沒有找到收款單資料</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead style={{ background: "linear-gradient(135deg, #c9a961 0%, #b8975a 100%)" }}>
+          <div className="v-table-wrapper">
+            <table className="v-table">
+              <thead>
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    收款單號
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    團號
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    團名
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    訂單編號
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">收款單號</th>
+                  <th className="v-th">團號</th>
+                  <th className="v-th">團名</th>
+                  <th className="v-th">訂單編號</th>
+                  <th className="v-th">
+                    <Calendar size={14} />
                     收款日期
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="v-th">
+                    <DollarSign size={14} />
                     金額
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    收款方式
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    狀態
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    操作
-                  </th>
+                  <th className="v-th">收款方式</th>
+                  <th className="v-th">狀態</th>
+                  <th className="v-th">操作</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody>
                 {receipts.map((receipt) => (
-                  <tr key={receipt.receiptNumber} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {receipt.receiptNumber}
+                  <tr key={receipt.receiptNumber} className="v-tr">
+                    <td className="v-td">
+                      <strong>{receipt.receiptNumber}</strong>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="v-td">
                       {receipt.groupCode ? (
                         <Link
                           href={`/dashboard/groups/${receipt.groupCode}`}
-                          className="text-blue-600 hover:text-blue-900 underline"
+                          className="v-link"
                         >
                           {receipt.groupCode}
                         </Link>
                       ) : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="v-td">
                       {receipt.groupName || '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="v-td">
                       <Link
                         href={`/dashboard/receipts/by-order/${receipt.orderNumber}`}
-                        className="text-blue-600 hover:text-blue-900 underline"
+                        className="v-link"
                       >
                         {receipt.orderNumber}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="v-td">
                       {formatDate(receipt.receiptDate)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="v-td">
                       <div>
-                        <div className="font-medium">{formatCurrency(receipt.receiptAmount)}</div>
+                        <div className="v-amount">{formatCurrency(receipt.receiptAmount)}</div>
                         {receipt.actualAmount !== receipt.receiptAmount && (
-                          <div className="text-xs text-gray-500">
+                          <div className="v-amount-sub">
                             實收: {formatCurrency(receipt.actualAmount)}
                           </div>
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="v-td">
                       {getReceiptTypeName(receipt.receiptType)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(receipt.status)}`}>
+                    <td className="v-td">
+                      <span className={`v-badge ${
+                        receipt.status === RECEIPT_STATUS.COMPLETED ? 'v-success' :
+                        receipt.status === RECEIPT_STATUS.PENDING ? 'v-warning' :
+                        'v-info'
+                      }`}>
                         {RECEIPT_STATUS_NAMES[receipt.status as keyof typeof RECEIPT_STATUS_NAMES]}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex gap-2">
+                    <td className="v-td">
+                      <div className="v-actions-cell">
                         <Link
                           href={`/dashboard/receipts/${receipt.receiptNumber}`}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="v-action-button"
+                          title="檢視"
                         >
-                          檢視
+                          <Eye size={14} />
                         </Link>
                         <button
                           onClick={() => handleDelete(receipt.receiptNumber)}
-                          className="text-red-600 hover:text-red-900"
+                          className="v-action-button v-danger"
+                          title="刪除"
                         >
-                          刪除
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -294,61 +319,294 @@ export default function ReceiptsPage() {
       </div>
       
       <style jsx global>{`
-        .receipt-stats {
+        /* Venturo 收款單管理樣式 */
+        .v-stats {
           display: flex;
-          gap: 24px;
+          gap: var(--spacing-lg);
           align-items: center;
         }
-        
-        .receipt-stats .stat-item {
+
+        .v-stat-item {
+          display: flex;
+          align-items: center;
+          gap: var(--spacing-sm);
+          padding: var(--spacing-sm) var(--spacing-md);
+          background: rgba(255, 255, 255, 0.5);
+          border-radius: var(--radius-md);
+          border: 1px solid rgba(212, 196, 160, 0.2);
+        }
+
+        .v-stat-icon {
+          color: var(--primary);
+          flex-shrink: 0;
+        }
+
+        .v-stat-content {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          gap: 2px;
+          align-items: flex-start;
         }
-        
-        .receipt-stats .stat-number {
-          font-size: 1.25rem;
+
+        .v-stat-number {
+          font-size: 18px;
           font-weight: 700;
-          color: #374151;
+          color: #333;
+          line-height: 1;
         }
-        
-        .receipt-stats .stat-label {
-          font-size: 0.75rem;
-          color: #6b7280;
+
+        .v-stat-label {
+          font-size: 11px;
+          color: #666;
           white-space: nowrap;
         }
-        
-        .action-buttons {
+
+        /* 操作區域 */
+        .v-actions {
           display: flex;
-          gap: 12px;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: var(--spacing-lg);
+          gap: var(--spacing-md);
         }
-        
-        .filter-section {
+
+        .v-filters {
+          display: flex;
+          gap: var(--spacing-md);
+        }
+
+        .v-select-group {
+          position: relative;
+          min-width: 180px;
+        }
+
+        .v-select-icon {
+          position: absolute;
+          left: var(--spacing-sm);
+          top: 50%;
+          transform: translateY(-50%);
+          color: #666;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .v-select {
+          width: 100%;
+          padding: var(--spacing-sm) var(--spacing-sm) var(--spacing-sm) 36px;
+          border: 1px solid #E5E5E5;
+          border-radius: var(--radius-md);
+          font-size: 14px;
           background: white;
-          border-radius: 0.5rem;
-          padding: 1rem;
-          margin-bottom: 1.5rem;
-          box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-          border: 1px solid #e5e7eb;
+          cursor: pointer;
+          transition: all 0.2s ease;
         }
-        
+
+        .v-select:focus {
+          outline: none;
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(212, 196, 160, 0.1);
+        }
+
+        .v-action-buttons {
+          display: flex;
+          gap: var(--spacing-sm);
+        }
+
+        /* 表格樣式 */
+        .v-table-container {
+          background: white;
+          border-radius: var(--radius-lg);
+          border: 1px solid #E5E5E5;
+          overflow: hidden;
+        }
+
+        .v-empty-state {
+          padding: 48px 24px;
+          text-align: center;
+        }
+
+        .v-empty-message {
+          color: #666;
+          margin: 0;
+        }
+
+        .v-table-wrapper {
+          overflow-x: auto;
+        }
+
+        .v-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .v-th {
+          background: linear-gradient(135deg, var(--primary) 0%, var(--sage-green) 100%);
+          color: white;
+          padding: var(--spacing-md) var(--spacing-lg);
+          text-align: left;
+          font-weight: 600;
+          font-size: 13px;
+          white-space: nowrap;
+          position: sticky;
+          top: 0;
+          z-index: 1;
+        }
+
+        .v-th svg {
+          margin-right: var(--spacing-xs);
+          vertical-align: text-top;
+        }
+
+        .v-tr {
+          transition: all 0.2s ease;
+        }
+
+        .v-tr:hover {
+          background: rgba(212, 196, 160, 0.05);
+        }
+
+        .v-td {
+          padding: var(--spacing-md) var(--spacing-lg);
+          border-bottom: 1px solid #F0F0F0;
+          vertical-align: top;
+        }
+
+        .v-link {
+          color: var(--primary);
+          text-decoration: none;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+
+        .v-link:hover {
+          color: var(--sage-green);
+          text-decoration: underline;
+        }
+
+        .v-amount {
+          font-weight: 600;
+          color: #333;
+        }
+
+        .v-amount-sub {
+          font-size: 12px;
+          color: #666;
+          margin-top: 2px;
+        }
+
+        .v-badge {
+          padding: 4px 8px;
+          font-size: 11px;
+          font-weight: 500;
+          border-radius: var(--radius-sm);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .v-badge.v-success {
+          background: #E8F5E8;
+          color: #2E7D32;
+        }
+
+        .v-badge.v-warning {
+          background: #FFF3E0;
+          color: #F57C00;
+        }
+
+        .v-badge.v-info {
+          background: #E3F2FD;
+          color: #1976D2;
+        }
+
+        .v-actions-cell {
+          display: flex;
+          gap: var(--spacing-xs);
+        }
+
+        .v-action-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 32px;
+          height: 32px;
+          border: none;
+          background: rgba(212, 196, 160, 0.1);
+          color: var(--primary);
+          border-radius: var(--radius-sm);
+          cursor: pointer;
+          transition: all 0.2s ease;
+          text-decoration: none;
+        }
+
+        .v-action-button:hover {
+          background: rgba(212, 196, 160, 0.2);
+          transform: translateY(-1px);
+        }
+
+        .v-action-button.v-danger {
+          background: rgba(244, 67, 54, 0.1);
+          color: #F44336;
+        }
+
+        .v-action-button.v-danger:hover {
+          background: rgba(244, 67, 54, 0.2);
+        }
+
+        /* 響應式設計 */
         @media (max-width: 768px) {
-          .receipt-stats {
+          .v-stats {
             flex-direction: column;
-            gap: 12px;
+            gap: var(--spacing-md);
+            align-items: stretch;
           }
-          
-          .receipt-stats .stat-item {
-            flex-direction: row;
-            gap: 8px;
+
+          .v-stat-item {
+            justify-content: space-between;
+            padding: var(--spacing-md);
           }
-          
-          .action-buttons {
+
+          .v-stat-content {
+            align-items: flex-end;
+          }
+
+          .v-actions {
             flex-direction: column;
+            align-items: stretch;
+          }
+
+          .v-filters {
+            flex-direction: column;
+          }
+
+          .v-action-buttons {
+            flex-direction: column;
+          }
+
+          .v-th {
+            font-size: 12px;
+            padding: var(--spacing-sm);
+          }
+
+          .v-td {
+            padding: var(--spacing-sm);
+            font-size: 14px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .v-th,
+          .v-td {
+            padding: var(--spacing-xs);
+            font-size: 12px;
           }
         }
       `}</style>
+
+      <VersionIndicator
+        page="收款單管理"
+        authSystem="mixed"
+        version="1.0"
+        status="error"
+      />
     </ModuleLayout>
   );
 }
